@@ -4,7 +4,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role?: 'user' | 'admin' | 'developer' | string;
+  role?: "user" | "admin" | "developer" | string;
   roles?: string[];
   onboardingCompleted: boolean;
 
@@ -67,7 +67,7 @@ export interface User {
   preferredChurchAttendance?: string[] | null;
   preferredRelationshipGoals?: string[] | null;
   preferredDenomination?: string | null;
-  preferredGender?: 'MALE' | 'FEMALE' | string | null;
+  preferredGender?: "MALE" | "FEMALE" | string | null;
   minAge?: number | null;
   maxAge?: number | null;
   maxDistance?: number | null;
@@ -87,9 +87,9 @@ export interface User {
   isOnline?: boolean;
   lastSeenAt?: string;
 
-  subscriptionStatus?: 'active' | 'pending' | 'inactive' | string;
-  subscriptionTier?: 'premium' | 'elite' | 'free' | string;
-  subscriptionCurrency?: 'NGN' | 'USD' | string;
+  subscriptionStatus?: "active" | "pending" | "inactive" | string;
+  subscriptionTier?: "premium" | "elite" | "free" | string;
+  subscriptionCurrency?: "NGN" | "USD" | string;
   profileBoosterCredits?: number;
   profileBoosterActiveUntil?: string | null;
   profileBoosterLastGrantedReference?: string | null;
@@ -98,8 +98,8 @@ export interface User {
     status?: string;
     tier?: string;
     currency?: string;
-    billingCycle?: 'monthly' | 'quarterly' | string;
-    pricingRegion?: 'nigeria' | 'africa' | 'global' | string;
+    billingCycle?: "monthly" | "quarterly" | string;
+    pricingRegion?: "nigeria" | "africa" | "global" | string;
     displayCurrency?: string;
     displayAmountMajor?: number;
     chargeAmountMajor?: number;
@@ -110,7 +110,7 @@ export interface User {
     customerCode?: string;
     subscriptionCode?: string;
     authorizationCode?: string;
-    renewalProvider?: 'plan' | 'authorization' | string;
+    renewalProvider?: "plan" | "authorization" | string;
     autoRenewEnabled?: boolean;
     autoRenewDisabledAt?: string;
     nextPaymentDate?: string;
@@ -124,19 +124,29 @@ export interface User {
   };
   settings?: Record<string, any>;
   createdAt?: string;
-
 }
 
-
-
-
 export interface UserPreferences {
-  preferredGender?: 'MALE' | 'FEMALE' | null;
-  preferredDenomination?: ('BAPTIST' | 'METHODIST' | 'PRESBYTERIAN' | 'PENTECOSTAL' | 'CATHOLIC' | 'ORTHODOX' | 'ANGLICAN' | 'LUTHERAN' | 'ASSEMBLIES_OF_GOD' | 'SEVENTH_DAY_ADVENTIST' | 'OTHER')[] | null;
-  minAge?: number | null;
-  maxAge?: number | null;
-  maxDistance?: number | null;
-  preferredFaithJourney?: string[] | null;
-  preferredChurchAttendance?: string[] | null;
-  preferredRelationshipGoals?: string[] | null;
+  preferredGender?: "MALE" | "FEMALE" | null;
+  preferredDenomination?:
+    | (
+        | "BAPTIST"
+        | "METHODIST"
+        | "PRESBYTERIAN"
+        | "PENTECOSTAL"
+        | "CATHOLIC"
+        | "ORTHODOX"
+        | "ANGLICAN"
+        | "LUTHERAN"
+        | "ASSEMBLIES_OF_GOD"
+        | "SEVENTH_DAY_ADVENTIST"
+        | "OTHER"
+      )[]
+    | null;
+  minAge?: number | null;
+  maxAge?: number | null;
+  maxDistance?: number | null;
+  preferredFaithJourney?: string[] | null;
+  preferredChurchAttendance?: string[] | null;
+  preferredRelationshipGoals?: string[] | null;
 }

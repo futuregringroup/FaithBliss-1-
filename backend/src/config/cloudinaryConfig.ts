@@ -1,8 +1,8 @@
 // src/config/cloudinaryConfig.ts
 
-import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import dotenv from 'dotenv';
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -20,16 +20,16 @@ export const storage = new CloudinaryStorage({
   params: async (req, file) => {
     // This function runs on every file upload
     return {
-      folder: 'faithbliss_profiles', // Cloudinary folder name
-      format: 'webp', // Store optimized but high-quality webp image
-      public_id: file.originalname.split('.')[0] + '-' + Date.now(),
+      folder: "faithbliss_profiles", // Cloudinary folder name
+      format: "webp", // Store optimized but high-quality webp image
+      public_id: file.originalname.split(".")[0] + "-" + Date.now(),
       transformation: [
         {
           width: 2048,
           height: 3072,
-          crop: 'limit',
-          quality: 'auto:best',
-          fetch_format: 'auto',
+          crop: "limit",
+          quality: "auto:best",
+          fetch_format: "auto",
         },
       ],
     };

@@ -42,3 +42,12 @@ yarn-error.log*
 Thumbs.db
 .vercel
 .env*.local
+
+
+#Migration
+migration.js
+exportUsers.js
+importUsers.js
+users.json
+destServiceAccount.json
+sourceServiceAccount.json

@@ -1,54 +1,79 @@
 ﻿/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { FcGoogle } from 'react-icons/fc';
-import { ArrowLeft, Eye, EyeOff, Lock, Mail, Sparkles, User } from 'lucide-react';
-import { PopupInstruction } from '@/components/auth/PopupInstruction';
-import { SuccessModal } from '@/components/SuccessModal';
-import { HeartBeatIcon } from '@/components/HeartBeatIcon';
-import AppDropdown from '@/components/AppDropdown';
-import { useAuthContext } from '../contexts/AuthContext';
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FcGoogle } from "react-icons/fc";
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  Sparkles,
+  User,
+} from "lucide-react";
+import { PopupInstruction } from "@/components/auth/PopupInstruction";
+import { SuccessModal } from "@/components/SuccessModal";
+import { HeartBeatIcon } from "@/components/HeartBeatIcon";
+import AppDropdown from "@/components/AppDropdown";
+import { useAuthContext } from "../contexts/AuthContext";
 
-type SignupGender = 'MALE' | 'FEMALE';
+type SignupGender = "MALE" | "FEMALE";
 
 const GENDER_OPTIONS: Array<{ value: SignupGender; label: string }> = [
-  { value: 'MALE', label: 'Male' },
-  { value: 'FEMALE', label: 'Female' },
+  { value: "MALE", label: "Male" },
+  { value: "FEMALE", label: "Female" },
 ];
 
 export default function Signup() {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    gender: 'MALE' as SignupGender,
+    name: "",
+    email: "",
+    password: "",
+    gender: "MALE" as SignupGender,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [showPopupInstruction, setShowPopupInstruction] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  const { directRegister, googleSignIn, isRegistering, isAuthenticated, isLoading, user } = useAuthContext();
+  const {
+    directRegister,
+    googleSignIn,
+    isRegistering,
+    isAuthenticated,
+    isLoading,
+    user,
+  } = useAuthContext();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      const target = user?.emailVerified === false
-        ? '/verify-email'
-        : user?.onboardingCompleted
-        ? '/dashboard'
-        : '/onboarding';
+      const target =
+        user?.emailVerified === false
+          ? "/verify-email"
+          : user?.onboardingCompleted
+            ? "/dashboard"
+            : "/onboarding";
       navigate(target, { replace: true });
     }
-  }, [isAuthenticated, isLoading, navigate, user?.emailVerified, user?.onboardingCompleted]);
+  }, [
+    isAuthenticated,
+    isLoading,
+    navigate,
+    user?.emailVerified,
+    user?.onboardingCompleted,
+  ]);
 
   useEffect(() => {
-    const fromSignup = typeof window !== 'undefined' ? sessionStorage.getItem('fromSignup') : null;
+    const fromSignup =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem("fromSignup")
+        : null;
 
     if (isAuthenticated && fromSignup) {
       setShowSuccessModal(true);
-      sessionStorage.removeItem('fromSignup');
+      sessionStorage.removeItem("fromSignup");
     }
 
     if (!isLoading && !isAuthenticated) {
@@ -59,14 +84,17 @@ export default function Signup() {
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
-      setError('');
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('fromSignup', 'true');
+      setError("");
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("fromSignup", "true");
       }
-      await googleSignIn('signup');
+      await googleSignIn("signup");
     } catch (err: any) {
-      setError(err?.message || 'Failed to sign up with Google. Please try again.');
-      if (typeof window !== 'undefined') sessionStorage.removeItem('fromSignup');
+      setError(
+        err?.message || "Failed to sign up with Google. Please try again.",
+      );
+      if (typeof window !== "undefined")
+        sessionStorage.removeItem("fromSignup");
     } finally {
       setLoading(false);
     }
@@ -75,15 +103,17 @@ export default function Signup() {
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim()) return setError('Please enter your full name');
-    if (!formData.email.trim()) return setError('Please enter your email address');
-    if (!formData.password.trim()) return setError('Please enter a password');
-    if (formData.password.length < 6) return setError('Password must be at least 6 characters long');
+    if (!formData.name.trim()) return setError("Please enter your full name");
+    if (!formData.email.trim())
+      return setError("Please enter your email address");
+    if (!formData.password.trim()) return setError("Please enter a password");
+    if (formData.password.length < 6)
+      return setError("Password must be at least 6 characters long");
     if (!GENDER_OPTIONS.some((option) => option.value === formData.gender)) {
-      return setError('Please select a valid gender');
+      return setError("Please select a valid gender");
     }
 
-    setError('');
+    setError("");
 
     try {
       await directRegister({
@@ -93,7 +123,9 @@ export default function Signup() {
         gender: formData.gender,
       });
     } catch (registerError: any) {
-      setError(registerError.message || 'An unexpected error occurred during signup.');
+      setError(
+        registerError.message || "An unexpected error occurred during signup.",
+      );
     }
   };
 
@@ -149,7 +181,9 @@ export default function Signup() {
           <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent mb-2">
             Join FaithBliss
           </h1>
-          <p className="text-gray-300 text-sm sm:text-base">Your love journey starts here!</p>
+          <p className="text-gray-300 text-sm sm:text-base">
+            Your love journey starts here!
+          </p>
         </div>
 
         {error && (
@@ -164,7 +198,9 @@ export default function Signup() {
           className="w-full mb-6 flex items-center justify-center gap-3 bg-gray-700/50 border border-gray-600/50 hover:border-gray-500/50 text-white py-3 px-4 sm:px-6 rounded-xl font-medium hover:bg-gray-600/50 transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <FcGoogle size={20} />
-          <span className="text-sm sm:text-base">{loading ? 'Connecting...' : 'Continue with Google'}</span>
+          <span className="text-sm sm:text-base">
+            {loading ? "Connecting..." : "Continue with Google"}
+          </span>
         </button>
 
         <div className="relative mb-6">
@@ -172,13 +208,18 @@ export default function Signup() {
             <div className="w-full border-t border-gray-600" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-gray-800/50 text-gray-400">Or continue with email</span>
+            <span className="px-4 bg-gray-800/50 text-gray-400">
+              Or continue with email
+            </span>
           </div>
         </div>
 
         <form onSubmit={handleEmailSignUp} className="space-y-4 sm:space-y-6">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-300 mb-2"
+            >
               Full Name
             </label>
             <div className="relative">
@@ -197,7 +238,10 @@ export default function Signup() {
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-300 mb-2"
+            >
               Email Address
             </label>
             <div className="relative">
@@ -216,13 +260,16 @@ export default function Signup() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-300 mb-2"
+            >
               Password
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 id="password"
                 name="password"
                 value={formData.password}
@@ -236,13 +283,20 @@ export default function Signup() {
                 onClick={() => setShowPassword((prev) => !prev)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
               >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
               </button>
             </div>
           </div>
 
           <div>
-            <label htmlFor="gender" className="block text-sm font-medium text-gray-300 mb-2">
+            <label
+              htmlFor="gender"
+              className="block text-sm font-medium text-gray-300 mb-2"
+            >
               Gender
             </label>
             <AppDropdown
@@ -281,27 +335,36 @@ export default function Signup() {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-400">
-            Already have an account?{' '}
-            <Link to="/login" className="text-pink-400 hover:text-pink-300 font-semibold transition-colors">
+            Already have an account?{" "}
+            <Link
+              to="/login"
+              className="text-pink-400 hover:text-pink-300 font-semibold transition-colors"
+            >
               Sign in here
             </Link>
           </p>
         </div>
 
         <div className="mt-6 text-center">
-          <Link to="/" className="text-sm text-gray-500 hover:text-gray-400 transition-colors">
+          <Link
+            to="/"
+            className="text-sm text-gray-500 hover:text-gray-400 transition-colors"
+          >
             Back to Home
           </Link>
         </div>
       </div>
 
-      <PopupInstruction show={showPopupInstruction} onDismiss={() => setShowPopupInstruction(false)} />
+      <PopupInstruction
+        show={showPopupInstruction}
+        onDismiss={() => setShowPopupInstruction(false)}
+      />
 
       <SuccessModal
         isOpen={showSuccessModal}
         onClose={() => {
           setShowSuccessModal(false);
-          navigate('/onboarding');
+          navigate("/onboarding");
         }}
         title="Welcome to FaithBliss!"
         message="Your account has been created successfully! Let's complete your profile to find your perfect match."

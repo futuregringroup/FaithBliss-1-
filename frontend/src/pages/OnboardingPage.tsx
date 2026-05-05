@@ -1,32 +1,34 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import ProtectedRoute from '../components/auth/ProtectedRoute';
-import { useAuthContext } from '../contexts/AuthContext';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import ProtectedRoute from "../components/auth/ProtectedRoute";
+import { useAuthContext } from "../contexts/AuthContext";
 import {
   OnboardingHeader,
   OnboardingNavigation,
   type OnboardingData,
-} from '../components/onboarding/index';
+} from "../components/onboarding/index";
 
-import ImageUploadSlide from '../components/onboarding/ImageUploadSlide';
-import ProfileBuilderSlide from '../components/onboarding/ProfileBuilderSlide';
-import LocationPermissionSlide from '../components/onboarding/LocationPermissionSlide';
-import PartnerPreferencesSlide from '../components/onboarding/PartnerPreferencesSlide';
-import RelationshipGoalsSlide from '../components/onboarding/RelationshipGoalsSlide';
-import PersonalEssenceSlide from '../components/onboarding/PersonalEssenceSlide';
-import InterestsSelectionSlide from '../components/onboarding/InterestsSelectionSlide';
-import ShareMoreAboutYouSlide from '../components/onboarding/ShareMoreAboutYouSlide';
+import ImageUploadSlide from "../components/onboarding/ImageUploadSlide";
+import ProfileBuilderSlide from "../components/onboarding/ProfileBuilderSlide";
+import LocationPermissionSlide from "../components/onboarding/LocationPermissionSlide";
+import PartnerPreferencesSlide from "../components/onboarding/PartnerPreferencesSlide";
+import RelationshipGoalsSlide from "../components/onboarding/RelationshipGoalsSlide";
+import PersonalEssenceSlide from "../components/onboarding/PersonalEssenceSlide";
+import InterestsSelectionSlide from "../components/onboarding/InterestsSelectionSlide";
+import ShareMoreAboutYouSlide from "../components/onboarding/ShareMoreAboutYouSlide";
 
-import { uploadPhotosToCloudinary } from '../api/cloudinaryUpload';
-import { MIN_PROFILE_FITS } from '../constants/profileFitOptions';
-import { MIN_ONBOARDING_PHOTOS } from '../constants/onboarding';
+import { uploadPhotosToCloudinary } from "../api/cloudinaryUpload";
+import { MIN_PROFILE_FITS } from "../constants/profileFitOptions";
+import { MIN_ONBOARDING_PHOTOS } from "../constants/onboarding";
 
 const MIN_ONBOARDING_INTERESTS = 10;
 
 // --- TYPE ---
-type OnboardingUpdateData = Partial<Omit<OnboardingData, 'photos' | 'customDenomination'>> & {
+type OnboardingUpdateData = Partial<
+  Omit<OnboardingData, "photos" | "customDenomination">
+> & {
   profilePhoto1?: string;
   profilePhoto2?: string;
   profilePhoto3?: string;
@@ -38,7 +40,7 @@ type OnboardingUpdateData = Partial<Omit<OnboardingData, 'photos' | 'customDenom
 
 const waitForNextPaint = () =>
   new Promise<void>((resolve) => {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       resolve();
       return;
     }
@@ -48,53 +50,67 @@ const waitForNextPaint = () =>
 
 const getSubmissionErrorMessage = (error: unknown): string => {
   const rawMessage =
-    error instanceof Error ? error.message : typeof error === 'string' ? error : 'Something went wrong.';
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : "Something went wrong.";
   const normalizedMessage = rawMessage.toLowerCase();
 
-  if (normalizedMessage.includes('user not authenticated')) {
-    return 'Your session has expired. Please sign in again and continue onboarding.';
+  if (normalizedMessage.includes("user not authenticated")) {
+    return "Your session has expired. Please sign in again and continue onboarding.";
   }
 
   if (
-    normalizedMessage.includes('upload failed') ||
-    normalizedMessage.includes('upload-photos') ||
-    normalizedMessage.includes('cloudinary') ||
-    normalizedMessage.includes('500')
+    normalizedMessage.includes("upload failed") ||
+    normalizedMessage.includes("upload-photos") ||
+    normalizedMessage.includes("cloudinary") ||
+    normalizedMessage.includes("500")
   ) {
-    return 'We could not upload your photos just now. Please check your connection and try again.';
+    return "We could not upload your photos just now. Please check your connection and try again.";
   }
 
-  if (normalizedMessage.includes('network') || normalizedMessage.includes('fetch')) {
-    return 'We could not reach the server. Please check your internet connection and try again.';
+  if (
+    normalizedMessage.includes("network") ||
+    normalizedMessage.includes("fetch")
+  ) {
+    return "We could not reach the server. Please check your internet connection and try again.";
   }
 
-  if (normalizedMessage.includes('please upload at least')) {
+  if (normalizedMessage.includes("please upload at least")) {
     return rawMessage;
   }
 
-  return 'We could not complete onboarding right now. Please try again.';
+  return "We could not complete onboarding right now. Please try again.";
 };
 
-const getStepValidationError = (step: number, data: OnboardingData): string | null => {
-  const hasText = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
-  const hasSelections = (value: unknown, minimum = 1): boolean => Array.isArray(value) && value.length >= minimum;
+const getStepValidationError = (
+  step: number,
+  data: OnboardingData,
+): string | null => {
+  const hasText = (value: unknown): value is string =>
+    typeof value === "string" && value.trim().length > 0;
+  const hasSelections = (value: unknown, minimum = 1): boolean =>
+    Array.isArray(value) && value.length >= minimum;
   const hasPhoneNumber = (value: unknown): boolean =>
-    typeof value === 'string' && value.replace(/\D/g, '').length >= 6;
+    typeof value === "string" && value.replace(/\D/g, "").length >= 6;
   const hasValidBirthday = (): boolean =>
-    hasText(data.birthday) && typeof data.age === 'number' && data.age >= 18 && data.age <= 99;
+    hasText(data.birthday) &&
+    typeof data.age === "number" &&
+    data.age >= 18 &&
+    data.age <= 99;
 
   if (step === 0 && data.photos.length < MIN_ONBOARDING_PHOTOS) {
     return `Please upload at least ${MIN_ONBOARDING_PHOTOS} photos.`;
   }
 
   if (step === 1 && !hasText(data.location)) {
-    return 'Please allow location or enter your location manually.';
+    return "Please allow location or enter your location manually.";
   }
 
   if (
     step === 2 &&
-    (
-      !hasText(data.location) ||
+    (!hasText(data.location) ||
       !hasValidBirthday() ||
       !data.faithJourney ||
       !data.churchAttendance ||
@@ -112,20 +128,18 @@ const getStepValidationError = (step: number, data: OnboardingData): string | nu
       !hasSelections(data.hobbies) ||
       !hasSelections(data.values) ||
       !hasSelections(data.spiritualGifts) ||
-      !data.gender
-    )
+      !data.gender)
   ) {
     return `Please complete every profile field on this step and pick at least ${MIN_PROFILE_FITS} profile fit options.`;
   }
 
   if (step === 3 && !hasSelections(data.relationshipGoals)) {
-    return 'Please select your relationship goal.';
+    return "Please select your relationship goal.";
   }
 
   if (
     step === 4 &&
-    (
-      !hasSelections(data.preferredFaithJourney) ||
+    (!hasSelections(data.preferredFaithJourney) ||
       !data.preferredGender ||
       !hasSelections(data.preferredChurchAttendance) ||
       !hasSelections(data.preferredRelationshipGoals) ||
@@ -137,30 +151,36 @@ const getStepValidationError = (step: number, data: OnboardingData): string | nu
       data.maxDistance === null ||
       data.maxDistance === undefined ||
       data.preferredMinHeight === null ||
-      data.preferredMinHeight === undefined
-    )
+      data.preferredMinHeight === undefined)
   ) {
-    return 'Please complete every partner preference on this step.';
+    return "Please complete every partner preference on this step.";
   }
 
   if (
     step === 5 &&
-    (
-      !Array.isArray(data.communicationStyle) ||
+    (!Array.isArray(data.communicationStyle) ||
       data.communicationStyle.length === 0 ||
       !Array.isArray(data.loveStyle) ||
       data.loveStyle.length === 0 ||
-      !data.educationLevel
-    )
+      !data.educationLevel)
   ) {
-    return 'Please complete all personal style fields.';
+    return "Please complete all personal style fields.";
   }
 
-  if (step === 6 && (!data.bio?.trim() || !data.personalPromptQuestion?.trim() || !data.personalPromptAnswer?.trim())) {
-    return 'Please add your bio, choose a prompt, and provide your answer.';
+  if (
+    step === 6 &&
+    (!data.bio?.trim() ||
+      !data.personalPromptQuestion?.trim() ||
+      !data.personalPromptAnswer?.trim())
+  ) {
+    return "Please add your bio, choose a prompt, and provide your answer.";
   }
 
-  if (step === 7 && (!Array.isArray(data.interests) || data.interests.length < MIN_ONBOARDING_INTERESTS)) {
+  if (
+    step === 7 &&
+    (!Array.isArray(data.interests) ||
+      data.interests.length < MIN_ONBOARDING_INTERESTS)
+  ) {
     return `Please select at least ${MIN_ONBOARDING_INTERESTS} interests.`;
   }
 
@@ -170,63 +190,66 @@ const getStepValidationError = (step: number, data: OnboardingData): string | nu
 // --- MAIN COMPONENT ---
 const OnboardingPage = () => {
   const navigate = useNavigate();
-  const { completeOnboarding, isCompletingOnboarding, user } = useAuthContext() as {
-    completeOnboarding: (data: any) => Promise<boolean>;
-    isCompletingOnboarding: boolean;
-    user: { uid?: string | null; id?: string | null } | null;
-  };
+  const { completeOnboarding, isCompletingOnboarding, user } =
+    useAuthContext() as {
+      completeOnboarding: (data: any) => Promise<boolean>;
+      isCompletingOnboarding: boolean;
+      user: { uid?: string | null; id?: string | null } | null;
+    };
 
   const [currentStep, setCurrentStep] = useState(0);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isSubmittingFinalStep, setIsSubmittingFinalStep] = useState(false);
-  const [submissionStage, setSubmissionStage] = useState<'idle' | 'uploading' | 'saving'>('idle');
+  const [submissionStage, setSubmissionStage] = useState<
+    "idle" | "uploading" | "saving"
+  >("idle");
   const totalSteps = 8;
 
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     age: undefined,
     gender: undefined,
     photos: [],
-    birthday: '',
-    location: '',
+    birthday: "",
+    location: "",
     latitude: undefined,
     longitude: undefined,
     faithJourney: null as any,
     churchAttendance: null as any,
-    denomination: '',
-    customDenomination: '',
-    occupation: '',
-    bio: '',
+    denomination: "",
+    customDenomination: "",
+    occupation: "",
+    bio: "",
     personality: [],
     hobbies: [],
     values: [],
     profileFits: [],
-    favoriteVerse: '',
-    height: '',
-    language: '',
+    favoriteVerse: "",
+    height: "",
+    language: "",
     languageSpoken: [],
-    personalPromptQuestion: '',
-    personalPromptAnswer: '',
+    personalPromptQuestion: "",
+    personalPromptAnswer: "",
     communicationStyle: [],
     loveStyle: [],
-    educationLevel: '',
-    zodiacSign: '',
-    drinkingHabit: '',
-    smokingHabit: '',
-    workoutHabit: '',
-    petPreference: '',
+    educationLevel: "",
+    zodiacSign: "",
+    drinkingHabit: "",
+    smokingHabit: "",
+    workoutHabit: "",
+    petPreference: "",
     relationshipGoals: [],
     preferredGender: null,
     minAge: 18,
     maxAge: 35,
     maxDistance: 50,
     preferredMinHeight: 160,
-    phoneNumber: '',
-    countryCode: '+1',
-    education: '',
-    baptismStatus: '',
+    phoneNumber: "",
+    countryCode: "+1",
+    education: "",
+    baptismStatus: "",
     spiritualGifts: [],
     interests: [],
-    lifestyle: '',
+    lifestyle: "",
     preferredFaithJourney: null,
     preferredChurchAttendance: null,
     preferredRelationshipGoals: null,
@@ -261,19 +284,23 @@ const OnboardingPage = () => {
 
     // --- Final Submission ---
     setIsSubmittingFinalStep(true);
-    setSubmissionStage('uploading');
+    setSubmissionStage("uploading");
 
     try {
       await waitForNextPaint();
 
       const userId = user?.uid || user?.id;
-      if (!userId) throw new Error('User not authenticated.');
+      if (!userId) throw new Error("User not authenticated.");
       if (onboardingData.photos.length < MIN_ONBOARDING_PHOTOS) {
-        throw new Error(`Please upload at least ${MIN_ONBOARDING_PHOTOS} photos before completing onboarding.`);
+        throw new Error(
+          `Please upload at least ${MIN_ONBOARDING_PHOTOS} photos before completing onboarding.`,
+        );
       }
 
       // --- UPLOAD PHOTOS TO CLOUDINARY ---
-      const photoUrls = await uploadPhotosToCloudinary(onboardingData.photos as File[]);
+      const photoUrls = await uploadPhotosToCloudinary(
+        onboardingData.photos as File[],
+      );
 
       // Merge photo URLs with other data
       const { photos: _, customDenomination: __, ...baseData } = onboardingData;
@@ -282,7 +309,8 @@ const OnboardingPage = () => {
         // Keep legacy keys and persist canonical profile keys used across the app.
         profession: onboardingData.occupation,
         fieldOfStudy: onboardingData.education,
-        language: onboardingData.languageSpoken?.[0] || onboardingData.language || '',
+        language:
+          onboardingData.languageSpoken?.[0] || onboardingData.language || "",
       } as Record<string, any>;
 
       // Assign Cloudinary URLs to profilePhoto1,2,3,4
@@ -297,35 +325,37 @@ const OnboardingPage = () => {
         if (
           value !== null &&
           value !== undefined &&
-          !(typeof value === 'string' && value.trim() === '')
+          !(typeof value === "string" && value.trim() === "")
         ) {
           (dataToSubmit as any)[key] = value;
         }
       });
 
-      setSubmissionStage('saving');
+      setSubmissionStage("saving");
 
       const success = await completeOnboarding({
         ...dataToSubmit,
-        birthday: dataToSubmit.birthday ? new Date(dataToSubmit.birthday) : undefined,
+        birthday: dataToSubmit.birthday
+          ? new Date(dataToSubmit.birthday)
+          : undefined,
       });
 
       if (success) {
         try {
-          localStorage.setItem('faithbliss_show_post_onboarding_offer', '1');
+          localStorage.setItem("faithbliss_show_post_onboarding_offer", "1");
         } catch {
           // Ignore localStorage access errors.
         }
-        navigate('/dashboard', { replace: true });
+        navigate("/dashboard", { replace: true });
       } else {
-        throw new Error('Onboarding failed. Please try again.');
+        throw new Error("Onboarding failed. Please try again.");
       }
     } catch (err: any) {
       setValidationError(getSubmissionErrorMessage(err));
-      console.error('❌ Onboarding error:', err);
+      console.error("❌ Onboarding error:", err);
     } finally {
       setIsSubmittingFinalStep(false);
-      setSubmissionStage('idle');
+      setSubmissionStage("idle");
     }
   };
 
@@ -342,7 +372,7 @@ const OnboardingPage = () => {
         canGoBack={currentStep > 0}
       />
 
-      <main className="container mx-auto px-4 sm:px-6 py-8 pb-24 max-w-2xl">
+      <main className="container mx-auto px-4 sm:px-6 py-8 pb-48 max-w-2xl">
         <div className="bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-2xl">
           <ImageUploadSlide
             isVisible={currentStep === 0}
@@ -402,7 +432,11 @@ const OnboardingPage = () => {
         canGoBack={currentStep > 0}
         canProceed={canProceedToNext}
         submitting={isCompletingOnboarding || isSubmittingFinalStep}
-        submittingLabel={submissionStage === 'uploading' ? 'Uploading photos...' : 'Saving profile...'}
+        submittingLabel={
+          submissionStage === "uploading"
+            ? "Uploading photos..."
+            : "Saving profile..."
+        }
         validationError={validationError}
         onPrevious={prevStep}
         onNext={nextStep}

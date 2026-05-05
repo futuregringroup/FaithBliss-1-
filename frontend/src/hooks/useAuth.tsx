@@ -12,19 +12,19 @@ import { API } from "@/services/api";
 
 //  FIREBASE IMPORTS
 import {
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    signOut,
-    onAuthStateChanged,
-    setPersistence,
-    browserLocalPersistence, 
-    GoogleAuthProvider,
-    signInWithPopup,
-    signInWithRedirect,
-    getRedirectResult,
-    sendPasswordResetEmail,
-    verifyPasswordResetCode,
-    confirmPasswordReset,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  sendPasswordResetEmail,
+  verifyPasswordResetCode,
+  confirmPasswordReset,
 } from "firebase/auth";
 import type { User as FirebaseAuthUser } from "firebase/auth";
 //  NEW FIREBASE IMPORTS FOR FIRESTORE
@@ -34,401 +34,488 @@ import { auth, db, serverTimestamp } from "@/firebase/config"; // Assuming db an
 // --------------------
 // INTERFACES (retained for context)
 interface LoginCredentials {
-    email: string;
-    password: string;
+  email: string;
+  password: string;
 }
 
 interface RegisterCredentials {
-    email: string;
-    password: string;
-    name: string;
-    gender: "MALE" | "FEMALE";
+  email: string;
+  password: string;
+  name: string;
+  gender: "MALE" | "FEMALE";
 }
 
 //  CORRECTED Interface for Onboarding Data (accepts all fields, including the resulting photo URLs)
-// The OnboardingPage must ensure photos are uploaded to Storage *before* calling this function 
+// The OnboardingPage must ensure photos are uploaded to Storage *before* calling this function
 // and pass the resulting URLs here.
 interface OnboardingData {
-    age?: number;
-    bio?: string;
-    location?: string;
-    denomination?: string;
-    latitude?: number; // Added
-    longitude?: number; // Added
-    phoneNumber?: string; // Added
-    countryCode?: string; // Added
-    birthday?: Date | string; // Added
-    education?: string; // Legacy onboarding key
-    occupation?: string; // Legacy onboarding key
-    fieldOfStudy?: string; // Added
-    profession?: string; // Added
-    faithJourney?: string; // Added
-    sundayActivity?: string; // Added
-    churchAttendance?: string; // Added
-    baptismStatus?: string; // Added
-    lookingFor?: string[]; // Added
-    relationshipGoals?: string[]; // Added
-    hobbies?: string[]; // Added
-    interests?: string[]; // Added
-    values?: string[]; // Added
-    profileFits?: string[]; // Added
-    spiritualGifts?: string[]; // Added
-    personality?: string[]; // Added
-    favoriteVerse?: string; // Added
-    lifestyle?: string; // Added
-    drinkingHabit?: string; // Added
-    smokingHabit?: string; // Added
-    workoutHabit?: string; // Added
-    petPreference?: string; // Added
-    height?: string; // Added
-    language?: string; // Added
-    languageSpoken?: string[]; // Added
-    personalPromptQuestion?: string; // Added
-    personalPromptAnswer?: string; // Added
-    communicationStyle?: string[]; // Added
-    loveStyle?: string[]; // Added
-    educationLevel?: string; // Added
-    zodiacSign?: string; // Added
-    preferredFaithJourney?: string[] | null; // Added
-    preferredChurchAttendance?: string[] | null; // Added
-    preferredRelationshipGoals?: string[] | null; // Added
-    preferredDenomination?: string | null; // Added
-    preferredGender?: string | null; // Added
-    minAge?: number; // Added
-    maxAge?: number; // Added
-    maxDistance?: number; // Added
-    preferredMinHeight?: number; // Added
-    profilePhoto1?: string; // Expecting the final Cloud Storage URL
-    profilePhoto2?: string;
-    profilePhoto3?: string;
-    profilePhoto4?: string; 
-    profilePhoto5?: string;
-    profilePhoto6?: string;
-    profilePhotoCount?: number;
-    [key: string]: any; // Allow for dynamic fields to be passed
+  age?: number;
+  bio?: string;
+  location?: string;
+  denomination?: string;
+  latitude?: number; // Added
+  longitude?: number; // Added
+  phoneNumber?: string; // Added
+  countryCode?: string; // Added
+  birthday?: Date | string; // Added
+  education?: string; // Legacy onboarding key
+  occupation?: string; // Legacy onboarding key
+  fieldOfStudy?: string; // Added
+  profession?: string; // Added
+  faithJourney?: string; // Added
+  sundayActivity?: string; // Added
+  churchAttendance?: string; // Added
+  baptismStatus?: string; // Added
+  lookingFor?: string[]; // Added
+  relationshipGoals?: string[]; // Added
+  hobbies?: string[]; // Added
+  interests?: string[]; // Added
+  values?: string[]; // Added
+  profileFits?: string[]; // Added
+  spiritualGifts?: string[]; // Added
+  personality?: string[]; // Added
+  favoriteVerse?: string; // Added
+  lifestyle?: string; // Added
+  drinkingHabit?: string; // Added
+  smokingHabit?: string; // Added
+  workoutHabit?: string; // Added
+  petPreference?: string; // Added
+  height?: string; // Added
+  language?: string; // Added
+  languageSpoken?: string[]; // Added
+  personalPromptQuestion?: string; // Added
+  personalPromptAnswer?: string; // Added
+  communicationStyle?: string[]; // Added
+  loveStyle?: string[]; // Added
+  educationLevel?: string; // Added
+  zodiacSign?: string; // Added
+  preferredFaithJourney?: string[] | null; // Added
+  preferredChurchAttendance?: string[] | null; // Added
+  preferredRelationshipGoals?: string[] | null; // Added
+  preferredDenomination?: string | null; // Added
+  preferredGender?: string | null; // Added
+  minAge?: number; // Added
+  maxAge?: number; // Added
+  maxDistance?: number; // Added
+  preferredMinHeight?: number; // Added
+  profilePhoto1?: string; // Expecting the final Cloud Storage URL
+  profilePhoto2?: string;
+  profilePhoto3?: string;
+  profilePhoto4?: string;
+  profilePhoto5?: string;
+  profilePhoto6?: string;
+  profilePhotoCount?: number;
+  [key: string]: any; // Allow for dynamic fields to be passed
 }
 
 const GOOGLE_REDIRECT_PENDING_KEY = "faithbliss_google_redirect_pending";
-const GOOGLE_REDIRECT_PENDING_PERSIST_KEY = "faithbliss_google_redirect_pending_persist";
-const PRIMARY_ADMIN_EMAIL = 'aginaemmanuel6@gmail.com';
+const GOOGLE_REDIRECT_PENDING_PERSIST_KEY =
+  "faithbliss_google_redirect_pending_persist";
+const PRIMARY_ADMIN_EMAIL = "aginaemmanuel6@gmail.com";
 
-const resolveUserRole = (email: unknown, role: unknown): User['role'] => {
-    if (typeof email === 'string' && email.trim().toLowerCase() === PRIMARY_ADMIN_EMAIL) {
-        return 'admin';
-    }
+const resolveUserRole = (email: unknown, role: unknown): User["role"] => {
+  if (
+    typeof email === "string" &&
+    email.trim().toLowerCase() === PRIMARY_ADMIN_EMAIL
+  ) {
+    return "admin";
+  }
 
-    if (typeof role === 'string' && role.trim()) {
-        return role;
-    }
+  if (typeof role === "string" && role.trim()) {
+    return role;
+  }
 
-    return 'user';
+  return "user";
 };
 
 const normalizeUserRoles = (email: unknown, roles: unknown): string[] => {
-    const normalizedRoles = Array.isArray(roles)
-        ? roles
-            .filter((role): role is string => typeof role === "string")
-            .map((role) => role.trim().toLowerCase())
-            .filter(Boolean)
-        : [];
+  const normalizedRoles = Array.isArray(roles)
+    ? roles
+        .filter((role): role is string => typeof role === "string")
+        .map((role) => role.trim().toLowerCase())
+        .filter(Boolean)
+    : [];
 
-    if (typeof email === 'string' && email.trim().toLowerCase() === PRIMARY_ADMIN_EMAIL) {
-        return Array.from(new Set([...normalizedRoles, 'developer']));
-    }
+  if (
+    typeof email === "string" &&
+    email.trim().toLowerCase() === PRIMARY_ADMIN_EMAIL
+  ) {
+    return Array.from(new Set([...normalizedRoles, "developer"]));
+  }
 
-    return Array.from(new Set(normalizedRoles));
+  return Array.from(new Set(normalizedRoles));
 };
 
 const isFirebaseNetworkError = (error: unknown): boolean => {
-    const candidates = [
-        error,
-        (error as { reason?: unknown })?.reason,
-        (error as { error?: unknown })?.error,
-    ];
+  const candidates = [
+    error,
+    (error as { reason?: unknown })?.reason,
+    (error as { error?: unknown })?.error,
+  ];
 
-    return candidates.some((candidate) => {
-        const code = (candidate as { code?: unknown })?.code;
-        const message = (candidate as { message?: unknown })?.message;
-        return (
-            (typeof code === "string" && code === "auth/network-request-failed")
-            || (typeof message === "string" && (
-                message.includes("auth/network-request-failed")
-                || message.toLowerCase().includes("network request failed")
-            ))
-        );
-    });
+  return candidates.some((candidate) => {
+    const code = (candidate as { code?: unknown })?.code;
+    const message = (candidate as { message?: unknown })?.message;
+    return (
+      (typeof code === "string" && code === "auth/network-request-failed") ||
+      (typeof message === "string" &&
+        (message.includes("auth/network-request-failed") ||
+          message.toLowerCase().includes("network request failed")))
+    );
+  });
 };
 
 const isBrowserOffline = (): boolean => {
-    if (typeof navigator === "undefined") return false;
-    return navigator.onLine === false;
+  if (typeof navigator === "undefined") return false;
+  return navigator.onLine === false;
 };
 
 const getAuthErrorMessage = (error: unknown, fallback: string): string => {
-    const message = (error as { message?: unknown })?.message;
-    return typeof message === "string" && message.trim() ? message : fallback;
+  const message = (error as { message?: unknown })?.message;
+  return typeof message === "string" && message.trim() ? message : fallback;
 };
 
 const getStoredUserSnapshot = (): User | null => {
-    if (typeof window === "undefined") return null;
+  if (typeof window === "undefined") return null;
 
-    const raw = localStorage.getItem("user");
-    if (!raw) return null;
+  const raw = localStorage.getItem("user");
+  if (!raw) return null;
 
-    try {
-        const parsed = JSON.parse(raw) as User;
-        return parsed && typeof parsed === "object" ? parsed : null;
-    } catch {
-        return null;
-    }
+  try {
+    const parsed = JSON.parse(raw) as User;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
 };
 
 const getStoredAccessToken = (): string | null => {
-    if (typeof window === "undefined") return null;
-    const token = localStorage.getItem("accessToken");
-    return typeof token === "string" && token.trim() ? token : null;
+  if (typeof window === "undefined") return null;
+  const token = localStorage.getItem("accessToken");
+  return typeof token === "string" && token.trim() ? token : null;
 };
 
 const hasPendingGoogleRedirect = (): boolean => {
-    if (typeof window === "undefined") return false;
-    return sessionStorage.getItem(GOOGLE_REDIRECT_PENDING_KEY) === "1"
-        || localStorage.getItem(GOOGLE_REDIRECT_PENDING_PERSIST_KEY) === "1";
+  if (typeof window === "undefined") return false;
+  return (
+    sessionStorage.getItem(GOOGLE_REDIRECT_PENDING_KEY) === "1" ||
+    localStorage.getItem(GOOGLE_REDIRECT_PENDING_PERSIST_KEY) === "1"
+  );
 };
 
 const markGoogleRedirectPending = (): void => {
-    if (typeof window === "undefined") return;
-    sessionStorage.setItem(GOOGLE_REDIRECT_PENDING_KEY, "1");
-    localStorage.setItem(GOOGLE_REDIRECT_PENDING_PERSIST_KEY, "1");
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(GOOGLE_REDIRECT_PENDING_KEY, "1");
+  localStorage.setItem(GOOGLE_REDIRECT_PENDING_PERSIST_KEY, "1");
 };
 
 const clearPendingGoogleRedirect = (): void => {
-    if (typeof window === "undefined") return;
-    sessionStorage.removeItem(GOOGLE_REDIRECT_PENDING_KEY);
-    localStorage.removeItem(GOOGLE_REDIRECT_PENDING_PERSIST_KEY);
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem(GOOGLE_REDIRECT_PENDING_KEY);
+  localStorage.removeItem(GOOGLE_REDIRECT_PENDING_PERSIST_KEY);
 };
 
 const isIosDevice = (): boolean => {
-    if (typeof navigator === "undefined") return false;
+  if (typeof navigator === "undefined") return false;
 
-    const userAgent = navigator.userAgent || navigator.vendor || "";
-    const platform = navigator.platform || "";
-    const maxTouchPoints = typeof navigator.maxTouchPoints === "number" ? navigator.maxTouchPoints : 0;
+  const userAgent = navigator.userAgent || navigator.vendor || "";
+  const platform = navigator.platform || "";
+  const maxTouchPoints =
+    typeof navigator.maxTouchPoints === "number" ? navigator.maxTouchPoints : 0;
 
-    return /iPad|iPhone|iPod/i.test(userAgent)
-        || (platform === "MacIntel" && maxTouchPoints > 1);
+  return (
+    /iPad|iPhone|iPod/i.test(userAgent) ||
+    (platform === "MacIntel" && maxTouchPoints > 1)
+  );
 };
 
 const isStandaloneDisplayMode = (): boolean => {
-    if (typeof window === "undefined") return false;
+  if (typeof window === "undefined") return false;
 
-    const isNavigatorStandalone = "standalone" in navigator && Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-    const isDisplayModeStandalone = typeof window.matchMedia === "function"
-        && window.matchMedia("(display-mode: standalone)").matches;
+  const isNavigatorStandalone =
+    "standalone" in navigator &&
+    Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+  const isDisplayModeStandalone =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(display-mode: standalone)").matches;
 
-    return isNavigatorStandalone || isDisplayModeStandalone;
+  return isNavigatorStandalone || isDisplayModeStandalone;
 };
 
 const shouldPreferGoogleRedirect = (): boolean => {
-    return isIosDevice() || isStandaloneDisplayMode();
+  return isIosDevice() || isStandaloneDisplayMode();
 };
 
 const getAppBaseUrl = (): string => {
-    if (typeof window !== "undefined" && window.location.origin) {
-        return window.location.origin;
-    }
+  if (typeof window !== "undefined" && window.location.origin) {
+    return window.location.origin;
+  }
 
-    const configuredBaseUrl = String(import.meta.env.VITE_APP_URL || "").trim();
-    if (configuredBaseUrl) {
-        return configuredBaseUrl.replace(/\/+$/, "");
-    }
+  const configuredBaseUrl = String(import.meta.env.VITE_APP_URL || "").trim();
+  if (configuredBaseUrl) {
+    return configuredBaseUrl.replace(/\/+$/, "");
+  }
 
-    return "http://localhost:5173";
+  return "http://localhost:5173";
 };
 
 const sanitizeText = (value: unknown, maxLen: number): string | undefined => {
-    if (typeof value !== "string") return undefined;
-    const cleaned = value.trim();
-    if (!cleaned) return undefined;
-    return cleaned.slice(0, maxLen);
+  if (typeof value !== "string") return undefined;
+  const cleaned = value.trim();
+  if (!cleaned) return undefined;
+  return cleaned.slice(0, maxLen);
 };
 
-const sanitizeArray = (value: unknown, maxItems: number | null = 20, maxLen = 60): string[] | undefined => {
-    if (!Array.isArray(value)) return undefined;
-    const cleaned = value
-        .filter((item) => typeof item === "string")
-        .map((item) => (item as string).trim())
-        .filter(Boolean)
-        .map((item) => item.slice(0, maxLen));
+const sanitizeArray = (
+  value: unknown,
+  maxItems: number | null = 20,
+  maxLen = 60,
+): string[] | undefined => {
+  if (!Array.isArray(value)) return undefined;
+  const cleaned = value
+    .filter((item) => typeof item === "string")
+    .map((item) => (item as string).trim())
+    .filter(Boolean)
+    .map((item) => item.slice(0, maxLen));
 
-    return maxItems === null ? cleaned : cleaned.slice(0, maxItems);
+  return maxItems === null ? cleaned : cleaned.slice(0, maxItems);
 };
 
-const sanitizeOnboardingPayload = (payload: OnboardingData): Record<string, any> => {
-    const result: Record<string, any> = {};
+const sanitizeOnboardingPayload = (
+  payload: OnboardingData,
+): Record<string, any> => {
+  const result: Record<string, any> = {};
 
-    const textFields: Array<[keyof OnboardingData, number]> = [
-        ["name", 120],
-        ["bio", 500],
-        ["location", 160],
-        ["denomination", 80],
-        ["gender", 20],
-        ["phoneNumber", 30],
-        ["countryCode", 8],
-        ["education", 120],
-        ["occupation", 120],
-        ["fieldOfStudy", 120],
-        ["profession", 120],
-        ["favoriteVerse", 120],
-        ["lifestyle", 80],
-        ["drinkingHabit", 80],
-        ["smokingHabit", 80],
-        ["workoutHabit", 80],
-        ["petPreference", 80],
-        ["height", 20],
-        ["language", 60],
-        ["personalPromptQuestion", 120],
-        ["personalPromptAnswer", 280],
-        ["educationLevel", 80],
-        ["zodiacSign", 40],
-        ["faithJourney", 40],
-        ["churchAttendance", 40],
-        ["sundayActivity", 40],
-        ["baptismStatus", 40],
-        ["preferredDenomination", 80],
-        ["preferredGender", 20],
+  const textFields: Array<[keyof OnboardingData, number]> = [
+    ["name", 120],
+    ["bio", 500],
+    ["location", 160],
+    ["denomination", 80],
+    ["gender", 20],
+    ["phoneNumber", 30],
+    ["countryCode", 8],
+    ["education", 120],
+    ["occupation", 120],
+    ["fieldOfStudy", 120],
+    ["profession", 120],
+    ["favoriteVerse", 120],
+    ["lifestyle", 80],
+    ["drinkingHabit", 80],
+    ["smokingHabit", 80],
+    ["workoutHabit", 80],
+    ["petPreference", 80],
+    ["height", 20],
+    ["language", 60],
+    ["personalPromptQuestion", 120],
+    ["personalPromptAnswer", 280],
+    ["educationLevel", 80],
+    ["zodiacSign", 40],
+    ["faithJourney", 40],
+    ["churchAttendance", 40],
+    ["sundayActivity", 40],
+    ["baptismStatus", 40],
+    ["preferredDenomination", 80],
+    ["preferredGender", 20],
+  ];
+
+  textFields.forEach(([field, maxLen]) => {
+    const value = sanitizeText(payload[field], maxLen);
+    if (value !== undefined) result[field] = value;
+  });
+
+  const arrayFields: Array<[keyof OnboardingData, number | null]> = [
+    ["relationshipGoals", 20],
+    ["lookingFor", 20],
+    ["hobbies", 20],
+    ["values", 20],
+    ["interests", null],
+    ["profileFits", 20],
+    ["languageSpoken", 20],
+    ["communicationStyle", 20],
+    ["loveStyle", 20],
+    ["spiritualGifts", 20],
+    ["preferredFaithJourney", 20],
+    ["preferredChurchAttendance", 20],
+    ["preferredRelationshipGoals", 20],
+    ["personality", 20],
+  ];
+
+  arrayFields.forEach(([field, maxItems]) => {
+    const value = sanitizeArray(payload[field], maxItems);
+    if (value !== undefined) result[field] = value;
+  });
+
+  if (payload.birthday instanceof Date) {
+    result.birthday = payload.birthday;
+  } else if (typeof payload.birthday === "string" && payload.birthday.trim()) {
+    const parsed = new Date(payload.birthday);
+    if (!Number.isNaN(parsed.getTime())) result.birthday = parsed;
+  }
+
+  const numericBounds: Array<[keyof OnboardingData, number, number, boolean]> =
+    [
+      ["age", 18, 99, true],
+      ["latitude", -90, 90, false],
+      ["longitude", -180, 180, false],
+      ["minAge", 18, 99, true],
+      ["maxAge", 18, 99, true],
+      ["maxDistance", 1, 500, true],
+      ["preferredMinHeight", 120, 220, true],
+      ["profilePhotoCount", 0, 6, true],
     ];
 
-    textFields.forEach(([field, maxLen]) => {
-        const value = sanitizeText(payload[field], maxLen);
-        if (value !== undefined) result[field] = value;
-    });
+  numericBounds.forEach(([field, min, max, integer]) => {
+    const value = payload[field];
+    if (typeof value !== "number" || Number.isNaN(value)) return;
+    const bounded = Math.min(max, Math.max(min, value));
+    result[field] = integer ? Math.round(bounded) : bounded;
+  });
 
-    const arrayFields: Array<[keyof OnboardingData, number | null]> = [
-        ["relationshipGoals", 20],
-        ["lookingFor", 20],
-        ["hobbies", 20],
-        ["values", 20],
-        ["interests", null],
-        ["profileFits", 20],
-        ["languageSpoken", 20],
-        ["communicationStyle", 20],
-        ["loveStyle", 20],
-        ["spiritualGifts", 20],
-        ["preferredFaithJourney", 20],
-        ["preferredChurchAttendance", 20],
-        ["preferredRelationshipGoals", 20],
-        ["personality", 20],
-    ];
+  for (let i = 1; i <= 6; i++) {
+    const key = `profilePhoto${i}`;
+    const url = sanitizeText(payload[key], 500);
+    if (url !== undefined) result[key] = url;
+  }
 
-    arrayFields.forEach(([field, maxItems]) => {
-        const value = sanitizeArray(payload[field], maxItems);
-        if (value !== undefined) result[field] = value;
-    });
+  if (
+    typeof result.occupation === "string" &&
+    typeof result.profession !== "string"
+  ) {
+    result.profession = result.occupation;
+  }
 
-    if (payload.birthday instanceof Date) {
-        result.birthday = payload.birthday;
-    } else if (typeof payload.birthday === "string" && payload.birthday.trim()) {
-        const parsed = new Date(payload.birthday);
-        if (!Number.isNaN(parsed.getTime())) result.birthday = parsed;
-    }
+  if (
+    typeof result.education === "string" &&
+    typeof result.fieldOfStudy !== "string"
+  ) {
+    result.fieldOfStudy = result.education;
+  }
 
-    const numericBounds: Array<[keyof OnboardingData, number, number, boolean]> = [
-        ["age", 18, 99, true],
-        ["latitude", -90, 90, false],
-        ["longitude", -180, 180, false],
-        ["minAge", 18, 99, true],
-        ["maxAge", 18, 99, true],
-        ["maxDistance", 1, 500, true],
-        ["preferredMinHeight", 120, 220, true],
-        ["profilePhotoCount", 0, 6, true],
-    ];
+  if (
+    typeof result.churchAttendance === "string" &&
+    typeof result.sundayActivity !== "string"
+  ) {
+    result.sundayActivity = result.churchAttendance;
+  }
 
-    numericBounds.forEach(([field, min, max, integer]) => {
-        const value = payload[field];
-        if (typeof value !== "number" || Number.isNaN(value)) return;
-        const bounded = Math.min(max, Math.max(min, value));
-        result[field] = integer ? Math.round(bounded) : bounded;
-    });
-
-    for (let i = 1; i <= 6; i++) {
-        const key = `profilePhoto${i}`;
-        const url = sanitizeText(payload[key], 500);
-        if (url !== undefined) result[key] = url;
-    }
-
-    if (typeof result.occupation === "string" && typeof result.profession !== "string") {
-        result.profession = result.occupation;
-    }
-
-    if (typeof result.education === "string" && typeof result.fieldOfStudy !== "string") {
-        result.fieldOfStudy = result.education;
-    }
-
-    if (typeof result.churchAttendance === "string" && typeof result.sundayActivity !== "string") {
-        result.sundayActivity = result.churchAttendance;
-    }
-
-    return result;
+  return result;
 };
 
 const getProfilePhotoCount = (payload: Record<string, any>): number => {
-    if (typeof payload.profilePhotoCount === "number" && Number.isFinite(payload.profilePhotoCount)) {
-        return Math.max(0, Math.min(6, Math.round(payload.profilePhotoCount)));
-    }
+  if (
+    typeof payload.profilePhotoCount === "number" &&
+    Number.isFinite(payload.profilePhotoCount)
+  ) {
+    return Math.max(0, Math.min(6, Math.round(payload.profilePhotoCount)));
+  }
 
-    let count = 0;
-    for (let i = 1; i <= 6; i++) {
-        const value = payload[`profilePhoto${i}`];
-        if (typeof value === "string" && value.trim()) {
-            count += 1;
-        }
+  let count = 0;
+  for (let i = 1; i <= 6; i++) {
+    const value = payload[`profilePhoto${i}`];
+    if (typeof value === "string" && value.trim()) {
+      count += 1;
     }
-    return count;
+  }
+  return count;
 };
 
 const timestampToIsoString = (value: unknown): string | undefined => {
-    if (!value) return undefined;
-    if (typeof value === "string" && value.trim()) return value;
-    if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString();
-    if (typeof value === "object" && value && "toDate" in value && typeof (value as { toDate?: unknown }).toDate === "function") {
-        const converted = (value as { toDate: () => Date }).toDate();
-        if (!Number.isNaN(converted.getTime())) {
-            return converted.toISOString();
-        }
+  if (!value) return undefined;
+  if (typeof value === "string" && value.trim()) return value;
+  if (value instanceof Date && !Number.isNaN(value.getTime()))
+    return value.toISOString();
+  if (
+    typeof value === "object" &&
+    value &&
+    "toDate" in value &&
+    typeof (value as { toDate?: unknown }).toDate === "function"
+  ) {
+    const converted = (value as { toDate: () => Date }).toDate();
+    if (!Number.isNaN(converted.getTime())) {
+      return converted.toISOString();
     }
-    return undefined;
+  }
+  return undefined;
 };
 
-const normalizeSubscription = (subscription: Record<string, any> | undefined) => {
-    if (!subscription || typeof subscription !== "object") {
-        return undefined;
-    }
+const normalizeSubscription = (
+  subscription: Record<string, any> | undefined,
+) => {
+  if (!subscription || typeof subscription !== "object") {
+    return undefined;
+  }
 
-    const nextPaymentDate = timestampToIsoString(subscription.nextPaymentDate);
-    const updatedAt = timestampToIsoString(subscription.updatedAt);
+  const nextPaymentDate = timestampToIsoString(subscription.nextPaymentDate);
+  const updatedAt = timestampToIsoString(subscription.updatedAt);
 
-    return {
-        status: typeof subscription.status === "string" ? subscription.status : undefined,
-        tier: typeof subscription.tier === "string" ? subscription.tier : undefined,
-        currency: typeof subscription.currency === "string" ? subscription.currency : undefined,
-        billingCycle: typeof subscription.billingCycle === "string" ? subscription.billingCycle : undefined,
-        pricingRegion: typeof subscription.pricingRegion === "string" ? subscription.pricingRegion : undefined,
-        displayCurrency: typeof subscription.displayCurrency === "string" ? subscription.displayCurrency : undefined,
-        displayAmountMajor: typeof subscription.displayAmountMajor === "number" ? subscription.displayAmountMajor : undefined,
-        chargeAmountMajor: typeof subscription.chargeAmountMajor === "number" ? subscription.chargeAmountMajor : undefined,
-        chargeAmountSubunits: typeof subscription.chargeAmountSubunits === "number" ? subscription.chargeAmountSubunits : undefined,
-        exchangeRate: typeof subscription.exchangeRate === "number" ? subscription.exchangeRate : undefined,
-        planCode: typeof subscription.planCode === "string" ? subscription.planCode : undefined,
-        reference: typeof subscription.reference === "string" ? subscription.reference : undefined,
-        customerCode: typeof subscription.customerCode === "string" ? subscription.customerCode : undefined,
-        subscriptionCode: typeof subscription.subscriptionCode === "string" ? subscription.subscriptionCode : undefined,
-        authorizationCode: typeof subscription.authorizationCode === "string" ? subscription.authorizationCode : undefined,
-        renewalProvider: typeof subscription.renewalProvider === "string" ? subscription.renewalProvider : undefined,
-        autoRenewEnabled: typeof subscription.autoRenewEnabled === "boolean" ? subscription.autoRenewEnabled : undefined,
-        autoRenewDisabledAt: timestampToIsoString(subscription.autoRenewDisabledAt),
-        nextPaymentDate,
-        updatedAt,
-    };
+  return {
+    status:
+      typeof subscription.status === "string" ? subscription.status : undefined,
+    tier: typeof subscription.tier === "string" ? subscription.tier : undefined,
+    currency:
+      typeof subscription.currency === "string"
+        ? subscription.currency
+        : undefined,
+    billingCycle:
+      typeof subscription.billingCycle === "string"
+        ? subscription.billingCycle
+        : undefined,
+    pricingRegion:
+      typeof subscription.pricingRegion === "string"
+        ? subscription.pricingRegion
+        : undefined,
+    displayCurrency:
+      typeof subscription.displayCurrency === "string"
+        ? subscription.displayCurrency
+        : undefined,
+    displayAmountMajor:
+      typeof subscription.displayAmountMajor === "number"
+        ? subscription.displayAmountMajor
+        : undefined,
+    chargeAmountMajor:
+      typeof subscription.chargeAmountMajor === "number"
+        ? subscription.chargeAmountMajor
+        : undefined,
+    chargeAmountSubunits:
+      typeof subscription.chargeAmountSubunits === "number"
+        ? subscription.chargeAmountSubunits
+        : undefined,
+    exchangeRate:
+      typeof subscription.exchangeRate === "number"
+        ? subscription.exchangeRate
+        : undefined,
+    planCode:
+      typeof subscription.planCode === "string"
+        ? subscription.planCode
+        : undefined,
+    reference:
+      typeof subscription.reference === "string"
+        ? subscription.reference
+        : undefined,
+    customerCode:
+      typeof subscription.customerCode === "string"
+        ? subscription.customerCode
+        : undefined,
+    subscriptionCode:
+      typeof subscription.subscriptionCode === "string"
+        ? subscription.subscriptionCode
+        : undefined,
+    authorizationCode:
+      typeof subscription.authorizationCode === "string"
+        ? subscription.authorizationCode
+        : undefined,
+    renewalProvider:
+      typeof subscription.renewalProvider === "string"
+        ? subscription.renewalProvider
+        : undefined,
+    autoRenewEnabled:
+      typeof subscription.autoRenewEnabled === "boolean"
+        ? subscription.autoRenewEnabled
+        : undefined,
+    autoRenewDisabledAt: timestampToIsoString(subscription.autoRenewDisabledAt),
+    nextPaymentDate,
+    updatedAt,
+  };
 };
 
 //  FIX 1: Update User interface to include all fields from the Mongoose model
@@ -438,949 +525,1064 @@ export type AuthHookReturn = ReturnType<typeof useAuth>;
 // ---------------------------------------------------------------------
 //  REPLACEMENT: Helper to fetch custom user data directly from Firestore
 // ---------------------------------------------------------------------
-const fetchUserDataFromFirestore = async (fbUser: FirebaseAuthUser): Promise<User | null> => {
-    //  DEBUG LOG 1: Check if the user is present
-    if (!fbUser || !fbUser.uid) {
-        throw new Error("Cannot fetch Firestore data: Firebase user is null or missing UID.");
-    }
-    
-    const docRef = doc(db, "users", fbUser.uid); 
-    const docSnap = await getDoc(docRef);
+const fetchUserDataFromFirestore = async (
+  fbUser: FirebaseAuthUser,
+): Promise<User | null> => {
+  //  DEBUG LOG 1: Check if the user is present
+  if (!fbUser || !fbUser.uid) {
+    throw new Error(
+      "Cannot fetch Firestore data: Firebase user is null or missing UID.",
+    );
+  }
 
-    if (!docSnap.exists()) {
-        return null;
-    }
+  const docRef = doc(db, "users", fbUser.uid);
+  const docSnap = await getDoc(docRef);
 
-    const backendData = docSnap.data();
-    const normalizedSubscription = normalizeSubscription(backendData.subscription);
-    
-    //  FIX 2: Map ALL fields from backendData to the complete User interface
-    return {
-        id: fbUser.uid, 
-        email: fbUser.email!,
-        name: backendData.name || 'User',
-        role: resolveUserRole(backendData.email || fbUser.email, backendData.role),
-        roles: normalizeUserRoles(backendData.email || fbUser.email, backendData.roles),
-        onboardingCompleted: backendData.onboardingCompleted || false,
-        emailVerified: backendData.emailVerified === false ? false : true,
-        
-        // Core fields (must exist if registration completed)
-        age: backendData.age || 0,
-        gender: backendData.gender || 'MALE',
-        denomination: backendData.denomination || '',
-        bio: backendData.bio || '',
-        location: backendData.location || '',
-        
-        // Optional/Onboarding fields
-        latitude: backendData.latitude,
-        longitude: backendData.longitude,
-        phoneNumber: backendData.phoneNumber,
-        countryCode: backendData.countryCode,
-        passportCountry: backendData.passportCountry || null,
-        birthday: backendData.birthday ? new Date(backendData.birthday.seconds * 1000) : undefined, // Handle Firestore Timestamp
-        fieldOfStudy: backendData.fieldOfStudy || backendData.education,
-        profession: backendData.profession || backendData.occupation,
-        faithJourney: backendData.faithJourney,
-        sundayActivity: backendData.sundayActivity || backendData.churchAttendance,
-        churchAttendance: backendData.churchAttendance || backendData.sundayActivity,
-        baptismStatus: backendData.baptismStatus,
-        spiritualGifts: backendData.spiritualGifts,
-        relationshipGoals: backendData.relationshipGoals,
-        lifestyle: backendData.lifestyle,
-        lookingFor: backendData.lookingFor,
-        personality: backendData.personality,
-        hobbies: backendData.hobbies,
-        interests: backendData.interests,
-        values: backendData.values,
-        profileFits: backendData.profileFits,
-        favoriteVerse: backendData.favoriteVerse,
-        drinkingHabit: backendData.drinkingHabit,
-        smokingHabit: backendData.smokingHabit,
-        workoutHabit: backendData.workoutHabit,
-        petPreference: backendData.petPreference,
-        height: backendData.height,
-        language: backendData.language,
-        languageSpoken: backendData.languageSpoken,
-        personalPromptQuestion: backendData.personalPromptQuestion,
-        personalPromptAnswer: backendData.personalPromptAnswer,
-        communicationStyle: backendData.communicationStyle,
-        loveStyle: backendData.loveStyle,
-        educationLevel: backendData.educationLevel,
-        zodiacSign: backendData.zodiacSign,
-        preferredFaithJourney: backendData.preferredFaithJourney,
-        preferredChurchAttendance: backendData.preferredChurchAttendance,
-        preferredRelationshipGoals: backendData.preferredRelationshipGoals,
-        preferredDenomination: backendData.preferredDenomination,
-        preferredGender: backendData.preferredGender,
-        minAge: backendData.minAge,
-        maxAge: backendData.maxAge,
-        maxDistance: backendData.maxDistance,
-        preferredMinHeight: backendData.preferredMinHeight,
-        
-        // Photo URLs
-        profilePhoto1: backendData.profilePhoto1,
-        profilePhoto2: backendData.profilePhoto2, 
-        profilePhoto3: backendData.profilePhoto3,
-        profilePhoto4: backendData.profilePhoto4,
-        profilePhoto5: backendData.profilePhoto5,
-        profilePhoto6: backendData.profilePhoto6,
-        profilePhotoCount: getProfilePhotoCount(backendData),
-        subscriptionStatus: backendData.subscriptionStatus || normalizedSubscription?.status,
-        subscriptionTier: backendData.subscriptionTier || normalizedSubscription?.tier,
-        subscriptionCurrency: backendData.subscriptionCurrency || normalizedSubscription?.currency,
-        profileBoosterCredits:
-            typeof backendData.profileBoosterCredits === 'number' ? backendData.profileBoosterCredits : 0,
-        profileBoosterActiveUntil:
-            typeof backendData.profileBoosterActiveUntil === 'string' ? backendData.profileBoosterActiveUntil : null,
-        profileBoosterLastGrantedReference:
-            typeof backendData.profileBoosterLastGrantedReference === 'string' ? backendData.profileBoosterLastGrantedReference : null,
-        profileBoosterLastUsedAt:
-            typeof backendData.profileBoosterLastUsedAt === 'string' ? backendData.profileBoosterLastUsedAt : null,
-        subscription: normalizedSubscription,
-        settings: backendData.settings,
-    };
+  if (!docSnap.exists()) {
+    return null;
+  }
+
+  const backendData = docSnap.data();
+  const normalizedSubscription = normalizeSubscription(
+    backendData.subscription,
+  );
+
+  //  FIX 2: Map ALL fields from backendData to the complete User interface
+  return {
+    id: fbUser.uid,
+    email: fbUser.email!,
+    name: backendData.name || "User",
+    role: resolveUserRole(backendData.email || fbUser.email, backendData.role),
+    roles: normalizeUserRoles(
+      backendData.email || fbUser.email,
+      backendData.roles,
+    ),
+    onboardingCompleted: backendData.onboardingCompleted || false,
+    emailVerified: backendData.emailVerified === false ? false : true,
+
+    // Core fields (must exist if registration completed)
+    age: backendData.age || 0,
+    gender: backendData.gender || "MALE",
+    denomination: backendData.denomination || "",
+    bio: backendData.bio || "",
+    location: backendData.location || "",
+
+    // Optional/Onboarding fields
+    latitude: backendData.latitude,
+    longitude: backendData.longitude,
+    phoneNumber: backendData.phoneNumber,
+    countryCode: backendData.countryCode,
+    passportCountry: backendData.passportCountry || null,
+    birthday: backendData.birthday
+      ? new Date(backendData.birthday.seconds * 1000)
+      : undefined, // Handle Firestore Timestamp
+    fieldOfStudy: backendData.fieldOfStudy || backendData.education,
+    profession: backendData.profession || backendData.occupation,
+    faithJourney: backendData.faithJourney,
+    sundayActivity: backendData.sundayActivity || backendData.churchAttendance,
+    churchAttendance:
+      backendData.churchAttendance || backendData.sundayActivity,
+    baptismStatus: backendData.baptismStatus,
+    spiritualGifts: backendData.spiritualGifts,
+    relationshipGoals: backendData.relationshipGoals,
+    lifestyle: backendData.lifestyle,
+    lookingFor: backendData.lookingFor,
+    personality: backendData.personality,
+    hobbies: backendData.hobbies,
+    interests: backendData.interests,
+    values: backendData.values,
+    profileFits: backendData.profileFits,
+    favoriteVerse: backendData.favoriteVerse,
+    drinkingHabit: backendData.drinkingHabit,
+    smokingHabit: backendData.smokingHabit,
+    workoutHabit: backendData.workoutHabit,
+    petPreference: backendData.petPreference,
+    height: backendData.height,
+    language: backendData.language,
+    languageSpoken: backendData.languageSpoken,
+    personalPromptQuestion: backendData.personalPromptQuestion,
+    personalPromptAnswer: backendData.personalPromptAnswer,
+    communicationStyle: backendData.communicationStyle,
+    loveStyle: backendData.loveStyle,
+    educationLevel: backendData.educationLevel,
+    zodiacSign: backendData.zodiacSign,
+    preferredFaithJourney: backendData.preferredFaithJourney,
+    preferredChurchAttendance: backendData.preferredChurchAttendance,
+    preferredRelationshipGoals: backendData.preferredRelationshipGoals,
+    preferredDenomination: backendData.preferredDenomination,
+    preferredGender: backendData.preferredGender,
+    minAge: backendData.minAge,
+    maxAge: backendData.maxAge,
+    maxDistance: backendData.maxDistance,
+    preferredMinHeight: backendData.preferredMinHeight,
+
+    // Photo URLs
+    profilePhoto1: backendData.profilePhoto1,
+    profilePhoto2: backendData.profilePhoto2,
+    profilePhoto3: backendData.profilePhoto3,
+    profilePhoto4: backendData.profilePhoto4,
+    profilePhoto5: backendData.profilePhoto5,
+    profilePhoto6: backendData.profilePhoto6,
+    profilePhotoCount: getProfilePhotoCount(backendData),
+    subscriptionStatus:
+      backendData.subscriptionStatus || normalizedSubscription?.status,
+    subscriptionTier:
+      backendData.subscriptionTier || normalizedSubscription?.tier,
+    subscriptionCurrency:
+      backendData.subscriptionCurrency || normalizedSubscription?.currency,
+    profileBoosterCredits:
+      typeof backendData.profileBoosterCredits === "number"
+        ? backendData.profileBoosterCredits
+        : 0,
+    profileBoosterActiveUntil:
+      typeof backendData.profileBoosterActiveUntil === "string"
+        ? backendData.profileBoosterActiveUntil
+        : null,
+    profileBoosterLastGrantedReference:
+      typeof backendData.profileBoosterLastGrantedReference === "string"
+        ? backendData.profileBoosterLastGrantedReference
+        : null,
+    profileBoosterLastUsedAt:
+      typeof backendData.profileBoosterLastUsedAt === "string"
+        ? backendData.profileBoosterLastUsedAt
+        : null,
+    subscription: normalizedSubscription,
+    settings: backendData.settings,
+  };
 };
 
 // Ensure a Firestore profile exists for OAuth users
 const ensureUserProfile = async (fbUser: FirebaseAuthUser) => {
-    const userDocRef = doc(db, "users", fbUser.uid);
-    const docSnap = await getDoc(userDocRef);
+  const userDocRef = doc(db, "users", fbUser.uid);
+  const docSnap = await getDoc(userDocRef);
 
-    if (!docSnap.exists()) {
-        await setDoc(userDocRef, {
-            email: fbUser.email || "",
-            name: fbUser.displayName || "New User",
-            role: resolveUserRole(fbUser.email, undefined),
-            roles: [],
-            age: 0,
-            gender: "MALE",
-            denomination: "",
-            location: "",
-            bio: "",
-            onboardingCompleted: false,
-            emailVerified: fbUser.emailVerified === true,
-            profilePhotoCount: 0,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-        });
-    }
+  if (!docSnap.exists()) {
+    await setDoc(userDocRef, {
+      email: fbUser.email || "",
+      name: fbUser.displayName || "New User",
+      role: resolveUserRole(fbUser.email, undefined),
+      roles: [],
+      age: 0,
+      gender: "MALE",
+      denomination: "",
+      location: "",
+      bio: "",
+      onboardingCompleted: false,
+      emailVerified: fbUser.emailVerified === true,
+      profilePhotoCount: 0,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  }
 };
 
-
 export function useAuth() {
-    const navigate = useNavigate();
-    const location = useLocation(); 
-    const { showSuccess, showError } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { showSuccess, showError } = useToast();
 
-    const [isLoading, setIsLoading] = useState(true);
-    const [isLoggingIn, setIsLoggingIn] = useState(false);
-    const [isRegistering, setIsRegistering] = useState(false);
-    const [isLoggingOut, setIsLoggingOut] = useState(false);
-    const [isCompletingOnboarding, setIsCompletingOnboarding] = useState(false); 
-    //  FIX: Use User interface
-    const [user, setUser] = useState<User | null>(null);
-    const [isInitialSignUp, setIsInitialSignUp] = useState(false); 
-    
-    const [accessToken, setAccessToken] = useState<string | null>(null);
-    const lastNetworkToastAtRef = useRef(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isCompletingOnboarding, setIsCompletingOnboarding] = useState(false);
+  //  FIX: Use User interface
+  const [user, setUser] = useState<User | null>(null);
+  const [isInitialSignUp, setIsInitialSignUp] = useState(false);
 
-    const clearAppStorage = useCallback(() => {
-        // Avoid nuking Firebase auth storage used for redirect/persistence.
-        localStorage.removeItem("user");
-        localStorage.removeItem("faithbliss-auth");
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("accessToken");
-        sessionStorage.removeItem("authToken");
-    }, []);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const lastNetworkToastAtRef = useRef(0);
 
-    const isAuthenticated = !!(accessToken && user);
+  const clearAppStorage = useCallback(() => {
+    // Avoid nuking Firebase auth storage used for redirect/persistence.
+    localStorage.removeItem("user");
+    localStorage.removeItem("faithbliss-auth");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("accessToken");
+    sessionStorage.removeItem("authToken");
+  }, []);
 
-    useEffect(() => {
-        const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-            if (!isFirebaseNetworkError(event.reason)) return;
-            event.preventDefault();
-            const now = Date.now();
-            if (now - lastNetworkToastAtRef.current > 10000) {
-                showError(
-                    "Network issue while contacting Firebase. Please check your internet and retry.",
-                    "Network Error"
+  const isAuthenticated = !!(accessToken && user);
+
+  useEffect(() => {
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      if (!isFirebaseNetworkError(event.reason)) return;
+      event.preventDefault();
+      const now = Date.now();
+      if (now - lastNetworkToastAtRef.current > 10000) {
+        showError(
+          "Network issue while contacting Firebase. Please check your internet and retry.",
+          "Network Error",
+        );
+        lastNetworkToastAtRef.current = now;
+      }
+      console.warn("Suppressed unhandled Firebase network rejection.");
+    };
+
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+    return () => {
+      window.removeEventListener(
+        "unhandledrejection",
+        handleUnhandledRejection,
+      );
+    };
+  }, [showError]);
+
+  const syncUserFromFirebase = useCallback(async (fbUser: FirebaseAuthUser) => {
+    // 1. Get the current, secure ID Token (still needed for any future custom backend calls)
+    let token: string | null = null;
+    try {
+      token = await fbUser.getIdToken();
+      setAccessToken(token);
+      localStorage.setItem("accessToken", token);
+    } catch (tokenError) {
+      if (!isFirebaseNetworkError(tokenError)) {
+        throw tokenError;
+      }
+
+      token = getStoredAccessToken();
+      if (token) {
+        console.warn(
+          "Using cached Firebase token due to a temporary network issue.",
+        );
+        setAccessToken(token);
+      } else {
+        console.warn(
+          "Firebase token refresh failed due to network and no cached token is available.",
+        );
+        setAccessToken(null);
+      }
+    }
+
+    const persistUser = (userToPersist: User) => {
+      setUser(userToPersist);
+      localStorage.setItem("user", JSON.stringify(userToPersist));
+    };
+
+    const minimalUser: User = {
+      id: fbUser.uid,
+      email: fbUser.email!,
+      name: fbUser.displayName || "New User",
+      onboardingCompleted: false,
+      emailVerified: fbUser.emailVerified === true,
+      age: 0,
+      // Default values for required fields
+      gender: "MALE",
+      denomination: "",
+      bio: "",
+      location: "",
+    };
+
+    try {
+      // 2. Fetch/Sync custom user data from FIRESTORE
+      let userToStore = await fetchUserDataFromFirestore(fbUser);
+
+      if (!userToStore) {
+        try {
+          await ensureUserProfile(fbUser);
+          userToStore = await fetchUserDataFromFirestore(fbUser);
+        } catch (profileError) {
+          console.error(" Failed to create Firestore profile:", profileError);
+        }
+      }
+
+      if (userToStore) {
+        persistUser(userToStore);
+        return;
+      }
+
+      const cachedUser = getStoredUserSnapshot();
+      if (cachedUser?.id === fbUser.uid) {
+        console.warn(
+          "Using cached user profile because Firestore returned no profile during a network issue.",
+        );
+        persistUser({
+          ...cachedUser,
+          email: fbUser.email || cachedUser.email,
+          id: fbUser.uid,
+        });
+        return;
+      }
+
+      // Fallback to minimal user if Firestore is unavailable
+      persistUser(minimalUser);
+    } catch (error) {
+      console.error(" Firestore sync failed, using minimal user:", error);
+      const cachedUser = getStoredUserSnapshot();
+      if (cachedUser?.id === fbUser.uid) {
+        console.warn(
+          "Using cached user profile due to Firestore sync failure.",
+        );
+        persistUser({
+          ...cachedUser,
+          email: fbUser.email || cachedUser.email,
+          id: fbUser.uid,
+        });
+        return;
+      }
+      persistUser(minimalUser);
+    }
+  }, []);
+
+  // -----------------------------------------------------------
+  //  Firebase Auth State Listener (Now using Firestore Sync)
+  // -----------------------------------------------------------
+
+  useEffect(() => {
+    setIsLoading(true);
+
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (fbUser: FirebaseAuthUser | null) => {
+        if (fbUser) {
+          try {
+            if (isInitialSignUp) {
+              setIsInitialSignUp(false);
+              setIsLoading(false);
+              return;
+            }
+
+            await syncUserFromFirebase(fbUser);
+          } catch (e: any) {
+            if (isFirebaseNetworkError(e)) {
+              console.warn(
+                "Firebase sync skipped due to temporary network issue.",
+              );
+              const cachedUser = getStoredUserSnapshot();
+              const cachedToken = getStoredAccessToken();
+              if (cachedUser?.id === fbUser.uid) {
+                setUser({
+                  ...cachedUser,
+                  email: fbUser.email || cachedUser.email,
+                  id: fbUser.uid,
+                });
+              }
+              if (cachedToken) {
+                setAccessToken(cachedToken);
+              }
+            } else {
+              // If token fetch or Firestore sync fails for non-network reasons, force logout
+              console.error("Firebase/Firestore sync failed:", e);
+              try {
+                await signOut(auth);
+              } catch (signOutError) {
+                console.warn(
+                  "Sign-out after sync failure did not complete cleanly:",
+                  signOutError,
                 );
-                lastNetworkToastAtRef.current = now;
+              }
+              setUser(null);
+              setAccessToken(null);
             }
-            console.warn("Suppressed unhandled Firebase network rejection.");
-        };
-
-        window.addEventListener("unhandledrejection", handleUnhandledRejection);
-        return () => {
-            window.removeEventListener("unhandledrejection", handleUnhandledRejection);
-        };
-    }, [showError]);
-
-    const syncUserFromFirebase = useCallback(async (fbUser: FirebaseAuthUser) => {
-        // 1. Get the current, secure ID Token (still needed for any future custom backend calls)
-        let token: string | null = null;
-        try {
-            token = await fbUser.getIdToken();
-            setAccessToken(token);
-            localStorage.setItem("accessToken", token);
-        } catch (tokenError) {
-            if (!isFirebaseNetworkError(tokenError)) {
-                throw tokenError;
-            }
-
-            token = getStoredAccessToken();
-            if (token) {
-                console.warn("Using cached Firebase token due to a temporary network issue.");
-                setAccessToken(token);
-            } else {
-                console.warn("Firebase token refresh failed due to network and no cached token is available.");
-                setAccessToken(null);
-            }
+          }
+        } else {
+          // Logged out state
+          setAccessToken(null);
+          setUser(null);
+          clearAppStorage();
         }
+        setIsLoading(false);
+      },
+    );
 
-        const persistUser = (userToPersist: User) => {
-            setUser(userToPersist);
-            localStorage.setItem("user", JSON.stringify(userToPersist));
-        };
+    return () => unsubscribe(); // Cleanup the listener on unmount
+  }, [isInitialSignUp, clearAppStorage, syncUserFromFirebase]);
+  // -----------------------------------------------------------
+  //  Direct Login
+  // -----------------------------------------------------------
 
-        const minimalUser: User = { 
-            id: fbUser.uid, 
-            email: fbUser.email!, 
-            name: fbUser.displayName || 'New User', 
-            onboardingCompleted: false, 
-            emailVerified: fbUser.emailVerified === true,
-            age: 0,
-            // Default values for required fields
-            gender: 'MALE', 
-            denomination: '',
-            bio: '',
-            location: '',
-        };
+  //  2. Login (Uses Firebase SDK)
+  const directLogin = useCallback(
+    async (credentials: LoginCredentials) => {
+      setIsLoggingIn(true);
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        await signInWithEmailAndPassword(
+          auth,
+          credentials.email,
+          credentials.password,
+        );
+        showSuccess("Welcome back!", "Login Successful");
+      } catch (error: any) {
+        console.error("D. Login failed with error:", error);
+        showError(
+          getAuthErrorMessage(error, "Login failed"),
+          "Authentication Error",
+        );
+        throw error;
+      } finally {
+        setIsLoggingIn(false);
+      }
+    },
+    [showSuccess, showError],
+  );
 
-        try {
-            // 2. Fetch/Sync custom user data from FIRESTORE
-            let userToStore = await fetchUserDataFromFirestore(fbUser);
+  // -----------------------------------------------------------
+  //  Direct Register (Now using Firestore Profile Creation)
+  // -----------------------------------------------------------
 
-            if (!userToStore) {
-                try {
-                    await ensureUserProfile(fbUser);
-                    userToStore = await fetchUserDataFromFirestore(fbUser);
-                } catch (profileError) {
-                    console.error(" Failed to create Firestore profile:", profileError);
-                }
-            }
+  //  3. Register (Uses Firebase SDK & Firestore)
+  const directRegister = useCallback(
+    async (credentials: RegisterCredentials) => {
+      setIsRegistering(true);
+      setIsInitialSignUp(true);
+      try {
+        // 1. Create user in Firebase Auth
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          credentials.email,
+          credentials.password,
+        );
+        const fbUser = userCredential.user;
+        const token = await fbUser.getIdToken();
 
-            if (userToStore) {
-                persistUser(userToStore);
-                return;
-            }
-
-            const cachedUser = getStoredUserSnapshot();
-            if (cachedUser?.id === fbUser.uid) {
-                console.warn("Using cached user profile because Firestore returned no profile during a network issue.");
-                persistUser({
-                    ...cachedUser,
-                    email: fbUser.email || cachedUser.email,
-                    id: fbUser.uid,
-                });
-                return;
-            }
-
-            // Fallback to minimal user if Firestore is unavailable
-            persistUser(minimalUser);
-        } catch (error) {
-            console.error(" Firestore sync failed, using minimal user:", error);
-            const cachedUser = getStoredUserSnapshot();
-            if (cachedUser?.id === fbUser.uid) {
-                console.warn("Using cached user profile due to Firestore sync failure.");
-                persistUser({
-                    ...cachedUser,
-                    email: fbUser.email || cachedUser.email,
-                    id: fbUser.uid,
-                });
-                return;
-            }
-            persistUser(minimalUser);
-        }
-    }, []);
-
-// -----------------------------------------------------------
-//  Firebase Auth State Listener (Now using Firestore Sync)
-// -----------------------------------------------------------
-
-    useEffect(() => {
-        setIsLoading(true);
-
-        const unsubscribe = onAuthStateChanged(auth, async (fbUser: FirebaseAuthUser | null) => {
-            if (fbUser) {
-                try {
-                    if (isInitialSignUp) {
-                        setIsInitialSignUp(false);
-                        setIsLoading(false);
-                        return;
-                    }
-
-                    await syncUserFromFirebase(fbUser);
-                } catch (e: any) {
-                    if (isFirebaseNetworkError(e)) {
-                        console.warn("Firebase sync skipped due to temporary network issue.");
-                        const cachedUser = getStoredUserSnapshot();
-                        const cachedToken = getStoredAccessToken();
-                        if (cachedUser?.id === fbUser.uid) {
-                            setUser({
-                                ...cachedUser,
-                                email: fbUser.email || cachedUser.email,
-                                id: fbUser.uid,
-                            });
-                        }
-                        if (cachedToken) {
-                            setAccessToken(cachedToken);
-                        }
-                    } else {
-                        // If token fetch or Firestore sync fails for non-network reasons, force logout
-                        console.error("Firebase/Firestore sync failed:", e);
-                        try {
-                            await signOut(auth);
-                        } catch (signOutError) {
-                            console.warn("Sign-out after sync failure did not complete cleanly:", signOutError);
-                        }
-                        setUser(null);
-                        setAccessToken(null);
-                    }
-                }
-            } else {
-                // Logged out state
-                setAccessToken(null);
-                setUser(null);
-                clearAppStorage();
-            }
-            setIsLoading(false);
+        // 2.  NEW: Create user profile document directly in Firestore
+        const userDocRef = doc(db, "users", fbUser.uid);
+        await setDoc(userDocRef, {
+          email: credentials.email,
+          name: credentials.name,
+          age: 0,
+          gender: credentials.gender,
+          denomination: "",
+          location: "",
+          bio: "",
+          emailVerified: false,
+          onboardingCompleted: false, // Default value
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
         });
 
-        return () => unsubscribe(); // Cleanup the listener on unmount
-    }, [isInitialSignUp, clearAppStorage, syncUserFromFirebase]); 
-// -----------------------------------------------------------
-//  Direct Login
-// -----------------------------------------------------------
-
-    //  2. Login (Uses Firebase SDK)
-    const directLogin = useCallback(
-        async (credentials: LoginCredentials) => {
-            setIsLoggingIn(true);
-            try {
-                await setPersistence(auth, browserLocalPersistence); 
-                await signInWithEmailAndPassword(
-                    auth,
-                    credentials.email,
-                    credentials.password
-                );
-                showSuccess("Welcome back!", "Login Successful");
-                
-            } catch (error: any) {
-                console.error("D. Login failed with error:", error);
-                showError(getAuthErrorMessage(error, "Login failed"), "Authentication Error");
-                throw error;
-            } finally {
-                setIsLoggingIn(false);
-            }
-        },
-        [showSuccess, showError]
-    );
-
-// -----------------------------------------------------------
-//  Direct Register (Now using Firestore Profile Creation)
-// -----------------------------------------------------------
-
-    //  3. Register (Uses Firebase SDK & Firestore)
-    const directRegister = useCallback(
-        async (credentials: RegisterCredentials) => {
-            setIsRegistering(true);
-            setIsInitialSignUp(true);
-            try {
-                // 1. Create user in Firebase Auth
-                const userCredential = await createUserWithEmailAndPassword(
-                    auth,
-                    credentials.email,
-                    credentials.password
-                );
-                const fbUser = userCredential.user;
-                const token = await fbUser.getIdToken();
-
-                // 2.  NEW: Create user profile document directly in Firestore
-                const userDocRef = doc(db, "users", fbUser.uid);
-                await setDoc(userDocRef, {
-                    email: credentials.email,
-                    name: credentials.name,
-                    age: 0,
-                    gender: credentials.gender,
-                    denomination: "",
-                    location: "",
-                    bio: "",
-                    emailVerified: false,
-                    onboardingCompleted: false, // Default value
-                    createdAt: serverTimestamp(), 
-                    updatedAt: serverTimestamp(),
-                });
-
-                // 3. Manually update state now that Firestore sync is COMPLETE
-                //  FIX: Ensure local state has all required fields
-                const userToStore: User = {
-                    id: fbUser.uid,
-                    email: fbUser.email!,
-                    name: credentials.name,
-                    onboardingCompleted: false,
-                    emailVerified: false,
-                    age: 0,
-                    gender: credentials.gender,
-                    denomination: "",
-                    bio: "",
-                    location: "",
-                };
-
-                setUser(userToStore);
-                setAccessToken(token);
-                localStorage.setItem("accessToken", token);
-                localStorage.setItem("user", JSON.stringify(userToStore));
-
-                try {
-                    await API.Auth.sendEmailVerificationCode();
-                } catch (verificationError) {
-                    console.warn("Initial verification code send failed:", verificationError);
-                    showError(
-                        getAuthErrorMessage(
-                            verificationError,
-                            "Account created, but we could not send the verification code yet. You can resend it on the next screen."
-                        ),
-                        "Verification Pending"
-                    );
-                }
-                
-                showSuccess("Account created. Enter the code we sent to your email to continue.", "Verification Needed");
-                
-                return {
-                    accessToken: token,
-                    id: fbUser.uid,
-                    email: fbUser.email,
-                    name: credentials.name,
-                    onboardingCompleted: false,
-                    accessTokenExpiresIn: 3600
-                } as any;
-            } catch (error: any) {
-                console.error("Registration failed:", error);
-                // If Firestore profile creation fails, ensure Firebase auth is rolled back
-                if (auth.currentUser) {
-                    try {
-                        await signOut(auth);
-                    } catch (signOutError) {
-                        console.warn("Rollback sign-out did not complete cleanly:", signOutError);
-                    }
-                }
-                showError(getAuthErrorMessage(error, "Registration failed"), "Registration Error");
-                throw error;
-            } finally {
-                setIsRegistering(false);
-                if (user === null) {
-                    setIsInitialSignUp(false);
-                }
-            }
-        },
-        [showSuccess, showError, user]
-    );
-
-    const sendEmailVerificationCode = useCallback(async () => {
-        return await API.Auth.sendEmailVerificationCode();
-    }, []);
-
-    //  5. Refetch User (Now uses Firestore)
-    const refetchUser = useCallback(async () => {
-        try {
-            const fbUser = auth.currentUser;
-            if (!fbUser) throw new Error("No current Firebase user to refresh token.");
-            
-            // Use the new Firestore helper for refetching
-            const userToStore = await fetchUserDataFromFirestore(fbUser);
-            if (!userToStore) throw new Error("User profile not found in Firestore during refetch.");
-
-            const freshToken = await fbUser.getIdToken();
-
-            setUser(userToStore);
-            setAccessToken(freshToken);
-            localStorage.setItem("accessToken", freshToken);
-            localStorage.setItem("user", JSON.stringify(userToStore));
-        } catch (err) {
-            console.error("Refetch user failed:", err);
-        }
-    }, []);
-
-    const verifyEmailVerificationCode = useCallback(async (code: string) => {
-        const response = await API.Auth.verifyEmailVerificationCode(code);
-        await refetchUser();
-        showSuccess(response.message, "Email Verified");
-        return response;
-    }, [refetchUser, showSuccess]);
-
-
-// -----------------------------------------------------------
-//  NEW: Complete Onboarding (Uses Firestore Profile Update)
-// -----------------------------------------------------------
-
-    //  6. Complete Onboarding (Uses Firestore SDK)
-    const completeOnboarding = useCallback(
-        // This parameter type is correct, as it contains all optional fields passed from the form
-        async (onboardingData: OnboardingData) => {
-            setIsCompletingOnboarding(true);
-            const fbUser = auth.currentUser;
-            if (!fbUser) {
-                throw new Error("Authentication required to complete onboarding.");
-            }
-
-            try {
-                const sanitizedPayload = sanitizeOnboardingPayload(onboardingData);
-                await API.Auth.completeOnboarding(sanitizedPayload);
-
-                const refreshedUser = await fetchUserDataFromFirestore(fbUser);
-
-                // After successful update, manually update the local user state
-                setUser(prevUser => {
-                    const updatedUser: User = refreshedUser || {
-                        ...(prevUser || {
-                            id: fbUser.uid,
-                            email: fbUser.email || "",
-                            name: "User",
-                            onboardingCompleted: true,
-                            age: 0,
-                            gender: "MALE",
-                            denomination: "",
-                            bio: "",
-                            location: "",
-                        }),
-                        ...sanitizedPayload,
-                        onboardingCompleted: true,
-                    };
-                    localStorage.setItem("user", JSON.stringify(updatedUser));
-                    return updatedUser;
-                });
-
-                showSuccess("Profile complete!", "Welcome to the App!");
-                return true;
-            } catch (error: any) {
-                console.error("Firestore Onboarding failed:", error);
-                showError(getAuthErrorMessage(error, "Failed to complete onboarding."), "Onboarding Error");
-                throw error;
-            } finally {
-                setIsCompletingOnboarding(false);
-            }
-        },
-        [showSuccess, showError, setUser]
-    );
-
-
-// -----------------------------------------------------------
-//  Logout and Refetch 
-// -----------------------------------------------------------
-
-    //  4. Logout (Uses Firebase SDK)
-    const logout = useCallback(async () => {
-        setIsLoggingOut(true);
-        try {
-            await signOut(auth);
-
-            clearPendingGoogleRedirect();
-            clearAppStorage();
-            // Clear cookies in the browser
-            document.cookie.split(";").forEach((c) => {
-                document.cookie = c
-                    .replace(/^ +/, "")
-                    .replace(/=.*/, "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/");
-            });
-
-            showSuccess("You have been logged out", "Logout Successful");
-            navigate("/login", { replace: true });
-        } finally {
-            setIsLoggingOut(false);
-        }
-    }, [showSuccess, navigate, clearAppStorage]);
-
-
-// -----------------------------------------------------------
-//  Handle Google redirect result (avoids popup COOP issues)
-// -----------------------------------------------------------
-    useEffect(() => {
-        const handleRedirectResult = async () => {
-            const isAuthEntryRoute = ["/login", "/register", "/signup"].includes(location.pathname);
-            if (!hasPendingGoogleRedirect() && !isAuthEntryRoute) {
-                return;
-            }
-
-            let shouldClearPendingRedirect = true;
-            try {
-                if (isBrowserOffline()) {
-                    console.warn("Skipping getRedirectResult while offline.");
-                    shouldClearPendingRedirect = false;
-                    setIsLoading(false);
-                    return;
-                }
-                const result = await getRedirectResult(auth);
-                if (result?.user) {
-                    // In some cases onAuthStateChanged can be late or skipped after redirect.
-                    // Sync user here to ensure auth state is hydrated.
-                    setIsLoading(true);
-                    await ensureUserProfile(result.user);
-                    await syncUserFromFirebase(result.user);
-                    setIsLoading(false);
-                } else if (auth.currentUser) {
-                    // iOS Safari can occasionally restore the Firebase user but yield a null redirect result.
-                    setIsLoading(true);
-                    await ensureUserProfile(auth.currentUser);
-                    await syncUserFromFirebase(auth.currentUser);
-                    setIsLoading(false);
-                }
-            } catch (error: any) {
-                if (isFirebaseNetworkError(error)) {
-                    console.warn("Google redirect check deferred due to network issue.");
-                    shouldClearPendingRedirect = false;
-                } else {
-                    console.error("Google redirect handling failed:", error);
-                }
-                setIsLoading(false);
-            } finally {
-                if (shouldClearPendingRedirect) {
-                    clearPendingGoogleRedirect();
-                }
-            }
+        // 3. Manually update state now that Firestore sync is COMPLETE
+        //  FIX: Ensure local state has all required fields
+        const userToStore: User = {
+          id: fbUser.uid,
+          email: fbUser.email!,
+          name: credentials.name,
+          onboardingCompleted: false,
+          emailVerified: false,
+          age: 0,
+          gender: credentials.gender,
+          denomination: "",
+          bio: "",
+          location: "",
         };
 
-        handleRedirectResult();
-    }, [location.pathname, syncUserFromFirebase]);
+        setUser(userToStore);
+        setAccessToken(token);
+        localStorage.setItem("accessToken", token);
+        localStorage.setItem("user", JSON.stringify(userToStore));
 
+        try {
+          await API.Auth.sendEmailVerificationCode();
+        } catch (verificationError) {
+          console.warn(
+            "Initial verification code send failed:",
+            verificationError,
+          );
+          showError(
+            getAuthErrorMessage(
+              verificationError,
+              "Account created, but we could not send the verification code yet. You can resend it on the next screen.",
+            ),
+            "Verification Pending",
+          );
+        }
 
+        showSuccess(
+          "Account created. Enter the code we sent to your email to continue.",
+          "Verification Needed",
+        );
 
-// -----------------------------------------------------------
-//  Google Sign-In (Firebase Auth + Firestore profile creation)
-// -----------------------------------------------------------
+        return {
+          accessToken: token,
+          id: fbUser.uid,
+          email: fbUser.email,
+          name: credentials.name,
+          onboardingCompleted: false,
+          accessTokenExpiresIn: 3600,
+        } as any;
+      } catch (error: any) {
+        console.error("Registration failed:", error);
+        // If Firestore profile creation fails, ensure Firebase auth is rolled back
+        if (auth.currentUser) {
+          try {
+            await signOut(auth);
+          } catch (signOutError) {
+            console.warn(
+              "Rollback sign-out did not complete cleanly:",
+              signOutError,
+            );
+          }
+        }
+        showError(
+          getAuthErrorMessage(error, "Registration failed"),
+          "Registration Error",
+        );
+        throw error;
+      } finally {
+        setIsRegistering(false);
+        if (user === null) {
+          setIsInitialSignUp(false);
+        }
+      }
+    },
+    [showSuccess, showError, user],
+  );
 
-    const googleSignIn = useCallback(
-        async (mode: "login" | "signup") => {
-            if (mode === "signup") {
-                setIsRegistering(true);
-            } else {
-                setIsLoggingIn(true);
-            }
+  const sendEmailVerificationCode = useCallback(async () => {
+    return await API.Auth.sendEmailVerificationCode();
+  }, []);
 
-            try {
-                await setPersistence(auth, browserLocalPersistence);
-                const provider = new GoogleAuthProvider();
-                provider.setCustomParameters({ prompt: "select_account" });
+  //  5. Refetch User (Now uses Firestore)
+  const refetchUser = useCallback(async () => {
+    try {
+      const fbUser = auth.currentUser;
+      if (!fbUser)
+        throw new Error("No current Firebase user to refresh token.");
 
-                if (shouldPreferGoogleRedirect()) {
-                    markGoogleRedirectPending();
-                    await signInWithRedirect(auth, provider);
-                    return;
-                }
+      // Use the new Firestore helper for refetching
+      const userToStore = await fetchUserDataFromFirestore(fbUser);
+      if (!userToStore)
+        throw new Error("User profile not found in Firestore during refetch.");
 
-                try {
-                    const result = await signInWithPopup(auth, provider);
-                    if (result?.user) {
-                        clearPendingGoogleRedirect();
-                        await ensureUserProfile(result.user);
-                        await syncUserFromFirebase(result.user);
-                    }
-                } catch (popupError: any) {
-                    // Fallback to redirect if popup is blocked or unavailable
-                    if (
-                        popupError?.code === "auth/popup-blocked" ||
-                        popupError?.code === "auth/operation-not-supported-in-this-environment" ||
-                        popupError?.code === "auth/popup-closed-by-user"
-                    ) {
-                        markGoogleRedirectPending();
-                        await signInWithRedirect(auth, provider);
-                    } else {
-                        throw popupError;
-                    }
-                }
-            } catch (error: any) {
-                console.error("Google sign-in failed:", error);
-                if (isFirebaseNetworkError(error)) {
-                    showError(
-                        "Network error while contacting Google/Firebase. Check your connection and try again.",
-                        "Authentication Error"
-                    );
-                    return;
-                }
-                showError(getAuthErrorMessage(error, "Google sign-in failed"), "Authentication Error");
-                throw error;
-            } finally {
-                if (mode === "signup") {
-                    setIsRegistering(false);
-                } else {
-                    setIsLoggingIn(false);
-                }
-            }
-        },
-        [showSuccess, showError, refetchUser]
-    );
+      const freshToken = await fbUser.getIdToken();
 
-    const requestPasswordReset = useCallback(
-        async (email: string) => {
-            const normalizedEmail = typeof email === "string" ? email.trim() : "";
-            if (!normalizedEmail) {
-                throw new Error("Please enter your email address.");
-            }
+      setUser(userToStore);
+      setAccessToken(freshToken);
+      localStorage.setItem("accessToken", freshToken);
+      localStorage.setItem("user", JSON.stringify(userToStore));
+    } catch (err) {
+      console.error("Refetch user failed:", err);
+    }
+  }, []);
 
-            const actionCodeSettings = {
-                url: `${getAppBaseUrl()}/reset-password`,
-                handleCodeInApp: true,
-            };
+  const verifyEmailVerificationCode = useCallback(
+    async (code: string) => {
+      const response = await API.Auth.verifyEmailVerificationCode(code);
+      await refetchUser();
+      showSuccess(response.message, "Email Verified");
+      return response;
+    },
+    [refetchUser, showSuccess],
+  );
 
-            try {
-                await sendPasswordResetEmail(auth, normalizedEmail, actionCodeSettings);
-                showSuccess(
-                    "Password reset link sent. Check your email to continue.",
-                    "Reset Link Sent"
-                );
-            } catch (error: any) {
-                const code = error?.code;
-                if (code === "auth/user-not-found") {
-                    throw new Error("No account was found with that email address.");
-                }
-                if (code === "auth/invalid-email") {
-                    throw new Error("Please enter a valid email address.");
-                }
-                if (isFirebaseNetworkError(error)) {
-                    throw new Error("Network error while sending reset email. Please try again.");
-                }
-                throw new Error(getAuthErrorMessage(error, "Failed to send password reset email."));
-            }
-        },
-        [showSuccess]
-    );
+  // -----------------------------------------------------------
+  //  NEW: Complete Onboarding (Uses Firestore Profile Update)
+  // -----------------------------------------------------------
 
-    const validatePasswordResetCode = useCallback(async (oobCode: string) => {
-        const normalizedCode = typeof oobCode === "string" ? oobCode.trim() : "";
-        if (!normalizedCode) {
-            throw new Error("This password reset link is invalid or incomplete.");
+  //  6. Complete Onboarding (Uses Firestore SDK)
+  const completeOnboarding = useCallback(
+    // This parameter type is correct, as it contains all optional fields passed from the form
+    async (onboardingData: OnboardingData) => {
+      setIsCompletingOnboarding(true);
+      const fbUser = auth.currentUser;
+      if (!fbUser) {
+        throw new Error("Authentication required to complete onboarding.");
+      }
+
+      try {
+        const sanitizedPayload = sanitizeOnboardingPayload(onboardingData);
+        await API.Auth.completeOnboarding(sanitizedPayload);
+
+        const refreshedUser = await fetchUserDataFromFirestore(fbUser);
+
+        // After successful update, manually update the local user state
+        setUser((prevUser) => {
+          const updatedUser: User = refreshedUser || {
+            ...(prevUser || {
+              id: fbUser.uid,
+              email: fbUser.email || "",
+              name: "User",
+              onboardingCompleted: true,
+              age: 0,
+              gender: "MALE",
+              denomination: "",
+              bio: "",
+              location: "",
+            }),
+            ...sanitizedPayload,
+            onboardingCompleted: true,
+          };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          return updatedUser;
+        });
+
+        showSuccess("Profile complete!", "Welcome to the App!");
+        return true;
+      } catch (error: any) {
+        console.error("Firestore Onboarding failed:", error);
+        showError(
+          getAuthErrorMessage(error, "Failed to complete onboarding."),
+          "Onboarding Error",
+        );
+        throw error;
+      } finally {
+        setIsCompletingOnboarding(false);
+      }
+    },
+    [showSuccess, showError, setUser],
+  );
+
+  // -----------------------------------------------------------
+  //  Logout and Refetch
+  // -----------------------------------------------------------
+
+  //  4. Logout (Uses Firebase SDK)
+  const logout = useCallback(async () => {
+    setIsLoggingOut(true);
+    try {
+      await signOut(auth);
+
+      clearPendingGoogleRedirect();
+      clearAppStorage();
+      // Clear cookies in the browser
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/");
+      });
+
+      showSuccess("You have been logged out", "Logout Successful");
+      navigate("/login", { replace: true });
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }, [showSuccess, navigate, clearAppStorage]);
+
+  // -----------------------------------------------------------
+  //  Handle Google redirect result (avoids popup COOP issues)
+  // -----------------------------------------------------------
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      const isAuthEntryRoute = ["/login", "/register", "/signup"].includes(
+        location.pathname,
+      );
+      if (!hasPendingGoogleRedirect() && !isAuthEntryRoute) {
+        return;
+      }
+
+      let shouldClearPendingRedirect = true;
+      try {
+        if (isBrowserOffline()) {
+          console.warn("Skipping getRedirectResult while offline.");
+          shouldClearPendingRedirect = false;
+          setIsLoading(false);
+          return;
+        }
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          // In some cases onAuthStateChanged can be late or skipped after redirect.
+          // Sync user here to ensure auth state is hydrated.
+          setIsLoading(true);
+          await ensureUserProfile(result.user);
+          await syncUserFromFirebase(result.user);
+          setIsLoading(false);
+        } else if (auth.currentUser) {
+          // iOS Safari can occasionally restore the Firebase user but yield a null redirect result.
+          setIsLoading(true);
+          await ensureUserProfile(auth.currentUser);
+          await syncUserFromFirebase(auth.currentUser);
+          setIsLoading(false);
+        }
+      } catch (error: any) {
+        if (isFirebaseNetworkError(error)) {
+          console.warn("Google redirect check deferred due to network issue.");
+          shouldClearPendingRedirect = false;
+        } else {
+          console.error("Google redirect handling failed:", error);
+        }
+        setIsLoading(false);
+      } finally {
+        if (shouldClearPendingRedirect) {
+          clearPendingGoogleRedirect();
+        }
+      }
+    };
+
+    handleRedirectResult();
+  }, [location.pathname, syncUserFromFirebase]);
+
+  // -----------------------------------------------------------
+  //  Google Sign-In (Firebase Auth + Firestore profile creation)
+  // -----------------------------------------------------------
+
+  const googleSignIn = useCallback(
+    async (mode: "login" | "signup") => {
+      if (mode === "signup") {
+        setIsRegistering(true);
+      } else {
+        setIsLoggingIn(true);
+      }
+
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: "select_account" });
+        console.log(provider, auth);
+
+        if (shouldPreferGoogleRedirect()) {
+          markGoogleRedirectPending();
+          await signInWithRedirect(auth, provider);
+          return;
         }
 
         try {
-            return await verifyPasswordResetCode(auth, normalizedCode);
-        } catch (error: any) {
-            const code = error?.code;
-            if (code === "auth/expired-action-code" || code === "auth/invalid-action-code") {
-                throw new Error("This password reset link has expired or is no longer valid.");
-            }
-            if (isFirebaseNetworkError(error)) {
-                throw new Error("Network error while validating reset link. Please try again.");
-            }
-            throw new Error(getAuthErrorMessage(error, "Unable to validate password reset link."));
+          const result = await signInWithPopup(auth, provider);
+          if (result?.user) {
+            clearPendingGoogleRedirect();
+            await ensureUserProfile(result.user);
+            await syncUserFromFirebase(result.user);
+          }
+        } catch (popupError: any) {
+          // Fallback to redirect if popup is blocked or unavailable
+          if (
+            popupError?.code === "auth/popup-blocked" ||
+            popupError?.code ===
+              "auth/operation-not-supported-in-this-environment" ||
+            popupError?.code === "auth/popup-closed-by-user"
+          ) {
+            markGoogleRedirectPending();
+            await signInWithRedirect(auth, provider);
+          } else {
+            throw popupError;
+          }
         }
-    }, []);
-
-    const resetPassword = useCallback(
-        async (oobCode: string, newPassword: string) => {
-            const normalizedCode = typeof oobCode === "string" ? oobCode.trim() : "";
-            const normalizedPassword = typeof newPassword === "string" ? newPassword.trim() : "";
-
-            if (!normalizedCode) {
-                throw new Error("This password reset link is invalid or incomplete.");
-            }
-
-            if (normalizedPassword.length < 6) {
-                throw new Error("Password must be at least 6 characters long.");
-            }
-
-            try {
-                await confirmPasswordReset(auth, normalizedCode, normalizedPassword);
-                showSuccess("Your password has been updated. You can sign in now.", "Password Reset");
-            } catch (error: any) {
-                const code = error?.code;
-                if (code === "auth/expired-action-code" || code === "auth/invalid-action-code") {
-                    throw new Error("This password reset link has expired or is no longer valid.");
-                }
-                if (code === "auth/weak-password") {
-                    throw new Error("Choose a stronger password before continuing.");
-                }
-                if (isFirebaseNetworkError(error)) {
-                    throw new Error("Network error while resetting password. Please try again.");
-                }
-                throw new Error(getAuthErrorMessage(error, "Unable to reset password right now."));
-            }
-        },
-        [showSuccess]
-    );
-
-
-// -----------------------------------------------------------
-//  Navigation and Return (FIXED NAVIGATION LOGIC)
-// -----------------------------------------------------------
-
-    //  NAVIGATION: Use a separate effect to handle navigation once auth is stable
-    useEffect(() => {
-        if (!isLoading && user) {
-            const target = user.emailVerified === false
-                ? "/verify-email"
-                : user.onboardingCompleted
-                ? "/dashboard"
-                : "/onboarding";
-            
-            //  FIX: Only force redirect if the user is on a transient route
-            // (like '/', '/login', or the opposite of their required route)
-            const isTransientRoute = ['/', '/login', '/register', '/signup'].includes(location.pathname);
-            
-            // This checks if the user is on the WRONG core page (e.g., done onboarding but still on /onboarding)
-            const isOnWrongCoreRoute = (location.pathname === "/verify-email" && user.emailVerified !== false) ||
-                                       (location.pathname === "/onboarding" && (user.onboardingCompleted || user.emailVerified === false)) ||
-                                       (location.pathname === "/dashboard" && (!user.onboardingCompleted || user.emailVerified === false));
-            
-            // We only redirect if we are on a known transient or incorrect core route.
-            if (isTransientRoute || isOnWrongCoreRoute) {
-                if (location.pathname !== target) {
-                    navigate(target, { replace: true });
-                    return;
-                }
-            }
+      } catch (error: any) {
+        console.error("Google sign-in failed:", error);
+        if (isFirebaseNetworkError(error)) {
+          showError(
+            "Network error while contacting Google/Firebase. Check your connection and try again.",
+            "Authentication Error",
+          );
+          return;
         }
-    }, [isLoading, user, navigate, location.pathname]);
+        showError(
+          getAuthErrorMessage(error, "Google sign-in failed"),
+          "Authentication Error",
+        );
+        throw error;
+      } finally {
+        if (mode === "signup") {
+          setIsRegistering(false);
+        } else {
+          setIsLoggingIn(false);
+        }
+      }
+    },
+    [showSuccess, showError, refetchUser],
+  );
 
-    // -----------------------------------------------------------
-//  NEW: View Another Users Profile (by UID)
-// -----------------------------------------------------------
-const getUserProfileById = useCallback(async (userId: string): Promise<User | null> => {
-    if (!userId) {
-        console.warn(" getUserProfileById called with empty userId");
-        return null;
+  const requestPasswordReset = useCallback(
+    async (email: string) => {
+      const normalizedEmail = typeof email === "string" ? email.trim() : "";
+      if (!normalizedEmail) {
+        throw new Error("Please enter your email address.");
+      }
+
+      const actionCodeSettings = {
+        url: `${getAppBaseUrl()}/reset-password`,
+        handleCodeInApp: true,
+      };
+
+      try {
+        await sendPasswordResetEmail(auth, normalizedEmail, actionCodeSettings);
+        showSuccess(
+          "Password reset link sent. Check your email to continue.",
+          "Reset Link Sent",
+        );
+      } catch (error: any) {
+        const code = error?.code;
+        if (code === "auth/user-not-found") {
+          throw new Error("No account was found with that email address.");
+        }
+        if (code === "auth/invalid-email") {
+          throw new Error("Please enter a valid email address.");
+        }
+        if (isFirebaseNetworkError(error)) {
+          throw new Error(
+            "Network error while sending reset email. Please try again.",
+          );
+        }
+        throw new Error(
+          getAuthErrorMessage(error, "Failed to send password reset email."),
+        );
+      }
+    },
+    [showSuccess],
+  );
+
+  const validatePasswordResetCode = useCallback(async (oobCode: string) => {
+    const normalizedCode = typeof oobCode === "string" ? oobCode.trim() : "";
+    if (!normalizedCode) {
+      throw new Error("This password reset link is invalid or incomplete.");
     }
 
     try {
+      return await verifyPasswordResetCode(auth, normalizedCode);
+    } catch (error: any) {
+      const code = error?.code;
+      if (
+        code === "auth/expired-action-code" ||
+        code === "auth/invalid-action-code"
+      ) {
+        throw new Error(
+          "This password reset link has expired or is no longer valid.",
+        );
+      }
+      if (isFirebaseNetworkError(error)) {
+        throw new Error(
+          "Network error while validating reset link. Please try again.",
+        );
+      }
+      throw new Error(
+        getAuthErrorMessage(error, "Unable to validate password reset link."),
+      );
+    }
+  }, []);
+
+  const resetPassword = useCallback(
+    async (oobCode: string, newPassword: string) => {
+      const normalizedCode = typeof oobCode === "string" ? oobCode.trim() : "";
+      const normalizedPassword =
+        typeof newPassword === "string" ? newPassword.trim() : "";
+
+      if (!normalizedCode) {
+        throw new Error("This password reset link is invalid or incomplete.");
+      }
+
+      if (normalizedPassword.length < 6) {
+        throw new Error("Password must be at least 6 characters long.");
+      }
+
+      try {
+        await confirmPasswordReset(auth, normalizedCode, normalizedPassword);
+        showSuccess(
+          "Your password has been updated. You can sign in now.",
+          "Password Reset",
+        );
+      } catch (error: any) {
+        const code = error?.code;
+        if (
+          code === "auth/expired-action-code" ||
+          code === "auth/invalid-action-code"
+        ) {
+          throw new Error(
+            "This password reset link has expired or is no longer valid.",
+          );
+        }
+        if (code === "auth/weak-password") {
+          throw new Error("Choose a stronger password before continuing.");
+        }
+        if (isFirebaseNetworkError(error)) {
+          throw new Error(
+            "Network error while resetting password. Please try again.",
+          );
+        }
+        throw new Error(
+          getAuthErrorMessage(error, "Unable to reset password right now."),
+        );
+      }
+    },
+    [showSuccess],
+  );
+
+  // -----------------------------------------------------------
+  //  Navigation and Return (FIXED NAVIGATION LOGIC)
+  // -----------------------------------------------------------
+
+  //  NAVIGATION: Use a separate effect to handle navigation once auth is stable
+  useEffect(() => {
+    if (!isLoading && user) {
+      const target =
+        user.emailVerified === false
+          ? "/verify-email"
+          : user.onboardingCompleted
+            ? "/dashboard"
+            : "/onboarding";
+
+      //  FIX: Only force redirect if the user is on a transient route
+      // (like '/', '/login', or the opposite of their required route)
+      const isTransientRoute = ["/", "/login", "/register", "/signup"].includes(
+        location.pathname,
+      );
+
+      // This checks if the user is on the WRONG core page (e.g., done onboarding but still on /onboarding)
+      const isOnWrongCoreRoute =
+        (location.pathname === "/verify-email" &&
+          user.emailVerified !== false) ||
+        (location.pathname === "/onboarding" &&
+          (user.onboardingCompleted || user.emailVerified === false)) ||
+        (location.pathname === "/dashboard" &&
+          (!user.onboardingCompleted || user.emailVerified === false));
+
+      // We only redirect if we are on a known transient or incorrect core route.
+      if (isTransientRoute || isOnWrongCoreRoute) {
+        if (location.pathname !== target) {
+          navigate(target, { replace: true });
+          return;
+        }
+      }
+    }
+  }, [isLoading, user, navigate, location.pathname]);
+
+  // -----------------------------------------------------------
+  //  NEW: View Another Users Profile (by UID)
+  // -----------------------------------------------------------
+  const getUserProfileById = useCallback(
+    async (userId: string): Promise<User | null> => {
+      if (!userId) {
+        console.warn(" getUserProfileById called with empty userId");
+        return null;
+      }
+
+      try {
         const docRef = doc(db, "users", userId);
         const docSnap = await getDoc(docRef);
 
         if (!docSnap.exists()) {
-            console.warn(` No user profile found for UID: ${userId}`);
-            return null;
+          console.warn(` No user profile found for UID: ${userId}`);
+          return null;
         }
 
         const data = docSnap.data();
         const normalizedSubscription = normalizeSubscription(data.subscription);
 
         const profile: User = {
-            id: userId,
-            email: data.email || "",
-            name: data.name || "Unknown User",
-            role: resolveUserRole(data.email, data.role),
-            roles: normalizeUserRoles(data.email, data.roles),
-            onboardingCompleted: data.onboardingCompleted || false,
-            emailVerified: data.emailVerified === false ? false : true,
-            age: data.age || 0,
-            gender: data.gender || "MALE",
-            denomination: data.denomination || "",
-            bio: data.bio || "",
-            location: data.location || "",
+          id: userId,
+          email: data.email || "",
+          name: data.name || "Unknown User",
+          role: resolveUserRole(data.email, data.role),
+          roles: normalizeUserRoles(data.email, data.roles),
+          onboardingCompleted: data.onboardingCompleted || false,
+          emailVerified: data.emailVerified === false ? false : true,
+          age: data.age || 0,
+          gender: data.gender || "MALE",
+          denomination: data.denomination || "",
+          bio: data.bio || "",
+          location: data.location || "",
 
-            // Optional fields
-            latitude: data.latitude,
-            longitude: data.longitude,
-            phoneNumber: data.phoneNumber,
-            countryCode: data.countryCode,
-            passportCountry: data.passportCountry || null,
-            birthday: data.birthday ? new Date(data.birthday.seconds * 1000) : undefined,
-            fieldOfStudy: data.fieldOfStudy || data.education,
-            profession: data.profession || data.occupation,
-            faithJourney: data.faithJourney,
-            sundayActivity: data.sundayActivity || data.churchAttendance,
-            churchAttendance: data.churchAttendance || data.sundayActivity,
-            baptismStatus: data.baptismStatus,
-            spiritualGifts: data.spiritualGifts,
-            relationshipGoals: data.relationshipGoals,
-            lifestyle: data.lifestyle,
-            lookingFor: data.lookingFor,
-            personality: data.personality,
-            hobbies: data.hobbies,
-            interests: data.interests,
-            values: data.values,
-            profileFits: data.profileFits,
-            favoriteVerse: data.favoriteVerse,
-            drinkingHabit: data.drinkingHabit,
-            smokingHabit: data.smokingHabit,
-            workoutHabit: data.workoutHabit,
-            petPreference: data.petPreference,
-            height: data.height,
-            language: data.language,
-            languageSpoken: data.languageSpoken,
-            personalPromptQuestion: data.personalPromptQuestion,
-            personalPromptAnswer: data.personalPromptAnswer,
-            communicationStyle: data.communicationStyle,
-            loveStyle: data.loveStyle,
-            educationLevel: data.educationLevel,
-            zodiacSign: data.zodiacSign,
-            preferredFaithJourney: data.preferredFaithJourney,
-            preferredChurchAttendance: data.preferredChurchAttendance,
-            preferredRelationshipGoals: data.preferredRelationshipGoals,
-            preferredDenomination: data.preferredDenomination,
-            preferredGender: data.preferredGender,
-            minAge: data.minAge,
-            maxAge: data.maxAge,
-            maxDistance: data.maxDistance,
-            preferredMinHeight: data.preferredMinHeight,
+          // Optional fields
+          latitude: data.latitude,
+          longitude: data.longitude,
+          phoneNumber: data.phoneNumber,
+          countryCode: data.countryCode,
+          passportCountry: data.passportCountry || null,
+          birthday: data.birthday
+            ? new Date(data.birthday.seconds * 1000)
+            : undefined,
+          fieldOfStudy: data.fieldOfStudy || data.education,
+          profession: data.profession || data.occupation,
+          faithJourney: data.faithJourney,
+          sundayActivity: data.sundayActivity || data.churchAttendance,
+          churchAttendance: data.churchAttendance || data.sundayActivity,
+          baptismStatus: data.baptismStatus,
+          spiritualGifts: data.spiritualGifts,
+          relationshipGoals: data.relationshipGoals,
+          lifestyle: data.lifestyle,
+          lookingFor: data.lookingFor,
+          personality: data.personality,
+          hobbies: data.hobbies,
+          interests: data.interests,
+          values: data.values,
+          profileFits: data.profileFits,
+          favoriteVerse: data.favoriteVerse,
+          drinkingHabit: data.drinkingHabit,
+          smokingHabit: data.smokingHabit,
+          workoutHabit: data.workoutHabit,
+          petPreference: data.petPreference,
+          height: data.height,
+          language: data.language,
+          languageSpoken: data.languageSpoken,
+          personalPromptQuestion: data.personalPromptQuestion,
+          personalPromptAnswer: data.personalPromptAnswer,
+          communicationStyle: data.communicationStyle,
+          loveStyle: data.loveStyle,
+          educationLevel: data.educationLevel,
+          zodiacSign: data.zodiacSign,
+          preferredFaithJourney: data.preferredFaithJourney,
+          preferredChurchAttendance: data.preferredChurchAttendance,
+          preferredRelationshipGoals: data.preferredRelationshipGoals,
+          preferredDenomination: data.preferredDenomination,
+          preferredGender: data.preferredGender,
+          minAge: data.minAge,
+          maxAge: data.maxAge,
+          maxDistance: data.maxDistance,
+          preferredMinHeight: data.preferredMinHeight,
 
-            // Photos
-            profilePhoto1: data.profilePhoto1,
-            profilePhoto2: data.profilePhoto2,
-            profilePhoto3: data.profilePhoto3,
-            profilePhoto4: data.profilePhoto4,
-            profilePhoto5: data.profilePhoto5,
-            profilePhoto6: data.profilePhoto6,
-            profilePhotoCount: getProfilePhotoCount(data as Record<string, any>),
-            subscriptionStatus: data.subscriptionStatus || normalizedSubscription?.status,
-            subscriptionTier: data.subscriptionTier || normalizedSubscription?.tier,
-            subscriptionCurrency: data.subscriptionCurrency || normalizedSubscription?.currency,
-            profileBoosterCredits:
-                typeof data.profileBoosterCredits === 'number' ? data.profileBoosterCredits : 0,
-            profileBoosterActiveUntil:
-                typeof data.profileBoosterActiveUntil === 'string' ? data.profileBoosterActiveUntil : null,
-            profileBoosterLastGrantedReference:
-                typeof data.profileBoosterLastGrantedReference === 'string' ? data.profileBoosterLastGrantedReference : null,
-            profileBoosterLastUsedAt:
-                typeof data.profileBoosterLastUsedAt === 'string' ? data.profileBoosterLastUsedAt : null,
-            subscription: normalizedSubscription,
-            settings: data.settings,
+          // Photos
+          profilePhoto1: data.profilePhoto1,
+          profilePhoto2: data.profilePhoto2,
+          profilePhoto3: data.profilePhoto3,
+          profilePhoto4: data.profilePhoto4,
+          profilePhoto5: data.profilePhoto5,
+          profilePhoto6: data.profilePhoto6,
+          profilePhotoCount: getProfilePhotoCount(data as Record<string, any>),
+          subscriptionStatus:
+            data.subscriptionStatus || normalizedSubscription?.status,
+          subscriptionTier:
+            data.subscriptionTier || normalizedSubscription?.tier,
+          subscriptionCurrency:
+            data.subscriptionCurrency || normalizedSubscription?.currency,
+          profileBoosterCredits:
+            typeof data.profileBoosterCredits === "number"
+              ? data.profileBoosterCredits
+              : 0,
+          profileBoosterActiveUntil:
+            typeof data.profileBoosterActiveUntil === "string"
+              ? data.profileBoosterActiveUntil
+              : null,
+          profileBoosterLastGrantedReference:
+            typeof data.profileBoosterLastGrantedReference === "string"
+              ? data.profileBoosterLastGrantedReference
+              : null,
+          profileBoosterLastUsedAt:
+            typeof data.profileBoosterLastUsedAt === "string"
+              ? data.profileBoosterLastUsedAt
+              : null,
+          subscription: normalizedSubscription,
+          settings: data.settings,
         };
 
         return profile;
-    } catch (error: any) {
-        console.error(` Failed to fetch user profile for UID: ${userId}`, error);
+      } catch (error: any) {
+        console.error(
+          ` Failed to fetch user profile for UID: ${userId}`,
+          error,
+        );
         return null;
-    }
-}, []);
+      }
+    },
+    [],
+  );
 
-
-    return {
-        isLoading,
-        isAuthenticated,
-        user,
-        accessToken,
-        isLoggingIn,
-        isRegistering,
-        isLoggingOut,
-        isCompletingOnboarding, 
-        directLogin,
-        directRegister,
-        logout,
-        refetchUser,
-        completeOnboarding,
-        getUserProfileById,
-        googleSignIn,
-        sendEmailVerificationCode,
-        verifyEmailVerificationCode,
-        requestPasswordReset,
-        validatePasswordResetCode,
-        resetPassword,
-    };
+  return {
+    isLoading,
+    isAuthenticated,
+    user,
+    accessToken,
+    isLoggingIn,
+    isRegistering,
+    isLoggingOut,
+    isCompletingOnboarding,
+    directLogin,
+    directRegister,
+    logout,
+    refetchUser,
+    completeOnboarding,
+    getUserProfileById,
+    googleSignIn,
+    sendEmailVerificationCode,
+    verifyEmailVerificationCode,
+    requestPasswordReset,
+    validatePasswordResetCode,
+    resetPassword,
+  };
 }
 
 export function useRequireAuth() {
-    return useAuthContext();
+  return useAuthContext();
 }
 
 export function useOptionalAuth() {
-    return useAuthContext();
+  return useAuthContext();
 }

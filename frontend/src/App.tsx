@@ -1,32 +1,32 @@
 ﻿// src/App.tsx
 
-import { useEffect, useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
-import { NotificationListener } from './components/NotificationListener';
-import { SeoMetaManager } from './components/SeoMetaManager';
-import { useAuthContext } from './contexts/AuthContext';
-import { API } from './services/api';
+import { useEffect, useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
+import { NotificationListener } from "./components/NotificationListener";
+import { SeoMetaManager } from "./components/SeoMetaManager";
+import { useAuthContext } from "./contexts/AuthContext";
+import { API } from "./services/api";
 
 // Define the paths that should use the special "Auth Layout"
-const authPaths = ['/login', '/signup'];
+const authPaths = ["/login", "/signup"];
 // Include the Onboarding path in a list that needs a specific full-screen treatment.
-const fullScreenPaths = ['/onboarding'];
-const verificationPaths = ['/verify-email'];
+const fullScreenPaths = ["/onboarding"];
+const verificationPaths = ["/verify-email"];
 const appShellPaths = [
-  '/dashboard',
-  '/community',
-  '/messages',
-  '/notifications',
-  '/matches',
-  '/payment-success',
-  '/settings',
-  '/report',
-  '/deactivate',
-  '/profile',
+  "/dashboard",
+  "/community",
+  "/messages",
+  "/notifications",
+  "/matches",
+  "/payment-success",
+  "/settings",
+  "/report",
+  "/deactivate",
+  "/profile",
 ];
-const FEATURE_SETTINGS_SYNC_KEY = 'faithbliss:feature-settings-updated-at';
-const FEATURE_SETTINGS_SYNC_EVENT = 'faithbliss:feature-settings-updated';
-const FEATURE_SETTINGS_CACHE_KEY = 'faithbliss:feature-settings-cache';
+const FEATURE_SETTINGS_SYNC_KEY = "faithbliss:feature-settings-updated-at";
+const FEATURE_SETTINGS_SYNC_EVENT = "faithbliss:feature-settings-updated";
+const FEATURE_SETTINGS_CACHE_KEY = "faithbliss:feature-settings-cache";
 
 type CachedFeatureSettings = {
   passportModeEnabled: boolean;
@@ -36,7 +36,7 @@ type CachedFeatureSettings = {
 };
 
 const readCachedFeatureSettings = (): CachedFeatureSettings | null => {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
 
   try {
     const raw = window.localStorage.getItem(FEATURE_SETTINGS_CACHE_KEY);
@@ -61,13 +61,25 @@ function App() {
   const [shutdownModeEnabled, setShutdownModeEnabled] = useState(false);
   const [maintenanceLoaded, setMaintenanceLoaded] = useState(false);
   const isAuthRoute = authPaths.includes(pathname);
-  const isAppShellRoute = appShellPaths.some((route) => pathname === route || pathname.startsWith(`${route}/`));
-  const isFullScreenRoute = isAuthRoute || fullScreenPaths.includes(pathname) || verificationPaths.includes(pathname) || isAppShellRoute;
-  const isAdminRoute = pathname === '/admin' || pathname.startsWith('/admin/');
-  const isDeveloperRoute = pathname === '/developer' || pathname.startsWith('/developer/');
-  const shouldShowShutdownGate = maintenanceLoaded && shutdownModeEnabled && !isDeveloperRoute;
+  const isAppShellRoute = appShellPaths.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
+  const isFullScreenRoute =
+    isAuthRoute ||
+    fullScreenPaths.includes(pathname) ||
+    verificationPaths.includes(pathname) ||
+    isAppShellRoute;
+  const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+  const isDeveloperRoute =
+    pathname === "/developer" || pathname.startsWith("/developer/");
+  const shouldShowShutdownGate =
+    maintenanceLoaded && shutdownModeEnabled && !isDeveloperRoute;
   const shouldShowMaintenanceGate =
-    maintenanceLoaded && maintenanceModeEnabled && !shouldShowShutdownGate && !isAdminRoute && !isDeveloperRoute;
+    maintenanceLoaded &&
+    maintenanceModeEnabled &&
+    !shouldShowShutdownGate &&
+    !isAdminRoute &&
+    !isDeveloperRoute;
 
   useEffect(() => {
     let isMounted = true;
@@ -80,15 +92,17 @@ function App() {
         if (!isMounted) return;
         setMaintenanceModeEnabled(Boolean(response.maintenanceModeEnabled));
         setShutdownModeEnabled(Boolean(response.shutdownModeEnabled));
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           window.localStorage.setItem(
             FEATURE_SETTINGS_CACHE_KEY,
             JSON.stringify({
               passportModeEnabled: Boolean(response.passportModeEnabled),
               maintenanceModeEnabled: Boolean(response.maintenanceModeEnabled),
               shutdownModeEnabled: Boolean(response.shutdownModeEnabled),
-              backendOnlyShutdownEnabled: Boolean(response.backendOnlyShutdownEnabled),
-            })
+              backendOnlyShutdownEnabled: Boolean(
+                response.backendOnlyShutdownEnabled,
+              ),
+            }),
           );
         }
       } catch {
@@ -113,7 +127,7 @@ function App() {
     };
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState !== 'visible') return;
+      if (document.visibilityState !== "visible") return;
       void loadFeatureSettings();
     };
 
@@ -132,24 +146,34 @@ function App() {
       void loadFeatureSettings();
     }, 15000);
 
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('pageshow', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('storage', handleStorage);
-    window.addEventListener(FEATURE_SETTINGS_SYNC_EVENT, handleFeatureSettingsEvent);
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("pageshow", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener(
+      FEATURE_SETTINGS_SYNC_EVENT,
+      handleFeatureSettingsEvent,
+    );
 
     return () => {
       isMounted = false;
       window.clearInterval(refreshInterval);
-      window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('pageshow', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('storage', handleStorage);
-      window.removeEventListener(FEATURE_SETTINGS_SYNC_EVENT, handleFeatureSettingsEvent);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("pageshow", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener(
+        FEATURE_SETTINGS_SYNC_EVENT,
+        handleFeatureSettingsEvent,
+      );
     };
   }, [isAuthenticated, pathname]);
 
-  if ((authLoading || !maintenanceLoaded) && !isAdminRoute && !isDeveloperRoute) {
+  if (
+    (authLoading || !maintenanceLoaded) &&
+    !isAdminRoute &&
+    !isDeveloperRoute
+  ) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-950 text-sm text-slate-400">
         <SeoMetaManager />
@@ -173,7 +197,8 @@ function App() {
             Broken page, please check back later
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-300 sm:text-base">
-            The web app is temporarily unavailable right now. Please check back later while access is being restored.
+            The web app is temporarily unavailable right now. Please check back
+            later while access is being restored.
           </p>
         </div>
       </div>
@@ -195,7 +220,8 @@ function App() {
             Broken page, please check back later
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-300 sm:text-base">
-            We are making a few fixes behind the scenes right now. The app will be available again shortly.
+            We are making a few fixes behind the scenes right now. The app will
+            be available again shortly.
           </p>
         </div>
       </div>

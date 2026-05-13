@@ -1121,7 +1121,7 @@ export function useAuth() {
         setIsCompletingOnboarding(false);
       }
     },
-    [showSuccess, showError, setUser, fetchUserDataFromFirestore],
+    [showSuccess, showError],
   );
 
   // -----------------------------------------------------------
@@ -1216,7 +1216,6 @@ export function useAuth() {
         await setPersistence(auth, browserLocalPersistence);
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: "select_account" });
-        console.log(provider, auth);
 
         if (shouldPreferGoogleRedirect()) {
           markGoogleRedirectPending();

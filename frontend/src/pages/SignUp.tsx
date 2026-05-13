@@ -11,7 +11,6 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
-import { PopupInstruction } from "@/components/auth/PopupInstruction";
 import { SuccessModal } from "@/components/SuccessModal";
 import { HeartBeatIcon } from "@/components/HeartBeatIcon";
 import AppDropdown from "@/components/AppDropdown";
@@ -34,7 +33,6 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showPopupInstruction, setShowPopupInstruction] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const {
@@ -360,11 +358,6 @@ export default function Signup() {
           </Link>
         </div>
       </div>
-
-      <PopupInstruction
-        show={showPopupInstruction}
-        onDismiss={() => setShowPopupInstruction(false)}
-      />
 
       <SuccessModal
         isOpen={showSuccessModal}

@@ -20,8 +20,6 @@ import { uploadPhotosToCloudinary } from "../api/cloudinaryUpload";
 import { MIN_PROFILE_FITS } from "../constants/profileFitOptions";
 import { MIN_ONBOARDING_PHOTOS } from "../constants/onboarding";
 
-const MIN_ONBOARDING_INTERESTS = 10;
-
 // --- TYPE ---
 type OnboardingUpdateData = Partial<
   Omit<OnboardingData, "photos" | "customDenomination">

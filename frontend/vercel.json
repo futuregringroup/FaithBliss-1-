@@ -2,11 +2,11 @@
   "routes": [
     {
       "src": "/__/auth/(.*)",
-      "dest": "https://faithbliss-ade26.firebaseapp.com/__/auth/$1"
+      "dest": "https://faithbliss-79c63.firebaseapp.com/__/auth/$1"
     },
     {
       "src": "/__/firebase/init.json",
-      "dest": "https://faithbliss-ade26.firebaseapp.com/__/firebase/init.json"
+      "dest": "https://faithbliss-79c63.firebaseapp.com/__/firebase/init.json"
     },
     {
       "src": "/$",

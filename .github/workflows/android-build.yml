@@ -38,7 +38,9 @@ jobs:
         run: pnpm android:prepare
 
       - name: Decode Android signing keystore
-        if: ${{ secrets.ANDROID_KEYSTORE_B64 != '' }}
+        if: ${{ env.HAS_KEYSTORE == 'true' }}
+        env:
+          HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_B64 != '' }}
         working-directory: frontend
         run: |
           mkdir -p android/keystore
@@ -48,17 +50,20 @@ jobs:
         run: chmod +x frontend/android/gradlew
 
       - name: Build signed Android release (AAB + APK)
-        if: ${{ secrets.ANDROID_KEYSTORE_B64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
-        working-directory: frontend/android
+        if: ${{ env.HAS_SIGNING == 'true' }}
         env:
+          HAS_SIGNING: ${{ secrets.ANDROID_KEYSTORE_B64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
           SIGNING_STORE_FILE: keystore/upload-keystore.jks
           SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        working-directory: frontend/android
         run: ./gradlew --no-daemon clean bundleRelease assembleRelease
 
       - name: Build unsigned Android release (fallback)
-        if: ${{ secrets.ANDROID_KEYSTORE_B64 == '' || secrets.ANDROID_KEYSTORE_PASSWORD == '' || secrets.ANDROID_KEY_ALIAS == '' || secrets.ANDROID_KEY_PASSWORD == '' }}
+        if: ${{ env.HAS_SIGNING != 'true' }}
+        env:
+          HAS_SIGNING: ${{ secrets.ANDROID_KEYSTORE_B64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
         working-directory: frontend/android
         run: ./gradlew --no-daemon clean bundleRelease assembleRelease
 

@@ -73,7 +73,7 @@ export const AuthGate: React.FC = () => {
 export const PublicOnlyRoute: React.FC = () => {
   const { isAuthenticated, user, isLoading } = useAuthContext();
 
-  if (isLoading) return null;
+  if (isLoading) return <HeartBeatLoader message="Loading..." />;
 
   if (isAuthenticated) {
     const targetPath = user && user.emailVerified !== true
@@ -90,7 +90,7 @@ export const PublicOnlyRoute: React.FC = () => {
 export const AdminRoute: React.FC = () => {
   const { isAuthenticated, user, isLoading } = useAuthContext();
 
-  if (isLoading) return null;
+  if (isLoading) return <HeartBeatLoader message="Loading..." />;
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -106,7 +106,7 @@ export const AdminRoute: React.FC = () => {
 export const DeveloperRoute: React.FC = () => {
   const { isAuthenticated, user, isLoading } = useAuthContext();
 
-  if (isLoading) return null;
+  if (isLoading) return <HeartBeatLoader message="Loading..." />;
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

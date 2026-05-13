@@ -55,7 +55,7 @@ const readCachedFeatureSettings = (): CachedFeatureSettings | null => {
 
 function App() {
   const location = useLocation();
-  const { isAuthenticated, isLoading: authLoading } = useAuthContext();
+  const { isAuthenticated } = useAuthContext();
   const pathname = location.pathname.toLowerCase();
   const [maintenanceModeEnabled, setMaintenanceModeEnabled] = useState(false);
   const [shutdownModeEnabled, setShutdownModeEnabled] = useState(false);
@@ -170,7 +170,7 @@ function App() {
   }, [isAuthenticated, pathname]);
 
   if (
-    (authLoading || !maintenanceLoaded) &&
+    !maintenanceLoaded &&
     !isAdminRoute &&
     !isDeveloperRoute
   ) {

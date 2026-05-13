@@ -9,19 +9,15 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+        uses: actions/checkout@v4.2.2
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v4.4.0
         with:
           node-version: 20
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install pnpm
+        run: npm install -g pnpm@9
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -68,7 +64,7 @@ jobs:
         run: ./gradlew --no-daemon clean bundleRelease assembleRelease
 
       - name: Upload Android artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: faithbliss-android-build
           path: |

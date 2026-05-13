@@ -1,32 +1,17 @@
-// src/firebase/config.ts (FINAL)
-
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import {
   getFirestore,
   serverTimestamp as firestoreServerTimestamp,
 } from "firebase/firestore";
-// 💡 CRITICAL ADDITION: Import for Storage services
 import { getStorage } from "firebase/storage";
-
-// --- 1. Firebase Configuration Object ---
-// const configuredAuthDomain = String(
-//   import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
-// ).trim();
-// const runtimeHost =
-//   typeof window !== "undefined" && window.location.hostname
-//     ? window.location.hostname
-//     : "";
-// const shouldUseSameOriginAuthDomain =
-//   import.meta.env.PROD &&
-//   typeof window !== "undefined" &&
-//   runtimeHost.length > 0 &&
-//   runtimeHost !== "localhost" &&
-//   runtimeHost !== "127.0.0.1";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  // Always use the Firebase default auth domain — custom domain proxy (faithblissafrica.com/__/auth)
+  // requires Firebase Hosting custom domain setup which is not configured. The default domain
+  // works on all platforms without any extra setup.
+  authDomain: "faithbliss-79c63.firebaseapp.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,

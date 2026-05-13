@@ -633,11 +633,19 @@ const getDeveloperOverview = async (req: CustomRequest, res: Response) => {
 };
 
 const getOnboardingDebug = async (req: CustomRequest, res: Response) => {
-  const targetUid =
-    typeof req.params.id === 'string' && req.params.id.trim() ? req.params.id.trim() : req.userId;
+  const requestedId = typeof req.params.id === 'string' ? req.params.id.trim() : '';
+  const targetUid = requestedId || req.userId;
 
   if (!targetUid) {
     return res.status(401).json({ message: 'Authentication required: Firebase UID missing.' });
+  }
+
+  if (requestedId && requestedId !== req.userId) {
+    const callerDoc = await usersCollection.doc(req.userId!).get();
+    const callerData = callerDoc.data() as IFirestoreUser | undefined;
+    if (!isAdminUser(callerData) && !isDeveloperUser(callerData)) {
+      return res.status(403).json({ message: 'Forbidden: you can only access your own debug data.' });
+    }
   }
 
   try {

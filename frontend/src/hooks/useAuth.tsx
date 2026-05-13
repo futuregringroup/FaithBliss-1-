@@ -688,7 +688,7 @@ export function useAuth() {
   const [isCompletingOnboarding, setIsCompletingOnboarding] = useState(false);
   //  FIX: Use User interface
   const [user, setUser] = useState<User | null>(null);
-  const [isInitialSignUp, setIsInitialSignUp] = useState(false);
+  const isInitialSignUpRef = useRef(false);
 
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const lastNetworkToastAtRef = useRef(0);
@@ -836,8 +836,8 @@ export function useAuth() {
       async (fbUser: FirebaseAuthUser | null) => {
         if (fbUser) {
           try {
-            if (isInitialSignUp) {
-              setIsInitialSignUp(false);
+            if (isInitialSignUpRef.current) {
+              isInitialSignUpRef.current = false;
             }
 
             await syncUserFromFirebase(fbUser);
@@ -884,7 +884,7 @@ export function useAuth() {
     );
 
     return () => unsubscribe(); // Cleanup the listener on unmount
-  }, [isInitialSignUp, clearAppStorage, syncUserFromFirebase]);
+  }, [clearAppStorage, syncUserFromFirebase]);
   // -----------------------------------------------------------
   //  Direct Login
   // -----------------------------------------------------------
@@ -923,7 +923,7 @@ export function useAuth() {
   const directRegister = useCallback(
     async (credentials: RegisterCredentials) => {
       setIsRegistering(true);
-      setIsInitialSignUp(true);
+      isInitialSignUpRef.current = true;
       try {
         // 1. Create user in Firebase Auth
         const userCredential = await createUserWithEmailAndPassword(
@@ -1024,7 +1024,7 @@ export function useAuth() {
       } finally {
         setIsRegistering(false);
         if (user === null) {
-          setIsInitialSignUp(false);
+          isInitialSignUpRef.current = false;
         }
       }
     },
@@ -1155,10 +1155,7 @@ export function useAuth() {
   // -----------------------------------------------------------
   useEffect(() => {
     const handleRedirectResult = async () => {
-      const isAuthEntryRoute = ["/login", "/register", "/signup"].includes(
-        location.pathname,
-      );
-      if (!hasPendingGoogleRedirect() && !isAuthEntryRoute) {
+      if (!hasPendingGoogleRedirect()) {
         return;
       }
 

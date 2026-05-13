@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
+import { HeartBeatLoader } from './HeartBeatLoader';
 
 const ONBOARDING_PAUSE_STORAGE_KEY = 'faithbliss_onboarding_pause_state';
 
@@ -20,7 +21,7 @@ export const AuthGate: React.FC = () => {
   const path = location.pathname;
 
   if (isLoading) {
-    return null;
+    return <HeartBeatLoader message="Loading..." />;
   }
 
   if (!isAuthenticated) {

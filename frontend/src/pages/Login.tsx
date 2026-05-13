@@ -34,7 +34,7 @@ function LoginForm() {
   // We keep this check here as a fallback, but the AuthGate/PublicOnlyRoute is primary.
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-        const target = user?.emailVerified === false
+        const target = user?.emailVerified !== true
           ? '/verify-email'
           : user?.onboardingCompleted
           ? callbackUrl

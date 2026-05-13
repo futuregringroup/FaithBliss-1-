@@ -838,8 +838,6 @@ export function useAuth() {
           try {
             if (isInitialSignUp) {
               setIsInitialSignUp(false);
-              setIsLoading(false);
-              return;
             }
 
             await syncUserFromFirebase(fbUser);
@@ -972,8 +970,10 @@ export function useAuth() {
         localStorage.setItem("accessToken", token);
         localStorage.setItem("user", JSON.stringify(userToStore));
 
+        let verificationSent = false;
         try {
           await API.Auth.sendEmailVerificationCode();
+          verificationSent = true;
         } catch (verificationError) {
           console.warn(
             "Initial verification code send failed:",
@@ -988,10 +988,12 @@ export function useAuth() {
           );
         }
 
-        showSuccess(
-          "Account created. Enter the code we sent to your email to continue.",
-          "Verification Needed",
-        );
+        if (verificationSent) {
+          showSuccess(
+            "Account created. Enter the code we sent to your email to continue.",
+            "Verification Needed",
+          );
+        }
 
         return {
           accessToken: token,
@@ -1393,7 +1395,7 @@ export function useAuth() {
   useEffect(() => {
     if (!isLoading && user) {
       const target =
-        user.emailVerified === false
+        user.emailVerified !== true
           ? "/verify-email"
           : user.onboardingCompleted
             ? "/dashboard"
@@ -1408,11 +1410,11 @@ export function useAuth() {
       // This checks if the user is on the WRONG core page (e.g., done onboarding but still on /onboarding)
       const isOnWrongCoreRoute =
         (location.pathname === "/verify-email" &&
-          user.emailVerified !== false) ||
+          user.emailVerified === true) ||
         (location.pathname === "/onboarding" &&
-          (user.onboardingCompleted || user.emailVerified === false)) ||
+          (user.onboardingCompleted || user.emailVerified !== true)) ||
         (location.pathname === "/dashboard" &&
-          (!user.onboardingCompleted || user.emailVerified === false));
+          (!user.onboardingCompleted || user.emailVerified !== true));
 
       // We only redirect if we are on a known transient or incorrect core route.
       if (isTransientRoute || isOnWrongCoreRoute) {

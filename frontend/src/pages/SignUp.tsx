@@ -50,7 +50,7 @@ export default function Signup() {
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
       const target =
-        user?.emailVerified === false
+        user?.emailVerified !== true
           ? "/verify-email"
           : user?.onboardingCompleted
             ? "/dashboard"
@@ -364,10 +364,10 @@ export default function Signup() {
         isOpen={showSuccessModal}
         onClose={() => {
           setShowSuccessModal(false);
-          navigate("/onboarding");
+          navigate("/verify-email");
         }}
         title="Welcome to FaithBliss!"
-        message="Your account has been created successfully! Let's complete your profile to find your perfect match."
+        message="Your account has been created successfully! Check your email for a verification code to continue."
         autoCloseMs={3000}
       />
     </div>

@@ -27,7 +27,7 @@ export const AuthGate: React.FC = () => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (user && user.emailVerified === false) {
+  if (user && user.emailVerified !== true) {
     if (!path.startsWith('/verify-email')) {
       return <Navigate to="/verify-email" replace />;
     }
@@ -75,7 +75,7 @@ export const PublicOnlyRoute: React.FC = () => {
   if (isLoading) return null;
 
   if (isAuthenticated) {
-    const targetPath = user && user.emailVerified === false
+    const targetPath = user && user.emailVerified !== true
       ? '/verify-email'
       : user && !user.onboardingCompleted
       ? '/onboarding'

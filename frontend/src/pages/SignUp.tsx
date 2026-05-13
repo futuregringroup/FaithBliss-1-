@@ -48,7 +48,7 @@ export default function Signup() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
+    if (!isLoading && isAuthenticated && !showSuccessModal) {
       const target =
         user?.emailVerified !== true
           ? "/verify-email"
@@ -60,6 +60,7 @@ export default function Signup() {
   }, [
     isAuthenticated,
     isLoading,
+    showSuccessModal,
     navigate,
     user?.emailVerified,
     user?.onboardingCompleted,
@@ -72,14 +73,19 @@ export default function Signup() {
         : null;
 
     if (isAuthenticated && fromSignup) {
-      setShowSuccessModal(true);
-      sessionStorage.removeItem("fromSignup");
+      // Google users are already verified — skip the modal and navigate directly
+      if (user?.emailVerified === true) {
+        sessionStorage.removeItem("fromSignup");
+      } else {
+        setShowSuccessModal(true);
+        sessionStorage.removeItem("fromSignup");
+      }
     }
 
     if (!isLoading && !isAuthenticated) {
       setLoading(false);
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, user?.emailVerified]);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -364,7 +370,13 @@ export default function Signup() {
         isOpen={showSuccessModal}
         onClose={() => {
           setShowSuccessModal(false);
-          navigate("/verify-email");
+          const target =
+            user?.emailVerified !== true
+              ? "/verify-email"
+              : user?.onboardingCompleted
+                ? "/dashboard"
+                : "/onboarding";
+          navigate(target, { replace: true });
         }}
         title="Welcome to FaithBliss!"
         message="Your account has been created successfully! Check your email for a verification code to continue."

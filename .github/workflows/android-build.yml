@@ -14,10 +14,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4.4.0
         with:
-          node-version: 20
+          node-version: 24
 
-      - name: Install pnpm
-        run: npm install -g pnpm@9
+      - name: Enable Corepack and activate pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.15.0 --activate
 
       - name: Setup Java
         uses: actions/setup-java@v4

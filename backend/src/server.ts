@@ -147,6 +147,8 @@ const startServer = async () => {
   }
 };
 
-startServer();
+export { app };
 
-export default app;
+if (process.env.VERCEL !== '1') {
+  startServer();
+}

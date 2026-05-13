@@ -20,8 +20,6 @@ const isValidDateValue = (value: unknown): boolean => {
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
-const MIN_ONBOARDING_INTERESTS = 10;
-
 export const validateOnboardingPayload = (payload: Record<string, unknown>): string | null => {
   if (!isValidDateValue(payload.birthday)) {
     return 'Birthday is required and must be valid.';
@@ -39,10 +37,6 @@ export const validateOnboardingPayload = (payload: Record<string, unknown>): str
     ['fieldOfStudy', payload.fieldOfStudy ?? payload.education],
     ['baptismStatus', payload.baptismStatus],
     ['favoriteVerse', payload.favoriteVerse],
-    ['bio', payload.bio],
-    ['personalPromptQuestion', payload.personalPromptQuestion],
-    ['personalPromptAnswer', payload.personalPromptAnswer],
-    ['educationLevel', payload.educationLevel],
     ['preferredGender', payload.preferredGender],
   ];
 
@@ -58,9 +52,6 @@ export const validateOnboardingPayload = (payload: Record<string, unknown>): str
     ['preferredFaithJourney', payload.preferredFaithJourney, 1],
     ['preferredChurchAttendance', payload.preferredChurchAttendance, 1],
     ['preferredRelationshipGoals', payload.preferredRelationshipGoals, 1],
-    ['communicationStyle', payload.communicationStyle, 1],
-    ['loveStyle', payload.loveStyle, 1],
-    ['interests', payload.interests, MIN_ONBOARDING_INTERESTS],
   ];
 
   for (const [fieldName, value, minCount] of requiredArrayFields) {

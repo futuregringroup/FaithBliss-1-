@@ -15,9 +15,6 @@ import ProfileBuilderSlide from "../components/onboarding/ProfileBuilderSlide";
 import LocationPermissionSlide from "../components/onboarding/LocationPermissionSlide";
 import PartnerPreferencesSlide from "../components/onboarding/PartnerPreferencesSlide";
 import RelationshipGoalsSlide from "../components/onboarding/RelationshipGoalsSlide";
-import PersonalEssenceSlide from "../components/onboarding/PersonalEssenceSlide";
-import InterestsSelectionSlide from "../components/onboarding/InterestsSelectionSlide";
-import ShareMoreAboutYouSlide from "../components/onboarding/ShareMoreAboutYouSlide";
 
 import { uploadPhotosToCloudinary } from "../api/cloudinaryUpload";
 import { MIN_PROFILE_FITS } from "../constants/profileFitOptions";
@@ -152,34 +149,6 @@ const getStepValidationError = (
     return "Please complete every partner preference on this step.";
   }
 
-  if (
-    step === 5 &&
-    (!Array.isArray(data.communicationStyle) ||
-      data.communicationStyle.length === 0 ||
-      !Array.isArray(data.loveStyle) ||
-      data.loveStyle.length === 0 ||
-      !data.educationLevel)
-  ) {
-    return "Please complete all personal style fields.";
-  }
-
-  if (
-    step === 6 &&
-    (!data.bio?.trim() ||
-      !data.personalPromptQuestion?.trim() ||
-      !data.personalPromptAnswer?.trim())
-  ) {
-    return "Please add your bio, choose a prompt, and provide your answer.";
-  }
-
-  if (
-    step === 7 &&
-    (!Array.isArray(data.interests) ||
-      data.interests.length < MIN_ONBOARDING_INTERESTS)
-  ) {
-    return `Please select at least ${MIN_ONBOARDING_INTERESTS} interests.`;
-  }
-
   return null;
 };
 
@@ -199,7 +168,7 @@ const OnboardingPage = () => {
   const [submissionStage, setSubmissionStage] = useState<
     "idle" | "uploading" | "saving"
   >("idle");
-  const totalSteps = 8;
+  const totalSteps = 5;
 
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     age: undefined,
@@ -395,23 +364,6 @@ const OnboardingPage = () => {
             onboardingData={onboardingData}
             setOnboardingData={setOnboardingData}
             showValidationErrors={Boolean(validationError) && currentStep === 3}
-          />
-          <PersonalEssenceSlide
-            isVisible={currentStep === 5}
-            onboardingData={onboardingData}
-            setOnboardingData={setOnboardingData}
-            showValidationErrors={Boolean(validationError) && currentStep === 5}
-          />
-          <InterestsSelectionSlide
-            isVisible={currentStep === 7}
-            onboardingData={onboardingData}
-            setOnboardingData={setOnboardingData}
-          />
-          <ShareMoreAboutYouSlide
-            isVisible={currentStep === 6}
-            onboardingData={onboardingData}
-            setOnboardingData={setOnboardingData}
-            showValidationErrors={Boolean(validationError) && currentStep === 6}
           />
           <PartnerPreferencesSlide
             isVisible={currentStep === 4}

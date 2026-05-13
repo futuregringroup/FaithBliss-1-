@@ -10,6 +10,7 @@ import { ProfileDisplay } from '@/components/dashboard/ProfileDisplay';
 import { OverlayPanels } from '@/components/dashboard/OverlayPanels';
 import { StoryBar } from '@/components/dashboard/StoryBar';
 import { PostOnboardingWelcomeOverlay } from '@/components/dashboard/PostOnboardingWelcomeOverlay';
+import { ProfileCompletionBanner } from '@/components/dashboard/ProfileCompletionBanner';
 import { type DashboardFiltersPayload } from '@/components/dashboard/FilterPanel';
 import type { DashboardFilterFocusSection } from '@/components/dashboard/FilterPanel';
 import { useProfileQueue } from '@/components/dashboard/useProfileQueue';
@@ -696,6 +697,8 @@ const handleApplyFilters = async (filters: DashboardFiltersPayload) => {
         </div>
       )}
       
+      <ProfileCompletionBanner user={activeUser} />
+
       {/* Desktop Layout */}
                 <DesktopLayout
         userName={userName}

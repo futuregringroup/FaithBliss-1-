@@ -1,9 +1,7 @@
-import { IUser } from '../models/User';
-
 declare global {
   namespace Express {
     interface Request {
-      user?: IUser & {
+      user?: import('../models/User').IUser & {
         _id: string;
       };
       isAuthenticated(): boolean;
@@ -12,3 +10,5 @@ declare global {
     }
   }
 }
+
+export {};

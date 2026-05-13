@@ -373,7 +373,7 @@ const sanitizeOnboardingPayload = (
 
   for (let i = 1; i <= 6; i++) {
     const key = `profilePhoto${i}`;
-    const url = sanitizeText(payload[key], 500);
+    const url = sanitizeText((payload as Record<string, any>)[key], 500);
     if (url !== undefined) result[key] = url;
   }
 
@@ -1088,12 +1088,11 @@ export function useAuth() {
 
         // After successful update, manually update the local user state
         setUser((prevUser) => {
-          const updatedUser: User = refreshedUser || {
-            ...(prevUser || {
+          const updatedUser: User = {
+            ...(refreshedUser || prevUser || {
               id: fbUser.uid,
               email: fbUser.email || "",
               name: "User",
-              onboardingCompleted: true,
               age: 0,
               gender: "MALE",
               denomination: "",
@@ -1120,7 +1119,7 @@ export function useAuth() {
         setIsCompletingOnboarding(false);
       }
     },
-    [showSuccess, showError, setUser],
+    [showSuccess, showError, setUser, fetchUserDataFromFirestore],
   );
 
   // -----------------------------------------------------------

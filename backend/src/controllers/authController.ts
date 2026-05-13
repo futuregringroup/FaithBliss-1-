@@ -1,13 +1,10 @@
 // src/controllers/authController.ts (FIRESTORE/FIREBASE REWRITE)
 
-import { Request, Response, NextFunction } from "express";
-import { admin, db } from "../config/firebase-admin"; // Firestore DB instance
+import { Request, Response } from "express";
+import { admin, db } from "../config/firebase-admin";
 import { DocumentData, DocumentReference } from "firebase-admin/firestore";
-import { Types } from "mongoose"; // Still used for internal logic, but not for DB IDs anymore
-import multer from "multer";
 import { createHash, randomInt } from "crypto";
 import sgMail from "@sendgrid/mail";
-import { storage } from "../config/cloudinaryConfig"; // Assuming Cloudinary is still used
 import {
   countProfilePhotos,
   MIN_REQUIRED_PROFILE_PHOTOS,
@@ -83,27 +80,10 @@ const resolveUserRoles = (email: unknown, roles?: unknown): string[] => {
   return Array.from(new Set(normalizedRoles));
 };
 
-// Create a Multer instance using the Cloudinary storage engine
-const upload = multer({ storage: storage });
-
-const uploadPhotos = upload.fields([
-  { name: "profilePhoto1", maxCount: 1 },
-  { name: "profilePhoto2", maxCount: 1 },
-  { name: "profilePhoto3", maxCount: 1 },
-  { name: "profilePhoto4", maxCount: 1 },
-  { name: "profilePhoto5", maxCount: 1 },
-  { name: "profilePhoto6", maxCount: 1 },
-]);
-
 const EMAIL_VERIFICATION_EXPIRY_MINUTES = 10;
 const EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS = 45;
 const formatSecondsLabel = (seconds: number) =>
   `${seconds} second${seconds === 1 ? "" : "s"}`;
-
-// Helper types for the file object and request with user
-interface MulterRequest extends Request {
-  files: { [fieldname: string]: Express.Multer.File[] };
-}
 
 function isErrorWithMessage(error: unknown): error is { message: string } {
   return (
@@ -667,10 +647,7 @@ const verifyEmailVerificationCode = async (req: Request, res: Response) => {
  * @access Private
  */
 const completeOnboarding = async (req: Request, res: Response) => {
-  const files = (req as MulterRequest).files;
-
-  // 🔑 CRITICAL: Access the user via req.userId (Firebase UID) from 'protect' middleware.
-  const uid = req.userId; // This is the Firestore Document ID
+  const uid = req.userId;
 
   if (!uid) {
     return res
@@ -747,17 +724,16 @@ const completeOnboarding = async (req: Request, res: Response) => {
     onboardingCompleted: true,
   };
 
-  // Map the uploaded files to the photo URLs, only adding fields that have new files
+  // Read Cloudinary URLs sent as JSON strings in the request body.
   for (let i = 1; i <= 6; i++) {
-    const fieldName = `profilePhoto${i}`;
-    const userPhotoKey = `profilePhoto${i}` as keyof IUserProfile;
-
-    if (files && files[fieldName] && files[fieldName][0]) {
-      updateFields[userPhotoKey] = files[fieldName][0].path;
+    const fieldName = `profilePhoto${i}` as keyof IUserProfile;
+    const url = req.body[fieldName];
+    if (typeof url === 'string' && url.trim()) {
+      updateFields[fieldName] = url.trim();
     }
-    // NOTE: We don't copy existing photos here. If a field is missing in the upload
-    // and in updateFields, it remains unchanged in Firestore via .update().
   }
+
+  console.log(`[completeOnboarding] uid=${uid} photoCount=${Object.keys(updateFields).filter(k => k.startsWith('profilePhoto')).length} fields=${Object.keys(updateFields).join(',')}`);
 
   const nextUserSnapshot = { ...user, ...updateFields };
   const profilePhotoCount = countProfilePhotos(nextUserSnapshot);
@@ -833,7 +809,6 @@ const completeOnboarding = async (req: Request, res: Response) => {
 export {
   sendEmailVerificationCode,
   verifyEmailVerificationCode,
-  uploadPhotos,
   completeOnboarding,
   createProfileAfterFirebaseRegister,
 };

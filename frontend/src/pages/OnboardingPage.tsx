@@ -64,8 +64,7 @@ const getSubmissionErrorMessage = (error: unknown): string => {
   if (
     normalizedMessage.includes("upload failed") ||
     normalizedMessage.includes("upload-photos") ||
-    normalizedMessage.includes("cloudinary") ||
-    normalizedMessage.includes("500")
+    normalizedMessage.includes("cloudinary")
   ) {
     return "We could not upload your photos just now. Please check your connection and try again.";
   }
@@ -77,11 +76,8 @@ const getSubmissionErrorMessage = (error: unknown): string => {
     return "We could not reach the server. Please check your internet connection and try again.";
   }
 
-  if (normalizedMessage.includes("please upload at least")) {
-    return rawMessage;
-  }
-
-  return "We could not complete onboarding right now. Please try again.";
+  // Pass backend validation messages directly to the user so they know what to fix.
+  return rawMessage;
 };
 
 const getStepValidationError = (

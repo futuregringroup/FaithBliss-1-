@@ -1,6 +1,10 @@
 import { getAuth } from 'firebase/auth';
 
-const API_URL = import.meta.env.VITE_API_URL; 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
+if (!import.meta.env.VITE_API_URL) {
+  console.error('[cloudinaryUpload] VITE_API_URL is not set. Upload requests will fail.');
+}
 
 export const uploadPhotosToCloudinary = async (files: File[]) => {
   const auth = getAuth();

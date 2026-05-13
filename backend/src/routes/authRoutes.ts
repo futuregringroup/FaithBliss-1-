@@ -3,14 +3,13 @@
 import express from 'express';
 // passport is no longer needed since local/google auth is replaced by Firebase Auth
 // import passport from 'passport'; 
-import { 
-    // REMOVED: registerUser, loginUser, logoutUser 
+import {
+    // REMOVED: registerUser, loginUser, logoutUser
     sendEmailVerificationCode,
     verifyEmailVerificationCode,
-    uploadPhotos,      
-    completeOnboarding, 
-    createProfileAfterFirebaseRegister, 
-} from '../controllers/authController'; 
+    completeOnboarding,
+    createProfileAfterFirebaseRegister,
+} from '../controllers/authController';
 import { protect } from '../middleware/authMiddleware'; 
 
 const router = express.Router();
@@ -36,12 +35,7 @@ router.post('/email-verification/verify', protect, verifyEmailVerificationCode);
  * @desc Completes the user profile, including photo uploads and final form data.
  * @access Private (Requires Firebase ID Token via 'protect' middleware)
  */
-router.put(
-    '/complete-onboarding', 
-    protect, 
-    uploadPhotos, // Multer middleware for file uploads
-    completeOnboarding 
-);
+router.put('/complete-onboarding', protect, completeOnboarding);
 
 // ----------------------------------------
 // 🛑 DEPRECATED ROUTES REMOVED 

@@ -558,7 +558,7 @@ const fetchUserDataFromFirestore = async (
       backendData.roles,
     ),
     onboardingCompleted: backendData.onboardingCompleted || false,
-    emailVerified: backendData.emailVerified === false ? false : true,
+    emailVerified: fbUser.emailVerified === true || backendData.emailVerified === true,
 
     // Core fields (must exist if registration completed)
     age: backendData.age || 0,

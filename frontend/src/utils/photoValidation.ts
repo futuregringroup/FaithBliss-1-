@@ -1,5 +1,5 @@
 export const MAX_PROFILE_PHOTO_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
-export const ALLOWED_PROFILE_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+export const ALLOWED_PROFILE_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'] as const;
 
 type AllowedPhotoType = (typeof ALLOWED_PROFILE_PHOTO_TYPES)[number];
 

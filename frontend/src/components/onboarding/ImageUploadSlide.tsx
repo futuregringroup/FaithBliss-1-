@@ -12,7 +12,7 @@ interface ImageUploadSlideProps {
   isVisible: boolean;
 }
  
-const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
 
 const ImageUploadSlide = ({ onboardingData, setOnboardingData, isVisible }: ImageUploadSlideProps) => {
   const [uploading, setUploading] = useState(false);

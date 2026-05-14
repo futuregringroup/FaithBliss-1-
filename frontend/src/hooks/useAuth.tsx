@@ -1154,51 +1154,11 @@ export function useAuth() {
   //  Handle Google redirect result (avoids popup COOP issues)
   // -----------------------------------------------------------
   useEffect(() => {
-    const handleRedirectResult = async () => {
-      if (!hasPendingGoogleRedirect()) {
-        return;
-      }
-
-      let shouldClearPendingRedirect = true;
-      try {
-        if (isBrowserOffline()) {
-          console.warn("Skipping getRedirectResult while offline.");
-          shouldClearPendingRedirect = false;
-          setIsLoading(false);
-          return;
-        }
-        const result = await getRedirectResult(auth);
-        if (result?.user) {
-          // In some cases onAuthStateChanged can be late or skipped after redirect.
-          // Sync user here to ensure auth state is hydrated.
-          setIsLoading(true);
-          await ensureUserProfile(result.user);
-          await syncUserFromFirebase(result.user);
-          setIsLoading(false);
-        } else if (auth.currentUser) {
-          // iOS Safari can occasionally restore the Firebase user but yield a null redirect result.
-          setIsLoading(true);
-          await ensureUserProfile(auth.currentUser);
-          await syncUserFromFirebase(auth.currentUser);
-          setIsLoading(false);
-        }
-      } catch (error: any) {
-        if (isFirebaseNetworkError(error)) {
-          console.warn("Google redirect check deferred due to network issue.");
-          shouldClearPendingRedirect = false;
-        } else {
-          console.error("Google redirect handling failed:", error);
-        }
-        setIsLoading(false);
-      } finally {
-        if (shouldClearPendingRedirect) {
-          clearPendingGoogleRedirect();
-        }
-      }
-    };
-
-    handleRedirectResult();
-  }, [location.pathname, syncUserFromFirebase]);
+    // signInWithRedirect is no longer used — clear any stale flag from older app versions
+    if (hasPendingGoogleRedirect()) {
+      clearPendingGoogleRedirect();
+    }
+  }, []);
 
   // -----------------------------------------------------------
   //  Google Sign-In (Firebase Auth + Firestore profile creation)
@@ -1217,32 +1177,11 @@ export function useAuth() {
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: "select_account" });
 
-        if (shouldPreferGoogleRedirect()) {
-          markGoogleRedirectPending();
-          await signInWithRedirect(auth, provider);
-          return;
-        }
-
-        try {
-          const result = await signInWithPopup(auth, provider);
-          if (result?.user) {
-            clearPendingGoogleRedirect();
-            await ensureUserProfile(result.user);
-            await syncUserFromFirebase(result.user);
-          }
-        } catch (popupError: any) {
-          // Fallback to redirect if popup is blocked or unavailable
-          if (
-            popupError?.code === "auth/popup-blocked" ||
-            popupError?.code ===
-              "auth/operation-not-supported-in-this-environment" ||
-            popupError?.code === "auth/popup-closed-by-user"
-          ) {
-            markGoogleRedirectPending();
-            await signInWithRedirect(auth, provider);
-          } else {
-            throw popupError;
-          }
+        const result = await signInWithPopup(auth, provider);
+        if (result?.user) {
+          clearPendingGoogleRedirect();
+          await ensureUserProfile(result.user);
+          await syncUserFromFirebase(result.user);
         }
       } catch (error: any) {
         console.error("Google sign-in failed:", error);

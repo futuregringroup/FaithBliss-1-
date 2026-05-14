@@ -20,8 +20,6 @@ import {
   browserLocalPersistence,
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   sendPasswordResetEmail,
   verifyPasswordResetCode,
   confirmPasswordReset,
@@ -109,8 +107,7 @@ interface OnboardingData {
 }
 
 const GOOGLE_REDIRECT_PENDING_KEY = "faithbliss_google_redirect_pending";
-const GOOGLE_REDIRECT_PENDING_PERSIST_KEY =
-  "faithbliss_google_redirect_pending_persist";
+const GOOGLE_REDIRECT_PENDING_PERSIST_KEY = "faithbliss_google_redirect_pending_persist";
 const PRIMARY_ADMIN_EMAIL = "aginaemmanuel6@gmail.com";
 
 const resolveUserRole = (email: unknown, role: unknown): User["role"] => {
@@ -165,11 +162,6 @@ const isFirebaseNetworkError = (error: unknown): boolean => {
   });
 };
 
-const isBrowserOffline = (): boolean => {
-  if (typeof navigator === "undefined") return false;
-  return navigator.onLine === false;
-};
-
 const getAuthErrorMessage = (error: unknown, fallback: string): string => {
   const message = (error as { message?: unknown })?.message;
   return typeof message === "string" && message.trim() ? message : fallback;
@@ -203,48 +195,12 @@ const hasPendingGoogleRedirect = (): boolean => {
   );
 };
 
-const markGoogleRedirectPending = (): void => {
-  if (typeof window === "undefined") return;
-  sessionStorage.setItem(GOOGLE_REDIRECT_PENDING_KEY, "1");
-  localStorage.setItem(GOOGLE_REDIRECT_PENDING_PERSIST_KEY, "1");
-};
-
 const clearPendingGoogleRedirect = (): void => {
   if (typeof window === "undefined") return;
   sessionStorage.removeItem(GOOGLE_REDIRECT_PENDING_KEY);
   localStorage.removeItem(GOOGLE_REDIRECT_PENDING_PERSIST_KEY);
 };
 
-const isIosDevice = (): boolean => {
-  if (typeof navigator === "undefined") return false;
-
-  const userAgent = navigator.userAgent || navigator.vendor || "";
-  const platform = navigator.platform || "";
-  const maxTouchPoints =
-    typeof navigator.maxTouchPoints === "number" ? navigator.maxTouchPoints : 0;
-
-  return (
-    /iPad|iPhone|iPod/i.test(userAgent) ||
-    (platform === "MacIntel" && maxTouchPoints > 1)
-  );
-};
-
-const isStandaloneDisplayMode = (): boolean => {
-  if (typeof window === "undefined") return false;
-
-  const isNavigatorStandalone =
-    "standalone" in navigator &&
-    Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-  const isDisplayModeStandalone =
-    typeof window.matchMedia === "function" &&
-    window.matchMedia("(display-mode: standalone)").matches;
-
-  return isNavigatorStandalone || isDisplayModeStandalone;
-};
-
-const shouldPreferGoogleRedirect = (): boolean => {
-  return isIosDevice() || isStandaloneDisplayMode();
-};
 
 const getAppBaseUrl = (): string => {
   if (typeof window !== "undefined" && window.location.origin) {
@@ -1151,10 +1107,8 @@ export function useAuth() {
   }, [showSuccess, navigate, clearAppStorage]);
 
   // -----------------------------------------------------------
-  //  Handle Google redirect result (avoids popup COOP issues)
-  // -----------------------------------------------------------
+  // Clear any stale Google redirect flag left by older app versions
   useEffect(() => {
-    // signInWithRedirect is no longer used — clear any stale flag from older app versions
     if (hasPendingGoogleRedirect()) {
       clearPendingGoogleRedirect();
     }

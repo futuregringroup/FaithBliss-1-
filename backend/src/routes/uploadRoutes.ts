@@ -5,7 +5,7 @@ import { protect } from '../middleware/authMiddleware';
 
 const router = express.Router();
 
-const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
 const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024;
 
 const imageFileFilter: multer.Options['fileFilter'] = (_req, file, cb) => {

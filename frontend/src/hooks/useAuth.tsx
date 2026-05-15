@@ -1296,14 +1296,15 @@ export function useAuth() {
         location.pathname,
       );
 
-      // This checks if the user is on the WRONG core page (e.g., done onboarding but still on /onboarding)
+      // This checks if the user is on the WRONG core page (e.g., done onboarding but still on /onboarding).
+      // NOTE: /dashboard is intentionally excluded — AuthGate handles that declaratively.
+      // Including it here creates a race condition on iOS where setUser() hasn't committed
+      // yet when this effect fires after navigate("/dashboard"), causing an onboarding loop.
       const isOnWrongCoreRoute =
         (location.pathname === "/verify-email" &&
           user.emailVerified === true) ||
         (location.pathname === "/onboarding" &&
-          (user.onboardingCompleted || user.emailVerified !== true)) ||
-        (location.pathname === "/dashboard" &&
-          (!user.onboardingCompleted || user.emailVerified !== true));
+          (user.onboardingCompleted || user.emailVerified !== true));
 
       // We only redirect if we are on a known transient or incorrect core route.
       if (isTransientRoute || isOnWrongCoreRoute) {

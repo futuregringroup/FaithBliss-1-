@@ -1136,6 +1136,19 @@ export function useAuth() {
           clearPendingGoogleRedirect();
           await ensureUserProfile(result.user);
           await syncUserFromFirebase(result.user);
+
+          // Navigate immediately after state is fully settled. Reading Firestore
+          // directly here so we don't race against the onAuthStateChanged listener
+          // which runs concurrently and may not have committed to React state yet.
+          const freshProfile = await fetchUserDataFromFirestore(result.user);
+          const isVerified = result.user.emailVerified === true || freshProfile?.emailVerified === true;
+          const hasOnboarded = freshProfile?.onboardingCompleted === true;
+          const destination = !isVerified
+            ? "/verify-email"
+            : hasOnboarded
+              ? "/dashboard"
+              : "/onboarding";
+          navigate(destination, { replace: true });
         }
       } catch (error: any) {
         console.error("Google sign-in failed:", error);
@@ -1159,7 +1172,7 @@ export function useAuth() {
         }
       }
     },
-    [showSuccess, showError, refetchUser],
+    [showError, navigate],
   );
 
   const requestPasswordReset = useCallback(

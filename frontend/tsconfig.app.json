@@ -8,8 +8,6 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     
-    // ❌ REMOVE "react/index.d.ts"
-    
     "skipLibCheck": true,
 
     /* Bundler mode */

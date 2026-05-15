@@ -848,7 +848,6 @@ export function useAuth() {
     async (credentials: LoginCredentials) => {
       setIsLoggingIn(true);
       try {
-        await setPersistence(auth, browserLocalPersistence);
         await signInWithEmailAndPassword(
           auth,
           credentials.email,

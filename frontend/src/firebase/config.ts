@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, browserLocalPersistence, setPersistence } from "firebase/auth";
 import {
   getFirestore,
   serverTimestamp as firestoreServerTimestamp,
@@ -26,6 +26,13 @@ const firebaseApp = initializeApp(firebaseConfig);
 
 // Export the Auth instance
 export const auth = getAuth(firebaseApp);
+
+// Set persistence once at startup so it never needs to be awaited inside a
+// user-gesture handler. Awaiting setPersistence before signInWithPopup breaks
+// the synchronous call chain browsers require to allow popups.
+setPersistence(auth, browserLocalPersistence).catch(() => {
+  // Non-fatal — Firebase defaults to session persistence if this fails.
+});
 
 // Export the Firestore instance
 export const db = getFirestore(firebaseApp);

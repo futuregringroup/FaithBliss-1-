@@ -16,8 +16,6 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  setPersistence,
-  browserLocalPersistence,
   GoogleAuthProvider,
   signInWithPopup,
   sendPasswordResetEmail,
@@ -1127,7 +1125,6 @@ export function useAuth() {
       }
 
       try {
-        await setPersistence(auth, browserLocalPersistence);
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: "select_account" });
 

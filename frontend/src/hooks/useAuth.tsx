@@ -923,30 +923,18 @@ export function useAuth() {
         localStorage.setItem("accessToken", token);
         localStorage.setItem("user", JSON.stringify(userToStore));
 
-        let verificationSent = false;
-        try {
-          await API.Auth.sendEmailVerificationCode();
-          verificationSent = true;
-        } catch (verificationError) {
-          console.warn(
-            "Initial verification code send failed:",
-            verificationError,
-          );
-          showError(
-            getAuthErrorMessage(
-              verificationError,
-              "Account created, but we could not send the verification code yet. You can resend it on the next screen.",
-            ),
-            "Verification Pending",
-          );
-        }
+        // Fire verification email in the background — do not await it.
+        // The account is fully created in Firebase + Firestore; blocking
+        // navigation on a backend email send causes the button to appear
+        // frozen whenever the backend is slow or the request takes time.
+        API.Auth.sendEmailVerificationCode().catch((verificationError) => {
+          console.warn("Initial verification code send failed:", verificationError);
+        });
 
-        if (verificationSent) {
-          showSuccess(
-            "Account created. Enter the code we sent to your email to continue.",
-            "Verification Needed",
-          );
-        }
+        showSuccess(
+          "Account created. Enter the code we sent to your email to continue.",
+          "Verification Needed",
+        );
 
         return {
           accessToken: token,

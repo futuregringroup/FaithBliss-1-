@@ -13,6 +13,7 @@
         
         // 🌟 CRITICAL FIX: Ensures module resolution works correctly with pnpm's symlinks
         "moduleResolution": "node", 
+        "ignoreDeprecations": "6.0",
         
         "typeRoots": [
             "./node_modules/@types",

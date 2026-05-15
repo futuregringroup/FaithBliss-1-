@@ -18,7 +18,7 @@ interface CreateNotificationInput {
 }
 
 const sendEmail = async (to: string, subject: string, text: string) => {
-  const webhook = process.env.EMAIL_WEBHOOK_URL;
+  const webhook = (globalThis as any).process?.env?.EMAIL_WEBHOOK_URL;
   if (!webhook) return;
   try {
     await fetch(webhook, {

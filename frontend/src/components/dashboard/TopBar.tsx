@@ -262,7 +262,7 @@ export const TopBar = ({
                 type="button"
                 onClick={handleInstallApp}
                 disabled={isInstallPrompting}
-                className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold tracking-wide bg-pink-500/20 text-pink-100 hover:bg-pink-500/30 border border-pink-300/30 transition-all disabled:opacity-70"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold tracking-wide bg-pink-500/20 text-pink-100 hover:bg-pink-500/30 border border-pink-300/30 transition-all disabled:opacity-70"
               >
                 <Download className="w-3.5 h-3.5" />
                 {isInstallPrompting ? 'Installing...' : 'Install app'}

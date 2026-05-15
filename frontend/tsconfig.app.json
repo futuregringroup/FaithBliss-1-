@@ -9,7 +9,6 @@
     "module": "ESNext",
     
     // ❌ REMOVE "react/index.d.ts"
-    "types": ["vite/client"],
     
     "skipLibCheck": true,
 

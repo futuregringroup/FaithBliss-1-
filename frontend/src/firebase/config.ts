@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, browserLocalPersistence, setPersistence } from "firebase/auth";
+import { getAuth, browserLocalPersistence, browserSessionPersistence, setPersistence } from "firebase/auth";
 import {
   getFirestore,
   serverTimestamp as firestoreServerTimestamp,
@@ -30,8 +30,15 @@ export const auth = getAuth(firebaseApp);
 // Set persistence once at startup so it never needs to be awaited inside a
 // user-gesture handler. Awaiting setPersistence before signInWithPopup breaks
 // the synchronous call chain browsers require to allow popups.
+//
+// iOS Safari in private browsing mode blocks localStorage entirely. When
+// browserLocalPersistence fails, fall back to browserSessionPersistence so
+// the auth session survives for the duration of the tab instead of looping
+// forever on the loading spinner.
 setPersistence(auth, browserLocalPersistence).catch(() => {
-  // Non-fatal — Firebase defaults to session persistence if this fails.
+  setPersistence(auth, browserSessionPersistence).catch(() => {
+    // Both failed — Firebase will use in-memory persistence automatically.
+  });
 });
 
 // Export the Firestore instance

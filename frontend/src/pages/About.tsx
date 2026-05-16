@@ -83,11 +83,7 @@ export default function About() {
               <Heart className="h-8 w-8 text-pink-500" />
               <div className="flex flex-col">
                 <span className="text-2xl font-bold text-white">FaithBliss</span>
-                <span className="text-xs text-pink-300 font-medium">
-                  Africa&apos;s Trusted Platform for
-                  <br />
-                  Christian Singles
-                </span>
+                <span className="text-xs text-pink-300 font-medium">Africa&apos;s Trusted Platform for Christian Singles</span>
               </div>
             </div>
             <div className="hidden md:flex space-x-8">
@@ -131,7 +127,7 @@ export default function About() {
                     <p className="text-sm uppercase tracking-[0.35em] text-pink-300 mb-4">
                       About FaithBliss
                     </p>
-                    <h1 className="text-4xl md:text-6xl font-black text-white leading-tight">
+                    <h1 className="text-3xl sm:text-4xl md:text-6xl font-black text-white leading-tight">
                       Building faith-centered connections across Africa.
                     </h1>
                     <p className="text-lg text-gray-300 mt-6 max-w-2xl leading-relaxed">
@@ -189,7 +185,7 @@ export default function About() {
           <section id="values" className="py-16 md:py-24">
             <FadeIn>
               <div className="w-full px-4 sm:px-6 lg:px-12 text-center mb-12">
-                <h2 className="text-3xl md:text-5xl font-bold text-white">
+                <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-white">
                   What makes FaithBliss different
                 </h2>
                 <p className="text-gray-300 mt-4 max-w-2xl mx-auto">
@@ -227,7 +223,7 @@ export default function About() {
               <div className="w-full px-4 sm:px-6 lg:px-12">
                 <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] items-center">
                   <div className="space-y-6">
-                    <h2 className="text-3xl md:text-5xl font-bold text-white">
+                    <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-white">
                       How it works
                     </h2>
                     <p className="text-gray-300 leading-relaxed">
@@ -277,7 +273,7 @@ export default function About() {
             <FadeIn>
               <div className="w-full px-4 sm:px-6 lg:px-12">
                 <div className="rounded-3xl border border-white/10 bg-gradient-to-r from-pink-500/15 via-purple-500/10 to-blue-500/15 p-10 md:p-14 text-center">
-                  <h2 className="text-3xl md:text-5xl font-bold text-white">
+                  <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-white">
                     Ready to begin your faith-centered journey?
                   </h2>
                   <p className="text-gray-300 mt-4 max-w-2xl mx-auto">

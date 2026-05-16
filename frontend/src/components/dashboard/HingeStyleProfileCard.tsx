@@ -903,7 +903,7 @@ export const HingeStyleProfileCard = ({
 
                 <div
                   ref={viewerStageRef}
-                  className="relative h-[84vh] w-full touch-none overflow-hidden rounded-2xl border border-white/20 bg-black/30 shadow-[0_20px_60px_rgba(2,6,23,0.75)]"
+                  className="relative h-[80dvh] w-full touch-none overflow-hidden rounded-2xl border border-white/20 bg-black/30 shadow-[0_20px_60px_rgba(2,6,23,0.75)]"
                   onPointerDown={handleViewerPointerDown}
                   onPointerMove={handleViewerPointerMove}
                   onPointerUp={handleViewerPointerUpOrCancel}

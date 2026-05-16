@@ -391,7 +391,7 @@ const MatchesPage = () => {
 
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
             Your Matches
           </h1>
           <p className="text-gray-400 text-lg">
@@ -410,7 +410,7 @@ const MatchesPage = () => {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as any)}
-                className={`relative py-4 px-6 rounded-2xl transition-all duration-300 ${
+                className={`relative py-3 sm:py-4 px-3 sm:px-6 rounded-2xl transition-all duration-300 ${
                   activeTab === tab.key
                     ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg shadow-pink-500/25"
                     : "text-gray-400 hover:text-white hover:bg-white/10"
@@ -468,7 +468,7 @@ const MatchesPage = () => {
               ? renderEmpty(
                   Clock,
                   "No sent requests yet",
-                  "You haven?t sent any requests yet."
+                  "You haven't sent any requests yet."
                 )
               : renderEmpty(
                   Users,

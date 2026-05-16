@@ -100,7 +100,7 @@ export default function Home() {
               />
               <div className="flex flex-col leading-tight">
                 <span className="text-2xl font-bold text-white">FaithBliss</span>
-                <span className="text-xs text-pink-300 font-medium">Africa's Trusted Platform for<br />Christian Singles</span>
+                <span className="text-xs text-pink-300 font-medium">Africa's Trusted Platform for Christian Singles</span>
               </div>
             </div>
             <div className="hidden md:flex space-x-8">
@@ -161,7 +161,7 @@ export default function Home() {
                 transform: `scale(${headlineScale})`,
               }}
             >
-              <h1 className="text-3xl md:text-6xl font-bold mb-6 leading-tight text-center">
+              <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 leading-tight text-center">
                 African Christians Across the Globe
                 <span className="block bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
                   Are Finding Love
@@ -310,7 +310,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto relative z-10">
           <FadeIn>
             <div className="text-center mb-20">
-              <h2 className="text-5xl md:text-7xl font-black mb-6 bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
+              <h2 className="text-3xl sm:text-5xl md:text-7xl font-black mb-6 bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
                 Love Stories
               </h2>
               <p className="text-md md:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">

@@ -50,7 +50,7 @@ export const DesktopLayout = ({
         
         {/* Main Profile Display */}
         <div className="flex flex-1 items-start justify-center overflow-visible px-6 pb-10 pt-5 xl:px-8">
-          <div className="relative w-full">
+          <div className="relative w-full max-w-[1200px]">
             {children}
           </div>
         </div>

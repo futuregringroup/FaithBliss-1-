@@ -820,9 +820,13 @@ export const AuthAPI = {
   },
 
   sendEmailVerificationCode:
-    async (): Promise<EmailVerificationSendResponse> => {
+    async (overrideToken?: string): Promise<EmailVerificationSendResponse> => {
       return apiRequest("/api/auth/email-verification/send", {
         method: "POST",
+        // If the caller passes a token directly (e.g. right after signup on iOS
+        // private browsing where localStorage is blocked), inject it here so the
+        // backend can identify the user without relying on stored state.
+        ...(overrideToken ? { headers: { Authorization: `Bearer ${overrideToken}` } } : {}),
       });
     },
 

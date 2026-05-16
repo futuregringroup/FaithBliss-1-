@@ -924,10 +924,9 @@ export function useAuth() {
         localStorage.setItem("user", JSON.stringify(userToStore));
 
         // Fire verification email in the background — do not await it.
-        // The account is fully created in Firebase + Firestore; blocking
-        // navigation on a backend email send causes the button to appear
-        // frozen whenever the backend is slow or the request takes time.
-        API.Auth.sendEmailVerificationCode().catch((verificationError) => {
+        // Pass the token directly so it works on iOS private browsing where
+        // localStorage is blocked and the token can't be read back from storage.
+        API.Auth.sendEmailVerificationCode(token).catch((verificationError) => {
           console.warn("Initial verification code send failed:", verificationError);
         });
 
@@ -973,7 +972,11 @@ export function useAuth() {
   );
 
   const sendEmailVerificationCode = useCallback(async () => {
-    return await API.Auth.sendEmailVerificationCode();
+    // Get a fresh token directly from Firebase rather than from localStorage,
+    // so this works on iOS private browsing where localStorage is blocked.
+    const fbUser = auth.currentUser;
+    const freshToken = fbUser ? await fbUser.getIdToken() : undefined;
+    return await API.Auth.sendEmailVerificationCode(freshToken);
   }, []);
 
   //  5. Refetch User (Now uses Firestore)

@@ -177,7 +177,21 @@ const sendVerificationCodeEmail = async (
     `;
 
   // Prefer SendGrid if API key is configured
-  const sendgridKey = process.env.SENDGRID_API_KEY;
+  const sendgridKey = process.env.SENDGRID_API_KEY?.trim();
+
+  if (!sendgridKey || !sendgridFrom) {
+    // Both must be set in production for email to work. Log clearly so the
+    // issue is visible in backend logs rather than silently falling through.
+    console.error(
+      "[EMAIL] SENDGRID_API_KEY or SENDGRID_FROM is not set. " +
+      "Verification email was NOT sent. " +
+      `SENDGRID_FROM=${sendgridFrom || "(missing)"} ` +
+      `SENDGRID_API_KEY=${sendgridKey ? "(set)" : "(missing)"}`
+    );
+    throw new Error(
+      "Email service is not configured. Please contact support."
+    );
+  }
 
   if (sendgridKey && sendgridFrom) {
     sgMail.setApiKey(sendgridKey);

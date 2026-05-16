@@ -1,4 +1,4 @@
-const CACHE_NAME = 'faithbliss-pwa-v3';
+const CACHE_NAME = 'faithbliss-pwa-v4';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -6,6 +6,7 @@ const APP_SHELL = [
   '/logo.svg',
   '/favicon.svg',
   '/pwa-192.png',
+  '/pwa-512.png',
 ];
 
 self.addEventListener('install', (event) => {

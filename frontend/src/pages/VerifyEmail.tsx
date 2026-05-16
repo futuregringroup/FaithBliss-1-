@@ -22,10 +22,43 @@ export default function VerifyEmail() {
   };
 
   const [code, setCode] = useState('');
-  const [statusMessage, setStatusMessage] = useState('Enter the 6-digit code sent to your email before continuing.');
+  const [statusMessage, setStatusMessage] = useState('Sending your verification code...');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [countdown, setCountdown] = useState(0);
+
+  // On mount, always request a fresh code. This ensures the user receives a
+  // code even if the fire-and-forget send during signup failed silently (e.g.
+  // due to a network blip or email service error). If a code was already sent
+  // within the cooldown window the backend returns 429 with a retryAfterSeconds
+  // value — we surface that as a countdown so the UI stays consistent.
+  useEffect(() => {
+    let cancelled = false;
+    const requestCode = async () => {
+      try {
+        const response = await sendEmailVerificationCode();
+        if (cancelled) return;
+        setStatusMessage(response.message || 'Code sent — check your inbox.');
+        if (typeof response.retryAfterSeconds === 'number') {
+          setCountdown(response.retryAfterSeconds);
+        }
+      } catch (error) {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : '';
+        const retryAfterSeconds = extractRetryAfterSeconds(message);
+        if (typeof retryAfterSeconds === 'number' && retryAfterSeconds > 0) {
+          // A code was already sent recently — that's fine, it will arrive.
+          setCountdown(retryAfterSeconds);
+          setStatusMessage('A code was recently sent — check your inbox or spam folder.');
+        } else {
+          setStatusMessage(message || 'Could not send the code. Use the Resend button below to try again.');
+        }
+      }
+    };
+    void requestCode();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (countdown <= 0) return;

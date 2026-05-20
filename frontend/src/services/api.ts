@@ -633,10 +633,28 @@ const apiRequest = async <T = unknown>(
     }
   }
 
+  // 30s upper bound for all JSON API calls. Covers backend cold-start on
+  // free-tier hosts while still surfacing a clear error to onboarding users
+  // on weak networks instead of leaving them on a spinner indefinitely.
+  // Callers that pass their own `signal` override this.
+  const ABORT_TIMEOUT_MS = 30_000;
+  const userSignal = options.signal;
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(
+    () => timeoutController.abort(),
+    ABORT_TIMEOUT_MS,
+  );
+  const onUserAbort = () => timeoutController.abort();
+  if (userSignal) {
+    if (userSignal.aborted) timeoutController.abort();
+    else userSignal.addEventListener("abort", onUserAbort, { once: true });
+  }
+
   try {
     const response = await fetch(url, {
       ...options,
       headers,
+      signal: timeoutController.signal,
       // ✅ CRITICAL FIX: This ensures the browser automatically attaches
       // the HTTP-only cookies (like 'token' or 'connect.sid') to the request.
       credentials: "include",
@@ -723,9 +741,19 @@ const apiRequest = async <T = unknown>(
             "Your session has expired. Please sign in again.";
         }
       }
+
+      // Surface the abort/timeout case with a clear user-facing message so
+      // the onboarding screen doesn't leave a spinner on a hung connection.
+      if (error.name === "AbortError" && !userSignal?.aborted) {
+        enhancedError.message =
+          "Request timed out. Please check your internet connection and try again.";
+      }
     }
 
     throw error;
+  } finally {
+    clearTimeout(timeoutId);
+    if (userSignal) userSignal.removeEventListener("abort", onUserAbort);
   }
 };
 

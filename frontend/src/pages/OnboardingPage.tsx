@@ -99,29 +99,52 @@ const getStepValidationError = (
     return "Please allow location or enter your location manually.";
   }
 
-  if (
-    step === 2 &&
-    (!hasText(data.location) ||
-      !hasValidBirthday() ||
-      !data.faithJourney ||
-      !data.churchAttendance ||
-      !hasText(data.denomination) ||
-      !hasText(data.baptismStatus) ||
-      !hasText(data.occupation) ||
-      !hasText(data.education) ||
-      !hasText(data.favoriteVerse) ||
-      !hasText(data.height) ||
-      !hasSelections(data.languageSpoken) ||
-      !hasPhoneNumber(data.phoneNumber) ||
-      !hasText(data.countryCode) ||
-      !hasSelections(data.profileFits, MIN_PROFILE_FITS) ||
-      !hasSelections(data.personality) ||
-      !hasSelections(data.hobbies) ||
-      !hasSelections(data.values) ||
-      !hasSelections(data.spiritualGifts) ||
-      !data.gender)
-  ) {
-    return `Please complete every profile field on this step and pick at least ${MIN_PROFILE_FITS} profile fit options.`;
+  if (step === 2) {
+    // Identify the first missing field so the user sees exactly what to fix
+    // instead of a generic "complete every field" message that forces them
+    // to scan the entire form. Order roughly matches form layout.
+    const missingField: string | null = !hasValidBirthday()
+      ? "your birthday (you must be 18+)"
+      : !data.gender
+        ? "your gender"
+        : !hasText(data.location)
+          ? "your location"
+          : !hasText(data.countryCode)
+            ? "your country code"
+            : !hasPhoneNumber(data.phoneNumber)
+              ? "a valid phone number"
+              : !hasText(data.height)
+                ? "your height"
+                : !hasSelections(data.languageSpoken)
+                  ? "at least one language you speak"
+                  : !hasText(data.occupation)
+                    ? "your occupation"
+                    : !hasText(data.education)
+                      ? "your education"
+                      : !data.faithJourney
+                        ? "your faith journey"
+                        : !data.churchAttendance
+                          ? "your church attendance"
+                          : !hasText(data.denomination)
+                            ? "your denomination"
+                            : !hasText(data.baptismStatus)
+                              ? "your baptism status"
+                              : !hasText(data.favoriteVerse)
+                                ? "your favourite verse"
+                                : !hasSelections(data.profileFits, MIN_PROFILE_FITS)
+                                  ? `at least ${MIN_PROFILE_FITS} "profile fit" options`
+                                  : !hasSelections(data.personality)
+                                    ? "at least one personality trait"
+                                    : !hasSelections(data.hobbies)
+                                      ? "at least one hobby"
+                                      : !hasSelections(data.values)
+                                        ? "at least one value"
+                                        : !hasSelections(data.spiritualGifts)
+                                          ? "at least one spiritual gift"
+                                          : null;
+    if (missingField) {
+      return `Please add ${missingField} to continue.`;
+    }
   }
 
   if (step === 3 && !hasSelections(data.relationshipGoals)) {

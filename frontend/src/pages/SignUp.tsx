@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FcGoogle } from 'react-icons/fc';
 import { ArrowLeft } from 'lucide-react';
 import { HeartBeatLoader } from '@/components/HeartBeatLoader';
+import InstallAppButton from '@/components/InstallAppButton';
 import { useAuthContext } from '../contexts/AuthContext';
 
 export default function Signup() {
@@ -94,6 +95,10 @@ export default function Signup() {
               Sign in
             </Link>
           </p>
+        </div>
+
+        <div className="mt-5 flex justify-center">
+          <InstallAppButton variant="subtle" />
         </div>
       </div>
     </div>

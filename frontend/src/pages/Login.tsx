@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { FcGoogle } from 'react-icons/fc';
 import { ArrowLeft } from 'lucide-react';
 import { HeartBeatLoader } from '@/components/HeartBeatLoader';
+import InstallAppButton from '@/components/InstallAppButton';
 import { useAuthContext } from '../contexts/AuthContext';
 
 function LoginForm() {
@@ -100,6 +101,10 @@ function LoginForm() {
               Create an account
             </Link>
           </p>
+        </div>
+
+        <div className="mt-5 flex justify-center">
+          <InstallAppButton variant="subtle" />
         </div>
       </div>
     </div>

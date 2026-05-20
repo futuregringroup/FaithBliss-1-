@@ -7,23 +7,13 @@ import { Link, useLocation } from 'react-router-dom';
 import { useNotificationUnreadCount } from '@/hooks/useAPI';
 import { useRequireAuth } from '@/hooks/useAuth';
 import ProfileBoosterIcon from '@/components/icons/ProfileBoosterIcon';
+import {
+  consumeInstallPrompt,
+  getCachedInstallPrompt,
+  subscribeInstallPrompt,
+} from '@/lib/installPrompt';
 
 const NOTIFICATION_PROMPT_STORAGE_KEY_PREFIX = 'faithbliss_notification_prompt_seen';
-
-// Capture the beforeinstallprompt event at module load time so it is never
-// missed due to component mount timing. React Router's history.replaceState
-// calls can prevent the event from firing in some browsers (Samsung Internet);
-// capturing it here — before any navigation occurs — maximises the chance it
-// is caught. The stored event is consumed when the user taps "Install app".
-let _cachedInstallPrompt: BeforeInstallPromptEvent | null = null;
-if (typeof window !== 'undefined') {
-  window.addEventListener('beforeinstallprompt', (e: Event) => {
-    e.preventDefault();
-    _cachedInstallPrompt = e as BeforeInstallPromptEvent;
-    // Dispatch a custom event so any already-mounted TopBar instances re-render.
-    window.dispatchEvent(new Event('faithbliss:installprompt'));
-  });
-}
 
 interface TopBarProps {
   userName: string;
@@ -37,11 +27,6 @@ interface TopBarProps {
   title?: string;
   showBackButton?: boolean;
   onBack?: () => void;
-}
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 }
 
 export const TopBar = ({
@@ -76,9 +61,9 @@ export const TopBar = ({
   const [notificationsPermission, setNotificationsPermission] = useState<'default' | 'granted' | 'denied'>('default');
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [showMobileProfileMenu, setShowMobileProfileMenu] = useState(false);
-  // Seed from the module-level cache so the button appears even if the event
+  // Seed from the shared module so the button appears even if the event
   // fired before this component mounted (common when navigating to /dashboard).
-  const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(_cachedInstallPrompt);
+  const [promptAvailable, setPromptAvailable] = useState<boolean>(!!getCachedInstallPrompt());
   const [isInstallPrompting, setIsInstallPrompting] = useState(false);
   const mobileProfileMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -103,35 +88,11 @@ export const TopBar = ({
   }, [notificationPromptUserKey, notificationsAvailable, notificationsPermission]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    // Pick up the event if it fired after this component mounted.
-    const onBeforeInstallPrompt = (event: Event) => {
-      event.preventDefault();
-      _cachedInstallPrompt = event as BeforeInstallPromptEvent;
-      setInstallPromptEvent(event as BeforeInstallPromptEvent);
-    };
-
-    // Pick up the event if it fired before this component mounted
-    // (relayed via the module-level listener above).
-    const onCachedPrompt = () => {
-      if (_cachedInstallPrompt) setInstallPromptEvent(_cachedInstallPrompt);
-    };
-
-    const onInstalled = () => {
-      _cachedInstallPrompt = null;
-      setInstallPromptEvent(null);
-    };
-
-    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt as EventListener);
-    window.addEventListener('faithbliss:installprompt', onCachedPrompt);
-    window.addEventListener('appinstalled', onInstalled);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt as EventListener);
-      window.removeEventListener('faithbliss:installprompt', onCachedPrompt);
-      window.removeEventListener('appinstalled', onInstalled);
-    };
+    // Single source of truth: react to any change in the shared install-prompt
+    // module (event captured, consumed, or appinstalled fired).
+    return subscribeInstallPrompt(() => {
+      setPromptAvailable(!!getCachedInstallPrompt());
+    });
   }, []);
 
   useEffect(() => {
@@ -193,17 +154,12 @@ export const TopBar = ({
   };
 
   const handleInstallApp = async () => {
-    if (!installPromptEvent || isInstallPrompting) return;
+    if (!promptAvailable || isInstallPrompting) return;
+    setIsInstallPrompting(true);
     try {
-      setIsInstallPrompting(true);
-      await installPromptEvent.prompt();
-      await installPromptEvent.userChoice;
-    } catch {
-      // noop
+      await consumeInstallPrompt();
     } finally {
       setIsInstallPrompting(false);
-      _cachedInstallPrompt = null;
-      setInstallPromptEvent(null);
     }
   };
 
@@ -289,7 +245,7 @@ export const TopBar = ({
               </Link>
             )}
 
-            {installPromptEvent && !isSamsungInternet && (
+            {promptAvailable && !isSamsungInternet && (
               <button
                 type="button"
                 onClick={handleInstallApp}
@@ -301,7 +257,7 @@ export const TopBar = ({
               </button>
             )}
 
-            {isSamsungInternet && !installPromptEvent && (
+            {isSamsungInternet && !promptAvailable && (
               <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold tracking-wide bg-pink-500/20 text-pink-100 border border-pink-300/30">
                 <Download className="w-3.5 h-3.5" />
                 Tap + in address bar to install

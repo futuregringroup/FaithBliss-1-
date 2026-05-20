@@ -3,6 +3,8 @@ import { createRoot, hydrateRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import App from './App.tsx';
 import './index.css';
+// Register the beforeinstallprompt listener at the earliest possible moment.
+import './lib/installPrompt';
 import { AdminRoute, AuthGate, DeveloperRoute, PublicOnlyRoute } from './components/AuthGate.tsx';
 import { AuthProvider } from './contexts/AuthContext.tsx';
 import { ToastProvider } from './contexts/ToastContext.tsx';

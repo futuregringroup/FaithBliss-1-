@@ -2,6 +2,7 @@ import { Link } from "react-router-dom"; // <-- CHANGED from 'next/link'
 import { Heart, Globe, Users, Target, Shield, Handshake, BookOpen } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import FadeIn from "../components/FadeIn"; // <-- IMPORTED our component
+import InstallAppButton from "../components/InstallAppButton";
 
 // All &apos; have been replaced with '
 // All &quot; have been replaced with "
@@ -173,12 +174,13 @@ export default function Home() {
               </p>
               
               {/* CTA Button - Simple & Responsive */}
-              <div className="flex justify-center">
+              <div className="flex flex-col items-center gap-3">
                 <Link to="/signup">
                   <button className="bg-pink-500 text-white px-6 py-3 md:px-8 md:py-4 rounded-full text-base md:text-lg font-semibold hover:bg-pink-600 transition-all transform hover:scale-105 shadow-2xl backdrop-blur-sm border border-pink-400/20">
                     Join Now
                   </button>
                 </Link>
+                <InstallAppButton variant="subtle" />
               </div>
             </div>
           </div>

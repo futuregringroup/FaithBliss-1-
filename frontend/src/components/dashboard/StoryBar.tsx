@@ -288,23 +288,24 @@ export const StoryBar = ({
 
   return (
     <>
-      <div className="mx-2 mt-2 mb-3 rounded-2xl border border-white/10 bg-gray-900/70 backdrop-blur-xl p-3">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
+      <div className="mx-3 mt-2 mb-2 rounded-2xl border border-white/10 bg-gray-900/70 p-2.5 backdrop-blur-xl sm:mx-2 sm:mb-3 sm:p-3">
+        <div className="mb-2 flex flex-row items-center gap-2 sm:mb-3">
           <input
             type="text"
-            placeholder="Add a short caption (optional)"
+            placeholder="Add a caption (optional)"
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
             maxLength={220}
-            className="w-full sm:flex-1 bg-white/10 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-pink-500/40"
+            className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white placeholder-gray-400 focus:border-pink-500/40 focus:outline-none"
           />
           <button
             onClick={handlePickMedia}
             disabled={isPosting || loading}
-            className="inline-flex items-center justify-center gap-1 w-full sm:w-auto px-3 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white text-sm font-semibold disabled:opacity-60"
+            className="inline-flex shrink-0 items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            aria-label="Post story"
           >
-            <Plus className="w-4 h-4" />
-            {isPosting ? 'Posting...' : 'Post Story'}
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">{isPosting ? 'Posting...' : 'Post Story'}</span>
           </button>
           <input
             ref={fileInputRef}
@@ -315,7 +316,7 @@ export const StoryBar = ({
           />
         </div>
 
-        <div className="flex gap-3 overflow-x-auto pb-1">
+        <div className="flex gap-2.5 overflow-x-auto pb-1 sm:gap-3">
           {effectiveStories.length === 0 && (
             <p className="text-xs text-gray-400">No stories yet from your mutual friends.</p>
           )}
@@ -326,10 +327,10 @@ export const StoryBar = ({
               <button
                 key={`${story.authorId}-${index}`}
                 onClick={() => openStory(index)}
-                className="flex flex-col items-center gap-1 min-w-[68px]"
+                className="flex min-w-[60px] flex-col items-center gap-1 sm:min-w-[68px]"
               >
                 <div
-                  className={`p-[2px] rounded-full ${
+                  className={`rounded-full p-[2px] ${
                     hasUnseen
                       ? 'bg-gradient-to-r from-pink-500 to-purple-500'
                       : 'bg-gray-600'
@@ -338,10 +339,10 @@ export const StoryBar = ({
                   <img
                     src={story.authorPhoto || '/default-avatar.png'}
                     alt={story.authorName}
-                    className="w-14 h-14 rounded-full object-cover border-2 border-gray-900"
+                    className="h-12 w-12 rounded-full border-2 border-gray-900 object-cover sm:h-14 sm:w-14"
                   />
                 </div>
-                <span className="text-[11px] text-gray-200 truncate max-w-[68px]">
+                <span className="max-w-[60px] truncate text-[11px] text-gray-200 sm:max-w-[68px]">
                   {story.isCurrentUser ? 'Your story' : story.authorName}
                 </span>
               </button>

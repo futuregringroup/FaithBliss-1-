@@ -175,11 +175,11 @@ export const TopBar = ({
   };
 
   return (
-    <div className="sticky top-0 z-50 border-b border-gray-700/50 bg-gray-900/80 px-2.5 py-2 sm:px-4 sm:py-4 backdrop-blur-xl">
+    <div className="sticky top-0 z-50 border-b border-gray-700/50 bg-gray-900/80 px-3 py-2 sm:px-4 sm:py-4 backdrop-blur-xl">
       <div className="absolute inset-0 bg-gradient-to-r from-pink-500/5 via-purple-500/5 to-blue-500/5"></div>
 
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-1.5 sm:gap-3">
+        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-0">
             {showBackButton ? (
               <button
@@ -212,7 +212,7 @@ export const TopBar = ({
               <img
                 src="/FaithBliss-Logo%20Source.svg"
                 alt="FaithBliss"
-                className="-mt-1.5 h-10 w-28 shrink-0 object-cover object-left sm:-mt-2 sm:h-14 sm:w-44"
+                className="-mt-1 h-8 w-24 shrink-0 object-cover object-left sm:-mt-2 sm:h-14 sm:w-44"
                 loading="eager"
                 decoding="async"
               />
@@ -230,7 +230,7 @@ export const TopBar = ({
             </div>
           ) : <div />}
 
-          <div className="relative flex items-center justify-end gap-0.5 sm:gap-2">
+          <div className="relative flex items-center justify-end gap-1.5 sm:gap-2">
             {user && (
               <Link
                 to="/premium"
@@ -250,16 +250,19 @@ export const TopBar = ({
                 type="button"
                 onClick={handleInstallApp}
                 disabled={isInstallPrompting}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold tracking-wide bg-pink-500/20 text-pink-100 hover:bg-pink-500/30 border border-pink-300/30 transition-all disabled:opacity-70"
+                aria-label={isInstallPrompting ? 'Installing app' : 'Install app'}
+                className="inline-flex items-center gap-1.5 rounded-full border border-pink-300/30 bg-pink-500/20 p-2 text-xs font-semibold tracking-wide text-pink-100 transition-all hover:bg-pink-500/30 disabled:opacity-70 sm:px-3 sm:py-2"
               >
-                <Download className="w-3.5 h-3.5" />
-                {isInstallPrompting ? 'Installing...' : 'Install app'}
+                <Download className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                <span className="hidden sm:inline">
+                  {isInstallPrompting ? 'Installing...' : 'Install app'}
+                </span>
               </button>
             )}
 
             {isSamsungInternet && !promptAvailable && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold tracking-wide bg-pink-500/20 text-pink-100 border border-pink-300/30">
-                <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-pink-300/30 bg-pink-500/20 px-3 py-2 text-xs font-semibold tracking-wide text-pink-100">
+                <Download className="h-3.5 w-3.5" />
                 Tap + in address bar to install
               </span>
             )}
@@ -275,11 +278,11 @@ export const TopBar = ({
             )}
 
             <Link to="/notifications">
-              <button type="button" className="group relative rounded-2xl p-1.5 transition-all hover:scale-105 hover:bg-white/10 sm:p-3">
-                <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-gray-300 group-hover:text-white transition-colors" />
+              <button type="button" className="group relative rounded-full p-2 transition-all hover:scale-105 hover:bg-white/10 sm:rounded-2xl sm:p-3">
+                <Bell className="h-5 w-5 text-gray-300 transition-colors group-hover:text-white sm:h-6 sm:w-6" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-pink-500 to-red-500 rounded-full flex items-center justify-center">
-                    <span className="text-xs font-bold text-white">{unreadCount}</span>
+                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-red-500">
+                    <span className="text-[10px] font-bold leading-none text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>
                   </span>
                 )}
               </button>
@@ -311,14 +314,14 @@ export const TopBar = ({
                 <button
                   type="button"
                   onClick={onToggleFilters}
-                  className={`inline-flex rounded-2xl p-1.5 transition-all hover:scale-105 sm:hidden ${
+                  className={`inline-flex rounded-full p-2 transition-all hover:scale-105 sm:hidden ${
                     showFilters
-                      ? 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
-                      : 'hover:bg-white/10 text-gray-300 hover:text-white'
+                      ? 'border border-pink-500/30 bg-pink-500/20 text-pink-400'
+                      : 'text-gray-300 hover:bg-white/10 hover:text-white'
                   }`}
                   aria-label={showFilters ? 'Close filters' : 'Open filters'}
                 >
-                  <Filter className="w-5 h-5 transition-colors" />
+                  <Filter className="h-5 w-5 transition-colors" />
                 </button>
 
                 <button
@@ -339,9 +342,9 @@ export const TopBar = ({
             <button
               type="button"
               onClick={() => setShowMobileProfileMenu((prev) => !prev)}
-              className="group rounded-2xl p-1.5 transition-all hover:scale-105 hover:bg-white/10 sm:p-3 lg:hidden"
+              className="group rounded-full p-1 transition-all hover:scale-105 hover:bg-white/10 sm:rounded-2xl sm:p-3 lg:hidden"
             >
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-purple-600 sm:h-8 sm:w-8">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-purple-600 sm:h-8 sm:w-8">
                 {displayImage ? (
                   <img
                     src={displayImage}

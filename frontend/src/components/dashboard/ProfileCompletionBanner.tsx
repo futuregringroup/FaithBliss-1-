@@ -24,21 +24,21 @@ export const ProfileCompletionBanner = ({ user }: { user: User }) => {
   };
 
   return (
-    <div className="mx-4 mt-3 mb-1 flex items-center justify-between gap-3 rounded-xl bg-indigo-600/20 border border-indigo-500/30 px-4 py-3 text-sm">
-      <p className="text-indigo-200 leading-snug">
+    <div className="mx-3 mt-2 mb-1 flex items-center justify-between gap-2 rounded-xl border border-indigo-500/30 bg-indigo-600/20 px-3 py-2 text-xs sm:mx-4 sm:mt-3 sm:gap-3 sm:px-4 sm:py-3 sm:text-sm">
+      <p className="min-w-0 leading-snug text-indigo-200">
         Complete your profile for better matches and visibility.
       </p>
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
         <button
           onClick={() => navigate('/profile')}
-          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors"
+          className="whitespace-nowrap rounded-lg bg-indigo-600 px-2.5 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-indigo-500 sm:px-3 sm:text-xs"
         >
-          Complete Profile
+          Complete
         </button>
         <button
           onClick={handleDismiss}
           aria-label="Dismiss"
-          className="text-indigo-300 hover:text-white transition-colors text-lg leading-none"
+          className="flex h-6 w-6 items-center justify-center rounded-full text-lg leading-none text-indigo-300 transition-colors hover:bg-white/10 hover:text-white"
         >
           ×
         </button>

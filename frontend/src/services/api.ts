@@ -386,20 +386,6 @@ export interface UpdateSubscriptionAutoRenewResponse {
   renewalProvider: "plan" | "authorization";
 }
 
-export interface EmailVerificationSendResponse {
-  message: string;
-  email?: string;
-  expiresInMinutes?: number;
-  retryAfterSeconds?: number;
-  isVerified?: boolean;
-}
-
-export interface EmailVerificationVerifyResponse {
-  message: string;
-  isVerified: boolean;
-  emailVerifiedAt?: string;
-}
-
 export interface LocalizedPricingQuote {
   tier: "premium";
   billingCycle: "monthly" | "quarterly";
@@ -816,26 +802,6 @@ export const AuthAPI = {
     return apiRequest("/api/auth/complete-onboarding", {
       method: "PUT",
       body: JSON.stringify(onboardingData),
-    });
-  },
-
-  sendEmailVerificationCode:
-    async (overrideToken?: string): Promise<EmailVerificationSendResponse> => {
-      return apiRequest("/api/auth/email-verification/send", {
-        method: "POST",
-        // If the caller passes a token directly (e.g. right after signup on iOS
-        // private browsing where localStorage is blocked), inject it here so the
-        // backend can identify the user without relying on stored state.
-        ...(overrideToken ? { headers: { Authorization: `Bearer ${overrideToken}` } } : {}),
-      });
-    },
-
-  verifyEmailVerificationCode: async (
-    code: string,
-  ): Promise<EmailVerificationVerifyResponse> => {
-    return apiRequest("/api/auth/email-verification/verify", {
-      method: "POST",
-      body: JSON.stringify({ code }),
     });
   },
 

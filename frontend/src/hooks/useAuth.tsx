@@ -12,35 +12,22 @@ import { API } from "@/services/api";
 
 //  FIREBASE IMPORTS
 import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   sendPasswordResetEmail,
   verifyPasswordResetCode,
   confirmPasswordReset,
 } from "firebase/auth";
 import type { User as FirebaseAuthUser } from "firebase/auth";
 //  NEW FIREBASE IMPORTS FOR FIRESTORE
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db, serverTimestamp } from "@/firebase/config"; // Assuming db and serverTimestamp are exported
 
 // --------------------
-// INTERFACES (retained for context)
-interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-interface RegisterCredentials {
-  email: string;
-  password: string;
-  name: string;
-  gender: "MALE" | "FEMALE";
-}
-
 //  CORRECTED Interface for Onboarding Data (accepts all fields, including the resulting photo URLs)
 // The OnboardingPage must ensure photos are uploaded to Storage *before* calling this function
 // and pass the resulting URLs here.
@@ -199,6 +186,28 @@ const clearPendingGoogleRedirect = (): void => {
   localStorage.removeItem(GOOGLE_REDIRECT_PENDING_PERSIST_KEY);
 };
 
+
+// Returns true when the current environment is likely to block or mishandle
+// OAuth popups. iOS Safari blocks cross-origin popup auth due to ITP;
+// in-app browsers (Facebook, Instagram, etc.) block popups entirely.
+// iOS standalone PWA is excluded: it opens popups in a new Safari tab,
+// which completes successfully and returns control to the PWA.
+const shouldUseRedirectForGoogleAuth = (): boolean => {
+  if (typeof navigator === "undefined" || typeof window === "undefined")
+    return false;
+  const ua = navigator.userAgent;
+
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+  if (isIOS) {
+    const isStandalonePWA =
+      (navigator as unknown as { standalone?: boolean }).standalone === true ||
+      window.matchMedia("(display-mode: standalone)").matches;
+    return !isStandalonePWA;
+  }
+
+  // In-app browsers on Android/other platforms that restrict popups
+  return /FBAN|FBAV|Instagram|Twitter|Line|WeChat|MicroMessenger/.test(ua);
+};
 
 const getAppBaseUrl = (): string => {
   if (typeof window !== "undefined" && window.location.origin) {
@@ -605,7 +614,10 @@ const fetchUserDataFromFirestore = async (
   };
 };
 
-// Ensure a Firestore profile exists for OAuth users
+// Ensure a Firestore profile exists for Google OAuth users.
+// Also migrates existing email/password accounts: if Firebase says the email
+// is verified (always true for Google), we write that to Firestore so legacy
+// users who switch to Google are not stuck in an unverified state.
 const ensureUserProfile = async (fbUser: FirebaseAuthUser) => {
   const userDocRef = doc(db, "users", fbUser.uid);
   const docSnap = await getDoc(userDocRef);
@@ -622,11 +634,21 @@ const ensureUserProfile = async (fbUser: FirebaseAuthUser) => {
       location: "",
       bio: "",
       onboardingCompleted: false,
-      emailVerified: fbUser.emailVerified === true,
+      emailVerified: true,
       profilePhotoCount: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+  } else if (fbUser.emailVerified === true) {
+    // Propagate Firebase's verified state to Firestore for migrating
+    // existing users whose Firestore record still has emailVerified: false.
+    const data = docSnap.data();
+    if (data.emailVerified !== true) {
+      await updateDoc(userDocRef, {
+        emailVerified: true,
+        updatedAt: serverTimestamp(),
+      });
+    }
   }
 };
 
@@ -640,9 +662,7 @@ export function useAuth() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isCompletingOnboarding, setIsCompletingOnboarding] = useState(false);
-  //  FIX: Use User interface
   const [user, setUser] = useState<User | null>(null);
-  const isInitialSignUpRef = useRef(false);
 
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const lastNetworkToastAtRef = useRef(0);
@@ -790,10 +810,6 @@ export function useAuth() {
       async (fbUser: FirebaseAuthUser | null) => {
         if (fbUser) {
           try {
-            if (isInitialSignUpRef.current) {
-              isInitialSignUpRef.current = false;
-            }
-
             await syncUserFromFirebase(fbUser);
           } catch (e: any) {
             if (isFirebaseNetworkError(e)) {
@@ -839,147 +855,8 @@ export function useAuth() {
 
     return () => unsubscribe(); // Cleanup the listener on unmount
   }, [clearAppStorage, syncUserFromFirebase]);
-  // -----------------------------------------------------------
-  //  Direct Login
-  // -----------------------------------------------------------
 
-  //  2. Login (Uses Firebase SDK)
-  const directLogin = useCallback(
-    async (credentials: LoginCredentials) => {
-      setIsLoggingIn(true);
-      try {
-        await signInWithEmailAndPassword(
-          auth,
-          credentials.email,
-          credentials.password,
-        );
-        showSuccess("Welcome back!", "Login Successful");
-      } catch (error: any) {
-        console.error("D. Login failed with error:", error);
-        showError(
-          getAuthErrorMessage(error, "Login failed"),
-          "Authentication Error",
-        );
-        throw error;
-      } finally {
-        setIsLoggingIn(false);
-      }
-    },
-    [showSuccess, showError],
-  );
-
-  // -----------------------------------------------------------
-  //  Direct Register (Now using Firestore Profile Creation)
-  // -----------------------------------------------------------
-
-  //  3. Register (Uses Firebase SDK & Firestore)
-  const directRegister = useCallback(
-    async (credentials: RegisterCredentials) => {
-      setIsRegistering(true);
-      isInitialSignUpRef.current = true;
-      try {
-        // 1. Create user in Firebase Auth
-        const userCredential = await createUserWithEmailAndPassword(
-          auth,
-          credentials.email,
-          credentials.password,
-        );
-        const fbUser = userCredential.user;
-        const token = await fbUser.getIdToken();
-
-        // 2.  NEW: Create user profile document directly in Firestore
-        const userDocRef = doc(db, "users", fbUser.uid);
-        await setDoc(userDocRef, {
-          email: credentials.email,
-          name: credentials.name,
-          age: 0,
-          gender: credentials.gender,
-          denomination: "",
-          location: "",
-          bio: "",
-          emailVerified: false,
-          onboardingCompleted: false, // Default value
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-
-        // 3. Manually update state now that Firestore sync is COMPLETE
-        //  FIX: Ensure local state has all required fields
-        const userToStore: User = {
-          id: fbUser.uid,
-          email: fbUser.email!,
-          name: credentials.name,
-          onboardingCompleted: false,
-          emailVerified: false,
-          age: 0,
-          gender: credentials.gender,
-          denomination: "",
-          bio: "",
-          location: "",
-        };
-
-        setUser(userToStore);
-        setAccessToken(token);
-        localStorage.setItem("accessToken", token);
-        localStorage.setItem("user", JSON.stringify(userToStore));
-
-        // Fire verification email in the background — do not await it.
-        // Pass the token directly so it works on iOS private browsing where
-        // localStorage is blocked and the token can't be read back from storage.
-        API.Auth.sendEmailVerificationCode(token).catch((verificationError) => {
-          console.warn("Initial verification code send failed:", verificationError);
-        });
-
-        showSuccess(
-          "Account created. Enter the code we sent to your email to continue.",
-          "Verification Needed",
-        );
-
-        return {
-          accessToken: token,
-          id: fbUser.uid,
-          email: fbUser.email,
-          name: credentials.name,
-          onboardingCompleted: false,
-          accessTokenExpiresIn: 3600,
-        } as any;
-      } catch (error: any) {
-        console.error("Registration failed:", error);
-        // If Firestore profile creation fails, ensure Firebase auth is rolled back
-        if (auth.currentUser) {
-          try {
-            await signOut(auth);
-          } catch (signOutError) {
-            console.warn(
-              "Rollback sign-out did not complete cleanly:",
-              signOutError,
-            );
-          }
-        }
-        showError(
-          getAuthErrorMessage(error, "Registration failed"),
-          "Registration Error",
-        );
-        throw error;
-      } finally {
-        setIsRegistering(false);
-        if (user === null) {
-          isInitialSignUpRef.current = false;
-        }
-      }
-    },
-    [showSuccess, showError, user],
-  );
-
-  const sendEmailVerificationCode = useCallback(async () => {
-    // Get a fresh token directly from Firebase rather than from localStorage,
-    // so this works on iOS private browsing where localStorage is blocked.
-    const fbUser = auth.currentUser;
-    const freshToken = fbUser ? await fbUser.getIdToken() : undefined;
-    return await API.Auth.sendEmailVerificationCode(freshToken);
-  }, []);
-
-  //  5. Refetch User (Now uses Firestore)
+  //  Refetch User (Now uses Firestore)
   const refetchUser = useCallback(async () => {
     try {
       const fbUser = auth.currentUser;
@@ -1002,18 +879,8 @@ export function useAuth() {
     }
   }, []);
 
-  const verifyEmailVerificationCode = useCallback(
-    async (code: string) => {
-      const response = await API.Auth.verifyEmailVerificationCode(code);
-      await refetchUser();
-      showSuccess(response.message, "Email Verified");
-      return response;
-    },
-    [refetchUser, showSuccess],
-  );
-
   // -----------------------------------------------------------
-  //  NEW: Complete Onboarding (Uses Firestore Profile Update)
+  //  Complete Onboarding (Uses Firestore Profile Update)
   // -----------------------------------------------------------
 
   //  6. Complete Onboarding (Uses Firestore SDK)
@@ -1095,12 +962,35 @@ export function useAuth() {
   }, [showSuccess, navigate, clearAppStorage]);
 
   // -----------------------------------------------------------
-  // Clear any stale Google redirect flag left by older app versions
+  // Handle the return from a signInWithRedirect flow.
+  // onAuthStateChanged handles the full user sync; this effect only clears
+  // pending flags and surfaces any redirect-specific errors (e.g. user
+  // cancelled the Google consent screen, network failure mid-redirect).
   useEffect(() => {
-    if (hasPendingGoogleRedirect()) {
-      clearPendingGoogleRedirect();
-    }
-  }, []);
+    getRedirectResult(auth)
+      .then((result) => {
+        // A non-null result means the redirect sign-in succeeded — the
+        // onAuthStateChanged listener will handle everything else.
+        if (result?.user || hasPendingGoogleRedirect()) {
+          clearPendingGoogleRedirect();
+        }
+      })
+      .catch((error: unknown) => {
+        clearPendingGoogleRedirect();
+        const code = (error as { code?: string })?.code;
+        // Ignore user-cancelled or no-pending-redirect (normal startup path)
+        if (
+          !code ||
+          code === "auth/user-cancelled" ||
+          code === "auth/popup-closed-by-user" ||
+          code === "auth/cancelled-popup-request" ||
+          isFirebaseNetworkError(error)
+        ) {
+          return;
+        }
+        console.error("Google redirect sign-in error:", code, error);
+      });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // -----------------------------------------------------------
   //  Google Sign-In (Firebase Auth + Firestore profile creation)
@@ -1118,6 +1008,18 @@ export function useAuth() {
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: "select_account" });
 
+        if (shouldUseRedirectForGoogleAuth()) {
+          // iOS Safari (non-standalone) and in-app browsers cannot reliably open
+          // cross-origin popups. Use a full-page redirect instead.
+          // Both storage locations are written so the pending state survives a
+          // tab restoration (sessionStorage) and a full cold start (localStorage).
+          sessionStorage.setItem(GOOGLE_REDIRECT_PENDING_KEY, "1");
+          localStorage.setItem(GOOGLE_REDIRECT_PENDING_PERSIST_KEY, "1");
+          await signInWithRedirect(auth, provider);
+          // Browser navigates away; code below does not execute.
+          return;
+        }
+
         const result = await signInWithPopup(auth, provider);
         if (result?.user) {
           clearPendingGoogleRedirect();
@@ -1128,13 +1030,8 @@ export function useAuth() {
           // directly here so we don't race against the onAuthStateChanged listener
           // which runs concurrently and may not have committed to React state yet.
           const freshProfile = await fetchUserDataFromFirestore(result.user);
-          const isVerified = result.user.emailVerified === true || freshProfile?.emailVerified === true;
           const hasOnboarded = freshProfile?.onboardingCompleted === true;
-          const destination = !isVerified
-            ? "/verify-email"
-            : hasOnboarded
-              ? "/dashboard"
-              : "/onboarding";
+          const destination = hasOnboarded ? "/dashboard" : "/onboarding";
           navigate(destination, { replace: true });
         }
       } catch (error: any) {
@@ -1143,6 +1040,23 @@ export function useAuth() {
           showError(
             "Network error while contacting Google/Firebase. Check your connection and try again.",
             "Authentication Error",
+          );
+          return;
+        }
+        // User dismissed the Google consent screen — not an error to surface
+        if (
+          error?.code === "auth/popup-closed-by-user" ||
+          error?.code === "auth/cancelled-popup-request" ||
+          error?.code === "auth/user-cancelled"
+        ) {
+          return;
+        }
+        // This email is already registered with a different sign-in method
+        // (e.g. a legacy email/password account). Guide the user to support.
+        if (error?.code === "auth/account-exists-with-different-credential") {
+          showError(
+            "This email is linked to a different sign-in method. Please contact support to migrate your account to Google sign-in.",
+            "Account Conflict",
           );
           return;
         }
@@ -1280,37 +1194,28 @@ export function useAuth() {
   //  Navigation and Return (FIXED NAVIGATION LOGIC)
   // -----------------------------------------------------------
 
-  //  NAVIGATION: Use a separate effect to handle navigation once auth is stable
+  // Navigate authenticated users away from transient/public routes.
+  // Google accounts are always email-verified, so there is no verify-email step.
   useEffect(() => {
     if (!isLoading && user) {
-      const target =
-        user.emailVerified !== true
-          ? "/verify-email"
-          : user.onboardingCompleted
-            ? "/dashboard"
-            : "/onboarding";
+      const target = user.onboardingCompleted ? "/dashboard" : "/onboarding";
 
-      //  FIX: Only force redirect if the user is on a transient route
-      // (like '/', '/login', or the opposite of their required route)
-      const isTransientRoute = ["/", "/login", "/register", "/signup"].includes(
-        location.pathname,
-      );
+      // Only redirect from transient public routes or stale core routes.
+      // Avoids race conditions on iOS where setUser hasn't committed yet.
+      const isTransientRoute = [
+        "/",
+        "/login",
+        "/register",
+        "/signup",
+        "/verify-email",
+      ].includes(location.pathname);
 
-      // This checks if the user is on the WRONG core page (e.g., done onboarding but still on /onboarding).
-      // NOTE: /dashboard is intentionally excluded — AuthGate handles that declaratively.
-      // Including it here creates a race condition on iOS where setUser() hasn't committed
-      // yet when this effect fires after navigate("/dashboard"), causing an onboarding loop.
       const isOnWrongCoreRoute =
-        (location.pathname === "/verify-email" &&
-          user.emailVerified === true) ||
-        (location.pathname === "/onboarding" &&
-          (user.onboardingCompleted || user.emailVerified !== true));
+        location.pathname === "/onboarding" && user.onboardingCompleted;
 
-      // We only redirect if we are on a known transient or incorrect core route.
       if (isTransientRoute || isOnWrongCoreRoute) {
         if (location.pathname !== target) {
           navigate(target, { replace: true });
-          return;
         }
       }
     }
@@ -1455,15 +1360,11 @@ export function useAuth() {
     isRegistering,
     isLoggingOut,
     isCompletingOnboarding,
-    directLogin,
-    directRegister,
     logout,
     refetchUser,
     completeOnboarding,
     getUserProfileById,
     googleSignIn,
-    sendEmailVerificationCode,
-    verifyEmailVerificationCode,
     requestPasswordReset,
     validatePasswordResetCode,
     resetPassword,

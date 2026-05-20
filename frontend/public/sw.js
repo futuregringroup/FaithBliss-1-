@@ -1,7 +1,8 @@
-const CACHE_NAME = 'faithbliss-pwa-v4';
+const CACHE_NAME = 'faithbliss-pwa-v6';
 const APP_SHELL = [
   '/',
   '/index.html',
+  '/app-shell.html',
   '/site.webmanifest',
   '/logo.svg',
   '/favicon.svg',
@@ -39,16 +40,39 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
+  // Never intercept Firebase auth handler or init paths — they must always
+  // reach the server (Vercel proxies them to Firebase). Serving a cached
+  // shell here would corrupt the OAuth redirect handshake.
+  if (url.pathname.startsWith('/__/auth/') || url.pathname.startsWith('/__/firebase/')) return;
+
   // Network-first for app navigation, with offline shell fallback.
+  // Only cache the response as /index.html when it is the actual app shell
+  // (i.e. the request is for / or /index.html), not for auxiliary pages like
+  // prerendered routes, which would silently overwrite the cached shell.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy)).catch(() => {});
+          const isAppShellRequest =
+            url.pathname === '/' || url.pathname === '/index.html';
+          if (isAppShellRequest && response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy)).catch(() => {});
+          }
           return response;
         })
-        .catch(async () => (await caches.match(request)) || caches.match('/index.html'))
+        .catch(async () => {
+          // Offline navigation: prefer the exact URL, then the pure SPA shell,
+          // then the prerendered home as a last resort. Falling back to
+          // /app-shell.html avoids a flash of the prerendered home page when
+          // the installed PWA cold-starts on a protected route while offline.
+          const cached = await caches.match(request);
+          if (cached) return cached;
+          const isAppShellRequest =
+            url.pathname === '/' || url.pathname === '/index.html';
+          if (isAppShellRequest) return caches.match('/index.html');
+          return (await caches.match('/app-shell.html')) || caches.match('/index.html');
+        })
     );
     return;
   }

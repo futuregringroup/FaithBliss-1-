@@ -36,7 +36,10 @@ const PassionsSection = ({ profileData, setProfileData }: PassionsSectionProps) 
 
   return (
     <div className="space-y-6">
-      <div className="bg-gray-800/50 rounded-3xl p-8 border border-gray-700/50">
+      <div
+        className="bg-gray-800/50 rounded-3xl p-8 border border-gray-700/50 scroll-mt-32"
+        data-profile-focus="interests"
+      >
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold text-white mb-2">Interests</h2>
           <p className="text-gray-400">

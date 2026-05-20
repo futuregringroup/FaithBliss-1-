@@ -384,7 +384,7 @@ const BasicInfoSection = ({ profileData, setProfileData }: BasicInfoSectionProps
           </div>
         </div>
 
-        <div className="mt-6">
+        <div className="mt-6 scroll-mt-32" data-profile-focus="bio">
           <label className="mb-3 block text-sm font-semibold text-gray-300">About Me (Bio)</label>
           <textarea
             value={profileData.bio || ''}

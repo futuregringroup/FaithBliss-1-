@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/pages/Profile.tsx
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useUserProfile } from '@/hooks/useAPI';
 import { API } from '@/services/api';
@@ -34,11 +35,39 @@ const ProfilePage: React.FC = () => {
 
   const { data: userData, loading, execute } = useUserProfile(currentUserId, currentUserEmail);
 
-  const [activeSection, setActiveSection] = useState<TabSection>('photos');
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Deep-link target from ProfileCompletionBanner ("?focus=interests|bio"):
+  // open the right tab on first mount and scroll to the corresponding section.
+  const focusParam = searchParams.get('focus');
+  const initialSection: TabSection =
+    focusParam === 'interests' ? 'passions' : focusParam === 'bio' ? 'basics' : 'photos';
+
+  const [activeSection, setActiveSection] = useState<TabSection>(initialSection);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [showSidePanel, setShowSidePanel] = useState(false);
+
+  // Once profileData is populated (section content is mounted), scroll to the
+  // requested anchor and strip the query param so subsequent navigation isn't
+  // hijacked by a stale focus.
+  useEffect(() => {
+    if (!focusParam || !profileData) return;
+    const target = focusParam === 'interests' ? 'interests' : focusParam === 'bio' ? 'bio' : null;
+    if (!target) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const node = document.querySelector(`[data-profile-focus="${target}"]`);
+      if (node instanceof HTMLElement) {
+        node.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('focus');
+      setSearchParams(nextParams, { replace: true });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [focusParam, profileData, searchParams, setSearchParams]);
 
   const toArray = (value: unknown): string[] => {
     if (Array.isArray(value)) return value.filter((item) => typeof item === 'string' && item.trim().length > 0);

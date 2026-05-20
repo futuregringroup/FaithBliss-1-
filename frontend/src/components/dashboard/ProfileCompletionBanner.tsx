@@ -4,11 +4,19 @@ import type { User } from '@/services/api';
 
 const DISMISSED_KEY = 'faithbliss_profile_banner_dismissed';
 
-const isProfileIncomplete = (user: User): boolean => {
-  const hasInterests = Array.isArray(user.interests) && user.interests.length >= 1;
-  const hasBio = typeof user.bio === 'string' && user.bio.trim().length > 0;
-  return !hasInterests || !hasBio;
-};
+const hasInterests = (user: User): boolean =>
+  Array.isArray(user.interests) && user.interests.length >= 1;
+const hasBio = (user: User): boolean =>
+  typeof user.bio === 'string' && user.bio.trim().length > 0;
+
+const isProfileIncomplete = (user: User): boolean =>
+  !hasInterests(user) || !hasBio(user);
+
+// Pick the field that's still missing so the Profile page can deep-link the
+// user straight to it (right tab + scroll to the right section) instead of
+// dropping them on the default Photos tab and making them hunt.
+const pickProfileFocus = (user: User): 'interests' | 'bio' =>
+  !hasInterests(user) ? 'interests' : 'bio';
 
 export const ProfileCompletionBanner = ({ user }: { user: User }) => {
   const navigate = useNavigate();
@@ -17,6 +25,8 @@ export const ProfileCompletionBanner = ({ user }: { user: User }) => {
   );
 
   if (dismissed || !isProfileIncomplete(user)) return null;
+
+  const focus = pickProfileFocus(user);
 
   const handleDismiss = () => {
     localStorage.setItem(DISMISSED_KEY, '1');
@@ -30,7 +40,7 @@ export const ProfileCompletionBanner = ({ user }: { user: User }) => {
       </p>
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
         <button
-          onClick={() => navigate('/profile')}
+          onClick={() => navigate(`/profile?focus=${focus}`)}
           className="whitespace-nowrap rounded-lg bg-indigo-600 px-2.5 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-indigo-500 sm:px-3 sm:text-xs"
         >
           Complete

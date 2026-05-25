@@ -59,11 +59,11 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
   };
 
   return (
-    <div className="flex h-screen flex-col border-r border-white/8 bg-slate-950 lg:bg-slate-950/85 lg:backdrop-blur-xl">
-      <div className="flex-shrink-0 border-b border-white/8 p-6">
+    <div className="relative flex h-full min-h-screen flex-col border-r border-white/[0.06] bg-slate-950 lg:bg-slate-950/85 lg:backdrop-blur-xl">
+      <div className="flex-shrink-0 border-b border-white/8 p-5 xl:p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-purple-600">
+            <div className="flex h-10 w-10 xl:h-12 xl:w-12 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-purple-600">
               {displayImage ? (
                 <img
                   src={displayImage}
@@ -163,7 +163,7 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
         </div>
       </div>
 
-      <div className="side-panel-scroll flex-1 min-h-0 space-y-2 overflow-y-auto p-6">
+      <div className="side-panel-scroll flex-1 min-h-0 space-y-2 overflow-y-auto p-4 xl:p-6">
         <div className="mb-6">
           <h5 className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Navigation</h5>
 
@@ -365,7 +365,7 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
         </div>
       </div>
 
-      <div className="flex-shrink-0 border-t border-white/8 p-6">
+      <div className="flex-shrink-0 border-t border-white/8 p-4 xl:p-6">
         <button
           onClick={handleLogout}
           disabled={isLoggingOut}
@@ -386,6 +386,8 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
           </div>
         </button>
       </div>
+      {/* Decorative gradient right border */}
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-pink-500/20 to-transparent" />
     </div>
   );
 };

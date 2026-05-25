@@ -237,7 +237,7 @@ export const TopBar = ({
               {isSamsungInternet && !promptAvailable && (
                 <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-pink-300/30 bg-pink-500/20 px-3 py-2 text-xs font-semibold tracking-wide text-pink-100">
                   <Download className="h-3.5 w-3.5" />
-                  Tap + in address bar to install
+                  Tap ⋮ › Install App
                 </span>
               )}
 
@@ -405,10 +405,10 @@ export const TopBar = ({
       </div>
 
       {/* Install app banner — rendered below header, not inside the icon cluster */}
-      {promptAvailable && !isSamsungInternet && (
+      {promptAvailable && (
         <div className="relative z-40 flex items-center justify-between gap-3 border-b border-pink-400/15 bg-[linear-gradient(135deg,rgba(236,72,153,0.1),rgba(124,58,237,0.08))] px-4 py-2.5 backdrop-blur-md">
           <span className="text-xs font-medium text-pink-100">
-            Install FaithBliss for the best experience
+            Get the full app experience on your device
           </span>
           <button
             type="button"
@@ -417,7 +417,7 @@ export const TopBar = ({
             className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_4px_14px_rgba(236,72,153,0.3)] transition hover:brightness-110 disabled:opacity-60"
           >
             <Download className="h-3.5 w-3.5" />
-            {isInstallPrompting ? 'Installing...' : 'Install'}
+            {isInstallPrompting ? 'Installing...' : 'Install App'}
           </button>
         </div>
       )}

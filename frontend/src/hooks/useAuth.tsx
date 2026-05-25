@@ -842,18 +842,34 @@ export function useAuth() {
                 setAccessToken(cachedToken);
               }
             } else {
-              // If token fetch or Firestore sync fails for non-network reasons, force logout
+              // Firestore sync failed for a non-network reason (permission error,
+              // malformed doc, quota, etc.). Do NOT sign out — the Firebase auth
+              // session is valid. Fall back to cached profile or minimal user so
+              // the session survives and the user reaches the app.
               console.error("Firebase/Firestore sync failed:", e);
-              try {
-                await signOut(auth);
-              } catch (signOutError) {
-                console.warn(
-                  "Sign-out after sync failure did not complete cleanly:",
-                  signOutError,
-                );
+              const cachedUser = getStoredUserSnapshot();
+              const cachedToken = getStoredAccessToken();
+              if (cachedUser?.id === fbUser.uid) {
+                setUser({
+                  ...cachedUser,
+                  email: fbUser.email || cachedUser.email,
+                  id: fbUser.uid,
+                });
+              } else {
+                setUser({
+                  id: fbUser.uid,
+                  email: fbUser.email!,
+                  name: fbUser.displayName || "User",
+                  onboardingCompleted: false,
+                  emailVerified: fbUser.emailVerified === true,
+                  age: 0,
+                  gender: "MALE",
+                  denomination: "",
+                  bio: "",
+                  location: "",
+                });
               }
-              setUser(null);
-              setAccessToken(null);
+              if (cachedToken) setAccessToken(cachedToken);
             }
           }
         } else {

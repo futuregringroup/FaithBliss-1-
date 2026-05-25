@@ -99,7 +99,8 @@ class WebSocketService {
   private readonly WEBSOCKET_URL: string;
 
   constructor(token?: string) {
-    this.WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL || 'http://localhost:5000';
+    this.WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL ||
+      (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
     
     if (token) {
       this.connect(token).catch(err => console.error('WebSocket connect error:', err));

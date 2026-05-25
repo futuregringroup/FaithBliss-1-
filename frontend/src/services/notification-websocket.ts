@@ -17,7 +17,8 @@ class NotificationWebSocketService {
   private readonly WEBSOCKET_URL: string;
 
   constructor(token?: string) {
-    this.WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL || 'http://localhost:3001';
+    this.WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL ||
+      (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
     if (token) {
       this.connect(token).catch((err) => console.error('Notification WebSocket connect error:', err));
     }
@@ -29,7 +30,7 @@ class NotificationWebSocketService {
         return resolve();
       }
 
-      this.socket = io(`${this.WEBSOCKET_URL}/notifications`, {
+      this.socket = io(this.WEBSOCKET_URL, {
         auth: token ? { token } : undefined,
         transports: ['websocket', 'polling'],
         withCredentials: true,

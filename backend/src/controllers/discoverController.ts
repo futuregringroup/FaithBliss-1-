@@ -276,6 +276,7 @@ export const filterProfiles = async (req: Request, res: Response) => {
 
   const snapshot = await usersCollection
     .where('onboardingCompleted', '==', true)
+    .where('isActive', '==', true)
     .get();
 
   const results: IUserProfile[] = [];
@@ -417,6 +418,7 @@ export const discoverByInterests = async (req: Request, res: Response) => {
 
   const snapshot = await usersCollection
     .where('onboardingCompleted', '==', true)
+    .where('isActive', '==', true)
     .get();
 
   const selectedSet = new Set(selectedInterests);
@@ -576,6 +578,7 @@ export const discoverByProfileFit = async (req: Request, res: Response) => {
 
   const snapshot = await usersCollection
     .where('onboardingCompleted', '==', true)
+    .where('isActive', '==', true)
     .get();
 
   const collectResults = (enforceGender: boolean) => {

@@ -540,6 +540,7 @@ const getPotentialMatches = async (req: Request, res: Response) => {
         const candidateGender = typeof candidate.gender === 'string' ? candidate.gender.trim().toUpperCase() : '';
         if (excludedUids.has(candidate.id)) return;
         if (candidate.onboardingCompleted !== true) return;
+        if (candidate.isActive === false) return;
         if (isBlockedBetween(currentUser, candidate)) return;
         if (!canViewerSeeCandidate(currentUser, candidate, featureSettings.passportModeEnabled)) return;
 
@@ -1379,6 +1380,7 @@ const getMutualMatches = async (req: Request, res: Response) => {
       if (
         user.id !== currentUser.id &&
         user.onboardingCompleted === true &&
+        user.isActive !== false &&
         !isBlockedBetween(currentUser, user) &&
         user.likes?.includes(currentUser.id) &&
         currentUser.likes?.includes(user.id)
@@ -1417,7 +1419,7 @@ const getSentMatches = async (req: Request, res: Response) => {
     const sentMatches = sentDocs
       .filter((doc) => doc.exists)
       .map((doc) => ({ id: doc.id, ...doc.data() } as IUserProfile))
-      .filter((user) => user.onboardingCompleted === true && !isBlockedBetween(currentUser, user));
+      .filter((user) => user.onboardingCompleted === true && user.isActive !== false && !isBlockedBetween(currentUser, user));
 
     console.log(`? Sent matches found: ${sentMatches.length}`);
     res.status(200).json({ matches: sentMatches });
@@ -1456,6 +1458,7 @@ const getPassedProfiles = async (req: Request, res: Response) => {
       .map((doc) => ({ id: doc.id, ...doc.data() } as IUserProfile))
       .filter((user) => user.id !== currentUser.id)
       .filter((user) => user.onboardingCompleted === true)
+      .filter((user) => user.isActive !== false)
       .filter((user) => !isBlockedBetween(currentUser, user));
 
     return res.status(200).json({ profiles });
@@ -1483,6 +1486,7 @@ const getReceivedMatches = async (req: Request, res: Response) => {
       if (
         user.id !== currentUser.id &&
         user.onboardingCompleted === true &&
+        user.isActive !== false &&
         !isBlockedBetween(currentUser, user) &&
         user.likes?.includes(currentUser.id) &&
         !currentUser.likes?.includes(user.id)

@@ -184,12 +184,12 @@ export const TopBar = ({
                   onClick={handleSidePanelToggle}
                   aria-label={showSidePanel ? 'Close navigation menu' : 'Open navigation menu'}
                   aria-expanded={showSidePanel}
-                  className="relative z-20 shrink-0 p-1.5 sm:p-2 hover:bg-white/10 rounded-2xl transition-all active:scale-95 lg:hidden"
+                  className={`relative z-20 shrink-0 p-1.5 sm:p-2 hover:bg-white/10 rounded-2xl transition-all active:scale-95 lg:hidden${showSidePanel ? ' is-open' : ''}`}
                 >
-                  <div className="w-6 h-6 flex flex-col justify-center space-y-1">
-                    <div className="w-full h-0.5 bg-gray-300 rounded"></div>
-                    <div className="w-full h-0.5 bg-gray-300 rounded"></div>
-                    <div className="w-full h-0.5 bg-gray-300 rounded"></div>
+                  <div className="w-6 h-6 flex flex-col justify-center gap-[5px]">
+                    <span className="hamburger-bar" />
+                    <span className="hamburger-bar" />
+                    <span className="hamburger-bar" />
                   </div>
                 </button>
               )}

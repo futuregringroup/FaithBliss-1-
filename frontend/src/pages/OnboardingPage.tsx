@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import { useAuthContext } from "../contexts/AuthContext";
@@ -190,6 +191,13 @@ const OnboardingPage = () => {
     "idle" | "uploading" | "saving"
   >("idle");
   const totalSteps = 5;
+  const [direction, setDirection] = useState<1 | -1>(1);
+
+  const SLIDE_VARIANTS = {
+    enter: (dir: number) => ({ opacity: 0, x: dir > 0 ? 60 : -60 }),
+    center: { opacity: 1, x: 0 },
+    exit: (dir: number) => ({ opacity: 0, x: dir > 0 ? -60 : 60 }),
+  };
 
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     age: undefined,
@@ -264,6 +272,7 @@ const OnboardingPage = () => {
 
     // --- Continue or Submit ---
     if (currentStep < totalSteps - 1) {
+      setDirection(1);
       setCurrentStep(currentStep + 1);
       return;
     }
@@ -355,7 +364,10 @@ const OnboardingPage = () => {
   };
 
   const prevStep = () => {
-    if (currentStep > 0) setCurrentStep(currentStep - 1);
+    if (currentStep > 0) {
+      setDirection(-1);
+      setCurrentStep(currentStep - 1);
+    }
   };
 
   // Scroll the focused element into view when the on-screen keyboard opens,
@@ -372,7 +384,7 @@ const OnboardingPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="h-dvh overflow-y-auto overscroll-none bg-gray-950 text-white">
       <OnboardingHeader
         currentSlide={currentStep}
         totalSlides={totalSteps}
@@ -380,41 +392,61 @@ const OnboardingPage = () => {
         canGoBack={currentStep > 0}
       />
 
-      <main className="container mx-auto px-4 sm:px-6 py-8 pb-48 max-w-2xl">
-        <div className="bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-2xl">
-          <ImageUploadSlide
-            isVisible={currentStep === 0}
-            onboardingData={onboardingData}
-            setOnboardingData={setOnboardingData}
-          />
-          <ProfileBuilderSlide
-            isVisible={currentStep === 2}
-            onboardingData={onboardingData}
-            setOnboardingData={setOnboardingData}
-            showValidationErrors={Boolean(validationError) && currentStep === 2}
-          />
-          <LocationPermissionSlide
-            isVisible={currentStep === 1}
-            onboardingData={onboardingData}
-            setOnboardingData={setOnboardingData}
-            showValidationErrors={Boolean(validationError) && currentStep === 1}
-            onLocationResolved={() => {
-              void nextStep();
-            }}
-          />
-          <RelationshipGoalsSlide
-            isVisible={currentStep === 3}
-            onboardingData={onboardingData}
-            setOnboardingData={setOnboardingData}
-            showValidationErrors={Boolean(validationError) && currentStep === 3}
-          />
-          <PartnerPreferencesSlide
-            isVisible={currentStep === 4}
-            onboardingData={onboardingData}
-            setOnboardingData={setOnboardingData}
-            showValidationErrors={Boolean(validationError) && currentStep === 4}
-          />
-        </div>
+      <main className="container mx-auto px-4 sm:px-6 py-6 pb-[calc(env(safe-area-inset-bottom,0px)+160px)] max-w-2xl">
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={currentStep}
+            custom={direction}
+            variants={SLIDE_VARIANTS}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+          >
+            {currentStep === 0 && (
+              <ImageUploadSlide
+                isVisible={true}
+                onboardingData={onboardingData}
+                setOnboardingData={setOnboardingData}
+              />
+            )}
+            {currentStep === 1 && (
+              <LocationPermissionSlide
+                isVisible={true}
+                onboardingData={onboardingData}
+                setOnboardingData={setOnboardingData}
+                showValidationErrors={Boolean(validationError) && currentStep === 1}
+                onLocationResolved={() => {
+                  void nextStep();
+                }}
+              />
+            )}
+            {currentStep === 2 && (
+              <ProfileBuilderSlide
+                isVisible={true}
+                onboardingData={onboardingData}
+                setOnboardingData={setOnboardingData}
+                showValidationErrors={Boolean(validationError) && currentStep === 2}
+              />
+            )}
+            {currentStep === 3 && (
+              <RelationshipGoalsSlide
+                isVisible={true}
+                onboardingData={onboardingData}
+                setOnboardingData={setOnboardingData}
+                showValidationErrors={Boolean(validationError) && currentStep === 3}
+              />
+            )}
+            {currentStep === 4 && (
+              <PartnerPreferencesSlide
+                isVisible={true}
+                onboardingData={onboardingData}
+                setOnboardingData={setOnboardingData}
+                showValidationErrors={Boolean(validationError) && currentStep === 4}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       <OnboardingNavigation

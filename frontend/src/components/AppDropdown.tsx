@@ -74,11 +74,17 @@ export const AppDropdown: React.FC<AppDropdownProps> = ({
     const viewportPadding = 12;
     // Use visualViewport when available — it accounts for the on-screen keyboard
     // shrinking the visible area on iOS/Android.
-    const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    const viewportWidth = window.visualViewport ? window.visualViewport.width : window.innerWidth;
-    const viewportOffsetTop = window.visualViewport ? window.visualViewport.offsetTop : 0;
-    const availableBelow = viewportHeight + viewportOffsetTop - rect.bottom - viewportPadding;
-    const availableAbove = rect.top - viewportOffsetTop - viewportPadding;
+    const vv = window.visualViewport;
+    // visualViewport.height already excludes the on-screen keyboard.
+    // rect.getBoundingClientRect() is relative to the layout viewport origin,
+    // so subtract offsetTop to convert to visualViewport coordinates.
+    const viewportHeight = vv ? vv.height : window.innerHeight;
+    const viewportWidth = vv ? vv.width : window.innerWidth;
+    const viewportOffsetTop = vv ? vv.offsetTop : 0;
+    const rectTopInVV = rect.top - viewportOffsetTop;
+    const rectBottomInVV = rect.bottom - viewportOffsetTop;
+    const availableBelow = viewportHeight - rectBottomInVV - viewportPadding;
+    const availableAbove = rectTopInVV - viewportPadding;
     const preferredWidth = Math.max(rect.width, Math.min(viewportWidth - viewportPadding * 2, 420));
     const width = Math.min(preferredWidth, viewportWidth - viewportPadding * 2);
     const left = Math.min(
@@ -89,7 +95,9 @@ export const AppDropdown: React.FC<AppDropdownProps> = ({
     const maxHeight = Math.max(160, Math.min(420, shouldOpenAbove ? availableAbove - 8 : availableBelow));
 
     setMenuPosition({
-      top: shouldOpenAbove ? Math.max(viewportPadding, rect.top - maxHeight - 8) : rect.bottom + 8,
+      top: shouldOpenAbove
+        ? Math.max(viewportPadding, rectTopInVV + viewportOffsetTop - maxHeight - 8)
+        : rectBottomInVV + viewportOffsetTop + 8,
       left,
       width,
       maxHeight,
@@ -101,7 +109,11 @@ export const AppDropdown: React.FC<AppDropdownProps> = ({
     if (typeof window === 'undefined') return;
 
     const updateResponsiveMode = () => {
-      setIsMobileSheet(window.innerWidth < 640 && useMobileSheetOnSmallScreens);
+      // Use screen.width instead of window.innerWidth so the keyboard opening
+      // (which shrinks visualViewport but not innerWidth on some browsers) does
+      // not accidentally flip the mobile sheet back to the desktop menu.
+      const screenW = typeof screen !== 'undefined' ? screen.width : window.innerWidth;
+      setIsMobileSheet(screenW < 640 && useMobileSheetOnSmallScreens);
     };
 
     updateResponsiveMode();

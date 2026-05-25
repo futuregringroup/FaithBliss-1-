@@ -170,7 +170,7 @@ export default function Home() {
                 <span className="block text-white" style={{ fontFamily: "'Dancing Script', cursive" }}>on FaithBliss</span>
               </h1>
               <p className="text-sm md:text-xl mb-8 md:mb-12 text-gray-200 max-w-3xl mx-auto text-center">
-                Built for African Christians worldwide—connecting believers across the continent and the diaspora through shared faith, values, and marriage intentions.
+                Built for African Christians worldwide, connecting believers across the continent and the diaspora through shared faith, values, and marriage intentions.
               </p>
               
               {/* CTA Button - Simple & Responsive */}
@@ -196,7 +196,7 @@ export default function Home() {
                 Why FaithBliss?
               </h2>
               <p className="text-md text-gray-300 max-w-3xl mx-auto leading-relaxed">
-                More than just a dating app - we understand African faith, values, and realities
+                More than just a dating app. We understand African faith, values, and realities
               </p>
             </div>
           </FadeIn>
@@ -226,7 +226,7 @@ export default function Home() {
                   </div>
                   <h3 className="text-lg md:text-xl font-bold text-white">Built for African Christians</h3>
                   <p className="text-sm md:text-base text-gray-300 leading-relaxed">
-                    FaithBliss understands African faith, values, and realities — and is built around them.
+                    FaithBliss understands African faith, values, and realities. Built around them.
                   </p>
                 </div>
               </div>
@@ -283,7 +283,7 @@ export default function Home() {
                   </div>
                   <h3 className="text-lg md:text-xl font-bold text-white">Community & Meetups</h3>
                   <p className="text-sm md:text-base text-gray-300 leading-relaxed">
-                    Go beyond swipes — connect through sub-groups, interest spaces, and safe events for travelers, professionals, creatives, and more.
+                    Go beyond swipes. Connect through sub-groups, interest spaces, and safe events for travelers, professionals, creatives, and more.
                   </p>
                 </div>
               </div>
@@ -316,7 +316,7 @@ export default function Home() {
                 Love Stories
               </h2>
               <p className="text-md md:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-                We're building something beautiful — real stories from couples who met on FaithBliss.
+                We're building something beautiful. Real stories from couples who met on FaithBliss.
               </p>
             </div>
           </FadeIn>
@@ -350,7 +350,7 @@ export default function Home() {
           <div>
             <h2 className="text-2xl font-bold">Need help or have a question?</h2>
             <p className="text-gray-300 mt-2 max-w-xl">
-              Our Trust & Safety team is here to help — whether you have a question about getting started, a report to make, or feedback to share.
+              Our Trust & Safety team is here to help. Whether you have a question about getting started, a report to make, or feedback to share.
             </p>
           </div>
 

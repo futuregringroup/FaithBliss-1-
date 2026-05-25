@@ -1000,10 +1000,19 @@ export function useAuth() {
   // cancelled the Google consent screen, network failure mid-redirect).
   useEffect(() => {
     getRedirectResult(auth)
-      .then((result) => {
-        // A non-null result means the redirect sign-in succeeded — the
-        // onAuthStateChanged listener will handle everything else.
-        if (result?.user || hasPendingGoogleRedirect()) {
+      .then(async (result) => {
+        if (result?.user) {
+          // Android Chrome sometimes resolves signInWithPopup as a redirect
+          // internally — the result surfaces here instead of in the popup
+          // callback. Mirror the popup success path so navigation fires.
+          clearPendingGoogleRedirect();
+          await ensureUserProfile(result.user);
+          await syncUserFromFirebase(result.user);
+          const freshProfile = await fetchUserDataFromFirestore(result.user);
+          const hasOnboarded = freshProfile?.onboardingCompleted === true;
+          navigate(hasOnboarded ? "/dashboard" : "/onboarding", { replace: true });
+        } else if (hasPendingGoogleRedirect()) {
+          // Redirect was initiated but returned no user — user likely cancelled.
           clearPendingGoogleRedirect();
         }
       })

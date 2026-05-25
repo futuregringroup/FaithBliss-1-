@@ -57,9 +57,11 @@ function App() {
   const location = useLocation();
   const { isAuthenticated } = useAuthContext();
   const pathname = location.pathname.toLowerCase();
-  const [maintenanceModeEnabled, setMaintenanceModeEnabled] = useState(false);
-  const [shutdownModeEnabled, setShutdownModeEnabled] = useState(false);
-  const [maintenanceLoaded, setMaintenanceLoaded] = useState(false);
+  const cached = readCachedFeatureSettings();
+  const [maintenanceModeEnabled, setMaintenanceModeEnabled] = useState(cached?.maintenanceModeEnabled ?? false);
+  const [shutdownModeEnabled, setShutdownModeEnabled] = useState(cached?.shutdownModeEnabled ?? false);
+  // If we have a cached value, treat as already loaded so we never block rendering.
+  const [maintenanceLoaded, setMaintenanceLoaded] = useState(cached !== null);
   const isAuthRoute = authPaths.includes(pathname);
   const isAppShellRoute = appShellPaths.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),

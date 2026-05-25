@@ -1,5 +1,5 @@
 const CLOUDINARY_CLOUD_NAME = 'dygdz7cla';
-const CLOUDINARY_UPLOAD_PRESET = 'ml_default';
+const CLOUDINARY_UPLOAD_PRESET = 'FaithBliss Upload';
 const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
 const PHOTO_UPLOAD_TIMEOUT_MS = 90_000;

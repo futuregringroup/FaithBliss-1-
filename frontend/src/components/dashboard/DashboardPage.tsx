@@ -118,6 +118,7 @@ export const DashboardPage = ({ user: activeUser }: { user: User }) => {
     const [filteredProfiles, setFilteredProfiles] = useState<User[] | null>(null);
     const [isLoadingFilters, setIsLoadingFilters] = useState(false);
     const pendingActionIdsRef = useRef<Set<string>>(new Set());
+    const lastPassedProfileIdRef = useRef<string | null>(null);
     const hasCompletedInitialLoadRef = useRef(false);
     const [showForcedOnboardingPrompt, setShowForcedOnboardingPrompt] = useState(false);
     const ONBOARDING_PAUSE_STORAGE_KEY = 'faithbliss_onboarding_pause_state';
@@ -558,6 +559,7 @@ export const DashboardPage = ({ user: activeUser }: { user: User }) => {
     goToNextProfile();
 
     const key = String(userIdToPass);
+    lastPassedProfileIdRef.current = key;
     if (passedProfilesStorageKey) {
       try {
         const existingPassedProfileMap = pruneExpiredPassedProfiles(
@@ -591,6 +593,21 @@ export const DashboardPage = ({ user: activeUser }: { user: User }) => {
   };
 
   const handleGoBack = () => {
+    const key = lastPassedProfileIdRef.current;
+    lastPassedProfileIdRef.current = null;
+    if (key && passedProfilesStorageKey) {
+      try {
+        const existingMap = pruneExpiredPassedProfiles(
+          normalizePassedProfilesMap(localStorage.getItem(passedProfilesStorageKey))
+        );
+        const nextMap = { ...existingMap };
+        delete nextMap[key];
+        localStorage.setItem(passedProfilesStorageKey, JSON.stringify(nextMap));
+        setPersistedPassedProfileMap(nextMap);
+      } catch {
+        // Ignore localStorage errors.
+      }
+    }
     retreat();
   };
 

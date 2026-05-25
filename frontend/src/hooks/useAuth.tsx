@@ -804,10 +804,23 @@ export function useAuth() {
 
   useEffect(() => {
     setIsLoading(true);
+    let resolved = false;
+
+    // Safety net: if onAuthStateChanged never fires (iOS ITP / Firebase redirect
+    // session not resolved), unblock the UI after 8 seconds so the user sees
+    // the login page instead of a frozen spinner.
+    const safetyTimer = setTimeout(() => {
+      if (!resolved) {
+        console.warn("Auth state listener timed out — clearing loading state.");
+        setIsLoading(false);
+      }
+    }, 8000);
 
     const unsubscribe = onAuthStateChanged(
       auth,
       async (fbUser: FirebaseAuthUser | null) => {
+        resolved = true;
+        clearTimeout(safetyTimer);
         if (fbUser) {
           try {
             await syncUserFromFirebase(fbUser);
@@ -853,7 +866,10 @@ export function useAuth() {
       },
     );
 
-    return () => unsubscribe(); // Cleanup the listener on unmount
+    return () => {
+      clearTimeout(safetyTimer);
+      unsubscribe();
+    };
   }, [clearAppStorage, syncUserFromFirebase]);
 
   //  Refetch User (Now uses Firestore)

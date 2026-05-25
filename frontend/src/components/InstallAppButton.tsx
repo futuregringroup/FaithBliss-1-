@@ -48,8 +48,6 @@ const primaryClass =
   "inline-flex items-center gap-2 rounded-full bg-pink-500/90 px-5 py-2.5 text-sm font-semibold text-white shadow-lg backdrop-blur transition hover:bg-pink-500 disabled:opacity-70";
 const subtleClass =
   "inline-flex items-center gap-2 rounded-full border border-pink-300/30 bg-pink-500/15 px-3 py-1.5 text-xs font-semibold text-pink-100 transition hover:bg-pink-500/25 disabled:opacity-70";
-const hintClass =
-  "inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-gray-300";
 
 export default function InstallAppButton({
   variant = "primary",

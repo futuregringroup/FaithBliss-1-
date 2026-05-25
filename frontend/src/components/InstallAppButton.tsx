@@ -14,7 +14,7 @@ interface InstallAppButtonProps {
 }
 
 interface PlatformInfo {
-  kind: "ios" | "samsung" | "other";
+  kind: "ios" | "samsung" | "android" | "other";
   isIOSSafari: boolean;
 }
 
@@ -41,6 +41,7 @@ const detectPlatform = (): PlatformInfo => {
     return { kind: "ios", isIOSSafari: !isOtherIOSBrowser };
   }
   if (/SamsungBrowser/i.test(ua)) return { kind: "samsung", isIOSSafari: false };
+  if (/Android/i.test(ua)) return { kind: "android", isIOSSafari: false };
   return { kind: "other", isIOSSafari: false };
 };
 
@@ -188,19 +189,86 @@ export default function InstallAppButton({
     );
   }
 
-  // 4. Samsung Internet without a captured event — fall back to address-bar hint.
-  if (platform.kind === "samsung") {
+  // 4. Android without a native prompt — show manual install instructions.
+  if (platform.kind === "android" || platform.kind === "samsung") {
     return (
-      <span
-        className={`inline-flex items-center gap-2 rounded-full border border-pink-300/30 bg-pink-500/15 px-3 py-1.5 text-xs font-semibold text-pink-100${className ? ` ${className}` : ""}`}
-      >
-        <Download className="h-3.5 w-3.5" />
-        Tap + in address bar to install
-      </span>
+      <>
+        <button
+          type="button"
+          onClick={() => setShowIOSSheet(true)}
+          aria-label="Install FaithBliss app"
+          className={`${variant === "primary" ? primaryClass : subtleClass}${className ? ` ${className}` : ""}`}
+        >
+          <Download className="h-4 w-4" />
+          Install App
+        </button>
+
+        {showIOSSheet && (
+          <div
+            className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 p-4 sm:items-center"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="install-android-title"
+            onClick={() => setShowIOSSheet(false)}
+          >
+            <div
+              className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-gray-900 p-6 text-white shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setShowIOSSheet(false)}
+                aria-label="Close"
+                className="absolute right-3 top-3 rounded-full p-1.5 text-gray-400 transition hover:bg-white/10 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <h2 id="install-android-title" className="text-lg font-semibold">
+                Install FaithBliss
+              </h2>
+              <p className="mt-1 text-sm text-gray-400">
+                Add it to your home screen for the full app experience.
+              </p>
+              <ol className="mt-4 space-y-3 text-sm text-gray-100">
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-pink-500/20 text-xs font-bold text-pink-200">
+                    1
+                  </span>
+                  <span>
+                    Tap the <strong>⋮ menu</strong> in your browser (top-right corner).
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-pink-500/20 text-xs font-bold text-pink-200">
+                    2
+                  </span>
+                  <span>
+                    Tap <strong>Add to Home Screen</strong> or <strong>Install App</strong>.
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-pink-500/20 text-xs font-bold text-pink-200">
+                    3
+                  </span>
+                  <span>
+                    Tap <strong>Add</strong> to confirm.
+                  </span>
+                </li>
+              </ol>
+              <button
+                type="button"
+                onClick={() => setShowIOSSheet(false)}
+                className="mt-6 w-full rounded-full bg-pink-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-pink-600"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 
-  // 5. Browsers that simply can't install PWAs (Firefox desktop, macOS Safari
-  //    pre-Sonoma) — render nothing to avoid noise.
+  // 5. Browsers that simply can't install PWAs — render nothing.
   return null;
 }

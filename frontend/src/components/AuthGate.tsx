@@ -29,6 +29,24 @@ export const AuthGate: React.FC = () => {
   }
 
   if (user && !user.onboardingCompleted) {
+    // Check localStorage as a fallback — completeOnboarding writes onboardingCompleted:true
+    // to localStorage synchronously before navigating, so on iOS where React state commits
+    // asynchronously we avoid bouncing the user back to /onboarding.
+    let localOnboardingCompleted = false;
+    try {
+      const raw = localStorage.getItem('user');
+      if (raw) {
+        const parsed = JSON.parse(raw) as { onboardingCompleted?: boolean };
+        localOnboardingCompleted = parsed.onboardingCompleted === true;
+      }
+    } catch {
+      localOnboardingCompleted = false;
+    }
+
+    if (localOnboardingCompleted) {
+      return <Outlet />;
+    }
+
     let allowPausedDashboardAccess = false;
     try {
       const rawPauseState = localStorage.getItem(ONBOARDING_PAUSE_STORAGE_KEY);

@@ -27,11 +27,11 @@ export const DesktopLayout = ({
   children
 }: DesktopLayoutProps) => {
   return (
-    <div className="hidden min-h-screen lg:flex">
-      <div className="w-80 flex-shrink-0">
+    <div className="desktop-layout-shell hidden min-h-screen lg:flex">
+      <div className="desktop-sidebar">
         <SidePanel userName={userName} userImage={userImage} user={user} onClose={() => {}} />
       </div>
-      
+
       {/* Main Content Area */}
       <div className="flex min-h-screen flex-1 flex-col overflow-y-auto bg-[radial-gradient(circle_at_15%_20%,rgba(236,72,153,0.16),transparent_30%),radial-gradient(circle_at_90%_5%,rgba(59,130,246,0.14),transparent_30%)]">
         {/* Top Bar */}
@@ -46,11 +46,11 @@ export const DesktopLayout = ({
           onToggleSidePanel={onToggleSidePanel}
         />
 
-        {topContent && <div className="w-full px-6 pt-3 xl:px-8">{topContent}</div>}
-        
+        {topContent && <div className="w-full px-8 pt-3 xl:px-10 2xl:px-12">{topContent}</div>}
+
         {/* Main Profile Display */}
-        <div className="flex flex-1 items-start justify-center overflow-visible px-6 pb-10 pt-5 xl:px-8">
-          <div className="relative w-full max-w-[1200px]">
+        <div className="flex flex-1 items-start justify-center overflow-visible px-8 pb-10 pt-5 xl:px-10 2xl:px-12">
+          <div className="desktop-content relative w-full">
             {children}
           </div>
         </div>

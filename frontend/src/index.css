@@ -33,6 +33,9 @@
   /* Layout */
   --nav-height: 88px;
   --topbar-height: 60px;
+  --sidebar-width: 260px;
+  --layout-max-width: 1920px;
+  --content-max-width: 1600px;
 }
 
 /* Custom CSS for font fallbacks */
@@ -50,6 +53,13 @@ html {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
+}
+
+@media (min-width: 1280px) {
+  :root { --sidebar-width: 280px; }
+}
+@media (min-width: 1536px) {
+  :root { --sidebar-width: 300px; }
 }
 
 /* Custom animations for onboarding */
@@ -359,4 +369,24 @@ button, a, [role="button"] {
   border: 1px solid rgba(239,68,68,0.25);
   background: rgba(239,68,68,0.04);
   border-radius: 1.5rem;
+}
+
+/* Desktop layout structural utilities */
+.desktop-layout-shell {
+  max-width: var(--layout-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.desktop-sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  transition: width 0.2s ease;
+}
+
+.desktop-content {
+  flex: 1 1 0%;
+  min-width: 0;
+  max-width: var(--content-max-width);
 }

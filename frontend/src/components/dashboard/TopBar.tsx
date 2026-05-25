@@ -164,10 +164,10 @@ export const TopBar = ({
 
   return (
     <>
-      <div className="sticky top-0 z-50 border-b border-white/8 bg-gray-950/85 px-3 py-2 sm:px-4 sm:py-3 backdrop-blur-2xl transition-shadow duration-300">
+      <div className="sticky top-0 z-50 border-b border-white/8 bg-gray-950/85 px-6 py-2 sm:px-8 xl:px-10 2xl:px-12 sm:py-3 backdrop-blur-2xl transition-shadow duration-300">
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-pink-500/4 via-transparent to-purple-500/4" />
 
-        <div className="max-w-7xl mx-auto relative z-10">
+        <div className="relative z-10 w-full">
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3">
             <div className="flex items-center gap-0">
               {showBackButton ? (

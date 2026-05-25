@@ -204,7 +204,7 @@ export const SwipeDeck = ({
       : 'top-idle';
   const useFlowDesktopLayout = forceMobileCardLayout;
   const desktopCardShellClass = forceMobileCardLayout
-    ? 'mx-auto w-full lg:max-w-[1180px] xl:max-w-[1320px]'
+    ? 'mx-auto w-full lg:max-w-[680px] xl:max-w-[760px] 2xl:max-w-[820px]'
     : 'mx-auto h-full w-full lg:max-w-[560px]';
 
   return (

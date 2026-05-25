@@ -349,6 +349,19 @@ const OnboardingPage = () => {
     if (currentStep > 0) setCurrentStep(currentStep - 1);
   };
 
+  // Scroll the focused element into view when the on-screen keyboard opens,
+  // so dropdowns and inputs are never hidden behind it.
+  useEffect(() => {
+    const handleViewportResize = () => {
+      const focused = document.activeElement as HTMLElement | null;
+      if (focused && focused !== document.body) {
+        setTimeout(() => focused.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 100);
+      }
+    };
+    window.visualViewport?.addEventListener('resize', handleViewportResize);
+    return () => window.visualViewport?.removeEventListener('resize', handleViewportResize);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <OnboardingHeader

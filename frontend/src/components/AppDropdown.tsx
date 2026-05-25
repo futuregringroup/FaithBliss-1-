@@ -72,13 +72,18 @@ export const AppDropdown: React.FC<AppDropdownProps> = ({
     if (!triggerRef.current || typeof window === 'undefined') return;
     const rect = triggerRef.current.getBoundingClientRect();
     const viewportPadding = 12;
-    const availableBelow = window.innerHeight - rect.bottom - viewportPadding;
-    const availableAbove = rect.top - viewportPadding;
-    const preferredWidth = Math.max(rect.width, Math.min(window.innerWidth - viewportPadding * 2, 420));
-    const width = Math.min(preferredWidth, window.innerWidth - viewportPadding * 2);
+    // Use visualViewport when available — it accounts for the on-screen keyboard
+    // shrinking the visible area on iOS/Android.
+    const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const viewportWidth = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+    const viewportOffsetTop = window.visualViewport ? window.visualViewport.offsetTop : 0;
+    const availableBelow = viewportHeight + viewportOffsetTop - rect.bottom - viewportPadding;
+    const availableAbove = rect.top - viewportOffsetTop - viewportPadding;
+    const preferredWidth = Math.max(rect.width, Math.min(viewportWidth - viewportPadding * 2, 420));
+    const width = Math.min(preferredWidth, viewportWidth - viewportPadding * 2);
     const left = Math.min(
       Math.max(viewportPadding, rect.left),
-      Math.max(viewportPadding, window.innerWidth - width - viewportPadding)
+      Math.max(viewportPadding, viewportWidth - width - viewportPadding)
     );
     const shouldOpenAbove = availableBelow < 220 && availableAbove > availableBelow;
     const maxHeight = Math.max(160, Math.min(420, shouldOpenAbove ? availableAbove - 8 : availableBelow));
@@ -132,12 +137,17 @@ export const AppDropdown: React.FC<AppDropdownProps> = ({
     document.addEventListener('keydown', handleEscape);
     window.addEventListener('resize', handleViewportChange);
     window.addEventListener('scroll', handleViewportChange, true);
+    // visualViewport fires when the on-screen keyboard opens/closes on mobile
+    window.visualViewport?.addEventListener('resize', handleViewportChange);
+    window.visualViewport?.addEventListener('scroll', handleViewportChange);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
       window.removeEventListener('resize', handleViewportChange);
       window.removeEventListener('scroll', handleViewportChange, true);
+      window.visualViewport?.removeEventListener('resize', handleViewportChange);
+      window.visualViewport?.removeEventListener('scroll', handleViewportChange);
     };
   }, [isOpen, updateMenuPosition]);
 

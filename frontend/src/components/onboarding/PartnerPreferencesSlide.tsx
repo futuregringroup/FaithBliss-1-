@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Heart, MapPin, Ruler, UserRoundSearch } from 'lucide-react';
+import { Heart, MapPin, Ruler, UserRoundSearch, Plus } from 'lucide-react';
 import type { OnboardingData, FaithJourney, ChurchAttendance, RelationshipGoals } from './types';
 import SelectableCard from './SelectableCard';
 
@@ -51,10 +51,37 @@ const genderOptions = [
   { value: 'FEMALE', label: 'Women', emoji: '👩' },
 ];
 
-const chipClass = (selected: boolean) =>
-  `px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-    selected ? 'bg-pink-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-  }`;
+const ChipButton = ({
+  selected,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) => {
+  const [pressed, setPressed] = React.useState(false);
+
+  const handleClick = () => {
+    setPressed(true);
+    onClick();
+    setTimeout(() => setPressed(false), 150);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-150 active:scale-95 ${
+        selected || pressed
+          ? 'bg-pink-600 text-white scale-95'
+          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+      }`}
+    >
+      {children}
+    </button>
+  );
+};
 
 const PartnerPreferencesSlide: React.FC<PartnerPreferencesSlideProps> = ({
   onboardingData,
@@ -62,6 +89,8 @@ const PartnerPreferencesSlide: React.FC<PartnerPreferencesSlideProps> = ({
   isVisible,
   showValidationErrors = false,
 }) => {
+  const [denomInput, setDenomInput] = React.useState('');
+
   if (!isVisible) return null;
 
   const handleRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,21 +100,30 @@ const PartnerPreferencesSlide: React.FC<PartnerPreferencesSlideProps> = ({
   };
 
   const handleMultiSelect = (
-    name: 'preferredFaithJourney' | 'preferredChurchAttendance' | 'preferredRelationshipGoals' | 'preferredDenomination',
+    name: 'preferredFaithJourney' | 'preferredChurchAttendance' | 'preferredRelationshipGoals',
     value: string
   ) => {
     setOnboardingData((prev) => {
-      if (name === 'preferredDenomination') {
-        return {
-          ...prev,
-          preferredDenomination: prev.preferredDenomination === value ? '' : value,
-        };
-      }
-
       const currentList = (prev[name] || []) as string[];
-      const newList = currentList.includes(value) ? currentList.filter((item) => item !== value) : [...currentList, value];
+      const newList = currentList.includes(value)
+        ? currentList.filter((item) => item !== value)
+        : [...currentList, value];
       return { ...prev, [name]: newList };
     });
+  };
+
+  const handleDenomSelect = (value: string) => {
+    setOnboardingData((prev) => ({
+      ...prev,
+      preferredDenomination: prev.preferredDenomination === value ? '' : value,
+    }));
+  };
+
+  const handleAddCustomDenom = () => {
+    const trimmed = denomInput.trim();
+    if (!trimmed) return;
+    setOnboardingData((prev) => ({ ...prev, preferredDenomination: trimmed }));
+    setDenomInput('');
   };
 
   const preferredMinHeight = onboardingData.preferredMinHeight ?? 160;
@@ -214,14 +252,13 @@ const PartnerPreferencesSlide: React.FC<PartnerPreferencesSlideProps> = ({
         <h3 className="text-xl font-semibold text-white">Their ideal faith journey? <span className="text-red-400">*</span></h3>
         <div className={`flex flex-wrap gap-2 rounded-2xl p-2 ${showValidationErrors && !onboardingData.preferredFaithJourney?.length ? 'border border-red-400/40 bg-red-500/5' : ''}`}>
           {faithJourneyOptions.map((option) => (
-            <button
+            <ChipButton
               key={option.value}
-              type="button"
+              selected={!!onboardingData.preferredFaithJourney?.includes(option.value as FaithJourney)}
               onClick={() => handleMultiSelect('preferredFaithJourney', option.value)}
-              className={chipClass(!!onboardingData.preferredFaithJourney?.includes(option.value as FaithJourney))}
             >
               {option.emoji} {option.label}
-            </button>
+            </ChipButton>
           ))}
         </div>
         {showValidationErrors && !onboardingData.preferredFaithJourney?.length ? (
@@ -233,14 +270,13 @@ const PartnerPreferencesSlide: React.FC<PartnerPreferencesSlideProps> = ({
         <h3 className="text-xl font-semibold text-white">How often should they attend church? <span className="text-red-400">*</span></h3>
         <div className={`flex flex-wrap gap-2 rounded-2xl p-2 ${showValidationErrors && !onboardingData.preferredChurchAttendance?.length ? 'border border-red-400/40 bg-red-500/5' : ''}`}>
           {churchAttendanceOptions.map((option) => (
-            <button
+            <ChipButton
               key={option.value}
-              type="button"
+              selected={!!onboardingData.preferredChurchAttendance?.includes(option.value as ChurchAttendance)}
               onClick={() => handleMultiSelect('preferredChurchAttendance', option.value)}
-              className={chipClass(!!onboardingData.preferredChurchAttendance?.includes(option.value as ChurchAttendance))}
             >
               {option.emoji} {option.label}
-            </button>
+            </ChipButton>
           ))}
         </div>
         {showValidationErrors && !onboardingData.preferredChurchAttendance?.length ? (
@@ -252,14 +288,13 @@ const PartnerPreferencesSlide: React.FC<PartnerPreferencesSlideProps> = ({
         <h3 className="text-xl font-semibold text-white">What kind of relationship are they seeking? <span className="text-red-400">*</span></h3>
         <div className={`flex flex-wrap gap-2 rounded-2xl p-2 ${showValidationErrors && !onboardingData.preferredRelationshipGoals?.length ? 'border border-red-400/40 bg-red-500/5' : ''}`}>
           {relationshipGoalsOptions.map((option) => (
-            <button
+            <ChipButton
               key={option.value}
-              type="button"
+              selected={!!onboardingData.preferredRelationshipGoals?.includes(option.value as RelationshipGoals)}
               onClick={() => handleMultiSelect('preferredRelationshipGoals', option.value)}
-              className={chipClass(!!onboardingData.preferredRelationshipGoals?.includes(option.value as RelationshipGoals))}
             >
               {option.emoji} {option.label}
-            </button>
+            </ChipButton>
           ))}
         </div>
         {showValidationErrors && !onboardingData.preferredRelationshipGoals?.length ? (
@@ -268,19 +303,39 @@ const PartnerPreferencesSlide: React.FC<PartnerPreferencesSlideProps> = ({
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-xl font-semibold text-white">Any denomination preferences?</h3>
+        <h3 className="text-xl font-semibold text-white">Any denomination preference?</h3>
         <div className="flex flex-wrap gap-2 rounded-2xl p-2">
           {denominationOptions.map((option) => (
-            <button
+            <ChipButton
               key={option}
-              type="button"
-              onClick={() => handleMultiSelect('preferredDenomination', option)}
-              className={chipClass(onboardingData.preferredDenomination === option)}
+              selected={onboardingData.preferredDenomination === option}
+              onClick={() => handleDenomSelect(option)}
             >
               {option.replace(/_/g, ' ')}
-            </button>
+            </ChipButton>
           ))}
         </div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={denomInput}
+            onChange={(e) => setDenomInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCustomDenom(); } }}
+            placeholder="Type a denomination..."
+            className="flex-1 rounded-xl border border-white/20 bg-slate-900/75 px-4 py-2.5 text-sm text-white placeholder-slate-400 outline-none focus:border-pink-500"
+          />
+          <button
+            type="button"
+            onClick={handleAddCustomDenom}
+            className="flex items-center gap-1.5 rounded-xl bg-pink-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-pink-700 active:scale-95 transition-all"
+          >
+            <Plus className="h-4 w-4" />
+            Add
+          </button>
+        </div>
+        {onboardingData.preferredDenomination && !denominationOptions.includes(onboardingData.preferredDenomination) ? (
+          <p className="text-sm text-pink-300">Added: {onboardingData.preferredDenomination}</p>
+        ) : null}
       </div>
     </motion.div>
   );

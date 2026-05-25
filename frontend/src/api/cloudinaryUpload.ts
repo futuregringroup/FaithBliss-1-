@@ -2,17 +2,14 @@ const CLOUDINARY_CLOUD_NAME = 'dygdz7cla';
 const CLOUDINARY_UPLOAD_PRESET = 'ml_default';
 const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
-// 90s per photo — generous for mobile on 3G
 const PHOTO_UPLOAD_TIMEOUT_MS = 90_000;
 
 const uploadSinglePhoto = async (file: File, index: number): Promise<string> => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-  formData.append('folder', 'faithbliss_profiles');
-  formData.append('public_id', `photo_${index}_${Date.now()}`);
-  // Transformation: limit to 2048x3072, best quality webp
-  formData.append('transformation', 'w_2048,h_3072,c_limit,q_auto:best,f_webp');
+  // public_id must not include a folder path when folder is set separately
+  formData.append('public_id', `profile_${index}_${Date.now()}`);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), PHOTO_UPLOAD_TIMEOUT_MS);

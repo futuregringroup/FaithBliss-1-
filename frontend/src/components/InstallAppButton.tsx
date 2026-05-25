@@ -60,6 +60,7 @@ export default function InstallAppButton({
   );
   const [installed, setInstalled] = useState<boolean>(isStandalone());
   const [showIOSSheet, setShowIOSSheet] = useState(false);
+  const [showIOSBrowserSheet, setShowIOSBrowserSheet] = useState(false);
   const [busy, setBusy] = useState(false);
   const platform = detectPlatform();
 
@@ -113,11 +114,11 @@ export default function InstallAppButton({
         <button
           type="button"
           onClick={() => setShowIOSSheet(true)}
-          aria-label="Show steps to add FaithBliss to your home screen"
+          aria-label="Install FaithBliss app"
           className={`${variant === "primary" ? primaryClass : subtleClass}${className ? ` ${className}` : ""}`}
         >
-          <Share className="h-4 w-4" />
-          Add to Home Screen
+          <Download className="h-4 w-4" />
+          Install app
         </button>
 
         {showIOSSheet && (
@@ -191,11 +192,57 @@ export default function InstallAppButton({
   }
 
   // 3. iOS Chrome / Firefox / Edge etc. — WebKit-based but no install path.
+  //    Show a button that opens a modal explaining they need Safari.
   if (platform.kind === "ios") {
     return (
-      <span className={`${hintClass}${className ? ` ${className}` : ""}`}>
-        Open in Safari to install
-      </span>
+      <>
+        <button
+          type="button"
+          onClick={() => setShowIOSBrowserSheet(true)}
+          aria-label="Install FaithBliss app"
+          className={`${variant === "primary" ? primaryClass : subtleClass}${className ? ` ${className}` : ""}`}
+        >
+          <Download className="h-4 w-4" />
+          Install app
+        </button>
+
+        {showIOSBrowserSheet && (
+          <div
+            className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 p-4 sm:items-center"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="install-ios-browser-title"
+            onClick={() => setShowIOSBrowserSheet(false)}
+          >
+            <div
+              className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-gray-900 p-6 text-white shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setShowIOSBrowserSheet(false)}
+                aria-label="Close"
+                className="absolute right-3 top-3 rounded-full p-1.5 text-gray-400 transition hover:bg-white/10 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <h2 id="install-ios-browser-title" className="text-lg font-semibold">
+                Install FaithBliss
+              </h2>
+              <p className="mt-2 text-sm text-gray-300">
+                To install FaithBliss on your iPhone or iPad, open this page in <strong>Safari</strong> then tap the Share button and choose <strong>Add to Home Screen</strong>.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowIOSBrowserSheet(false)}
+                className="mt-6 w-full rounded-full bg-pink-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-pink-600"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 

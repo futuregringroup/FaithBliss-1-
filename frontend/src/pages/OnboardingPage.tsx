@@ -329,6 +329,15 @@ const OnboardingPage = () => {
       if (success) {
         try {
           localStorage.setItem("faithbliss_show_post_onboarding_offer", "1");
+          // Write onboardingCompleted synchronously so AuthGate's localStorage
+          // fallback sees it before React state commits, preventing a redirect
+          // loop back to /onboarding on iOS and slow devices.
+          const raw = localStorage.getItem("user");
+          if (raw) {
+            const parsed = JSON.parse(raw) as Record<string, unknown>;
+            parsed.onboardingCompleted = true;
+            localStorage.setItem("user", JSON.stringify(parsed));
+          }
         } catch {
           // Ignore localStorage access errors.
         }

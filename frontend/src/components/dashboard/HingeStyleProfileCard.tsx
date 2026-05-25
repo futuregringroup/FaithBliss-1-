@@ -694,7 +694,7 @@ export const HingeStyleProfileCard = ({
               {/* Photo carousel — swipe horizontally to cycle photos, isolated from card swipe */}
               <div
                 className="relative w-full overflow-hidden rounded-[26px] bg-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.08)]"
-                style={{ aspectRatio: '4/5', minHeight: isCompactHeight ? '352px' : '420px' }}
+                style={{ aspectRatio: '3/4', minHeight: isCompactHeight ? '260px' : '300px', maxHeight: '56vw' }}
               >
                 {/* Sliding strip */}
                 <div

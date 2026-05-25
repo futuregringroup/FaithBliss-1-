@@ -454,17 +454,15 @@ export const DashboardPage = ({ user: activeUser }: { user: User }) => {
     const handleNoProfilesAction = async () => {
       reset();
       setIsReviewingPassedProfiles(false);
+      // Clear all passed profiles so they reappear in the feed on reload
       if (passedProfilesStorageKey) {
         try {
-          const normalized = pruneExpiredPassedProfiles(
-            normalizePassedProfilesMap(localStorage.getItem(passedProfilesStorageKey))
-          );
-          localStorage.setItem(passedProfilesStorageKey, JSON.stringify(normalized));
-          setPersistedPassedProfileMap(normalized);
+          localStorage.setItem(passedProfilesStorageKey, JSON.stringify({}));
         } catch {
           // Ignore localStorage access errors.
         }
       }
+      setPersistedPassedProfileMap({});
       if (filteredProfiles !== null) {
         setFilteredProfiles(null);
       }

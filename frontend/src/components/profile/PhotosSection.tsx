@@ -39,9 +39,14 @@ const PhotosSection = ({ profileData, handlePhotoUpload, removePhoto }: PhotosSe
                   )}
                 </>
               ) : (
-                <label className="absolute inset-0 flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-600 bg-gray-700/50 transition-all hover:border-pink-500 hover:bg-gray-700">
-                  <Upload className="mb-2 h-8 w-8 text-gray-400 group-hover:text-pink-500" />
-                  <span className="text-sm font-medium text-gray-400 group-hover:text-pink-500">Add Photo</span>
+                <label className="absolute inset-0 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-white/3 transition-all hover:border-pink-400/50 hover:bg-pink-500/5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-all group-hover:border-pink-400/30 group-hover:bg-pink-500/10">
+                    <Upload className="h-5 w-5 text-slate-500 transition-colors group-hover:text-pink-400" />
+                  </div>
+                  <span className="text-xs font-medium text-slate-500 transition-colors group-hover:text-pink-300">Add Photo</span>
+                  {index === 0 && (
+                    <span className="text-[10px] text-slate-600 transition-colors group-hover:text-pink-400/70">Primary</span>
+                  )}
                   <input
                     type="file"
                     accept="image/*"

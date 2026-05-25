@@ -422,9 +422,50 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Profile completion progress bar */}
+      {(() => {
+        const completedFields = [
+          profileData.name,
+          profileData.bio,
+          profileData.photos[0],
+          profileData.denomination,
+          profileData.location?.address,
+          profileData.favoriteVerse,
+          (profileData.interests || []).length > 0,
+          (profileData.spiritualGifts || []).length > 0,
+          (profileData.profileFits || []).length > 0,
+          profileData.height,
+        ].filter(Boolean).length;
+        const totalFields = 10;
+        const completionPct = Math.round((completedFields / totalFields) * 100);
+        return (
+          <div className="mx-auto max-w-4xl px-4 pb-2">
+            <div className="rounded-2xl border border-white/8 bg-white/4 px-5 py-4">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Profile Completion</span>
+                <span className={`text-xs font-bold ${completionPct === 100 ? 'text-emerald-400' : 'text-pink-300'}`}>
+                  {completionPct}%
+                </span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/8">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 transition-all duration-700 ease-out"
+                  style={{ width: `${completionPct}%` }}
+                />
+              </div>
+              {completionPct < 100 && (
+                <p className="mt-1.5 text-[11px] text-slate-500">
+                  Complete your profile to attract better matches.
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       <ProfileTabs activeSection={activeSection} setActiveSection={setActiveSection} />
 
-      <div className="max-w-4xl mx-auto p-4 pb-20">
+      <div className="max-w-4xl mx-auto p-4 pb-[calc(var(--nav-height,88px)+max(1rem,env(safe-area-inset-bottom)))]">
         {profileData && activeSection === 'photos' && (
           <PhotosSection
             profileData={profileData}
@@ -459,7 +500,7 @@ const ProfilePage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 text-white pb-20 no-horizontal-scroll dashboard-main">
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-gray-900 to-slate-950 text-white pb-[calc(var(--nav-height,88px)+max(1rem,env(safe-area-inset-bottom)))] no-horizontal-scroll dashboard-main">
       {/* Desktop Layout */}
       <div className="hidden lg:flex min-h-screen">
         <div className="w-80 flex-shrink-0">

@@ -61,7 +61,7 @@ const SettingsContent = () => {
   };
 
   const mainContent = (
-    <div className="px-6 py-10 lg:px-12">
+    <div className="px-4 py-8 sm:px-6 lg:px-12">
       <div className="max-w-4xl space-y-8">
         <div className="flex items-center justify-start">
           <Link
@@ -74,7 +74,7 @@ const SettingsContent = () => {
           </Link>
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+        <div className="rounded-3xl border border-white/8 bg-white/4 p-6 shadow-[0_4px_24px_rgba(2,6,23,0.3)]">
           <div className="flex items-center gap-3">
             <div className="rounded-2xl bg-pink-500/20 p-3 text-pink-200">
               <Sliders className="h-6 w-6" />
@@ -87,29 +87,29 @@ const SettingsContent = () => {
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             {[
-              { key: 'emailNotifications', label: 'Email notifications', icon: Mail },
-              { key: 'pushNotifications', label: 'Browser notifications', icon: Smartphone },
-              { key: 'matchAlerts', label: 'New match alerts', icon: Bell },
-              { key: 'messageAlerts', label: 'New message alerts', icon: Shield },
-            ].map(({ key, label, icon: Icon }) => (
+              { key: 'emailNotifications', label: 'Email notifications', icon: Mail, iconBg: 'bg-blue-500/20', iconColor: 'text-blue-300' },
+              { key: 'pushNotifications', label: 'Browser notifications', icon: Smartphone, iconBg: 'bg-violet-500/20', iconColor: 'text-violet-300' },
+              { key: 'matchAlerts', label: 'New match alerts', icon: Bell, iconBg: 'bg-pink-500/20', iconColor: 'text-pink-300' },
+              { key: 'messageAlerts', label: 'New message alerts', icon: Shield, iconBg: 'bg-emerald-500/20', iconColor: 'text-emerald-300' },
+            ].map(({ key, label, icon: Icon, iconBg, iconColor }) => (
               <button
                 key={key}
                 onClick={() => handleToggle(key as keyof typeof form)}
-                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4 text-left transition hover:border-pink-500/40 hover:bg-white/10"
+                className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/4 p-4 text-left transition hover:border-pink-500/30 hover:bg-white/8"
               >
                 <div className="flex items-center gap-3">
-                  <div className="rounded-xl bg-white/10 p-2 text-white">
-                    <Icon className="h-5 w-5" />
+                  <div className={`rounded-xl p-2 ${iconBg}`}>
+                    <Icon className={`h-5 w-5 ${iconColor}`} />
                   </div>
                   <span className="text-sm font-medium text-white">{label}</span>
                 </div>
                 <span
-                  className={`h-5 w-10 rounded-full p-1 transition ${
-                    form[key as keyof typeof form] ? 'bg-pink-500/80' : 'bg-white/20'
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                    form[key as keyof typeof form] ? 'bg-gradient-to-r from-pink-500 to-purple-600' : 'bg-white/15'
                   }`}
                 >
                   <span
-                    className={`block h-3 w-3 rounded-full bg-white transition ${
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition-transform duration-200 ease-in-out ${
                       form[key as keyof typeof form] ? 'translate-x-5' : 'translate-x-0'
                     }`}
                   />
@@ -130,7 +130,7 @@ const SettingsContent = () => {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+        <div className="rounded-3xl border border-white/8 bg-white/4 p-6 shadow-[0_4px_24px_rgba(2,6,23,0.3)]">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-white">Subscription</h3>
@@ -138,10 +138,10 @@ const SettingsContent = () => {
                 {isPremium ? `Active ${activeTierLabel}` : 'Free plan'}
               </p>
             </div>
-            <span className={`rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] ${
+            <span className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] ${
               isPremium
-                ? 'border-pink-500/40 bg-pink-500/10 text-pink-200'
-                : 'border-white/10 bg-white/5 text-gray-300'
+                ? 'bg-gradient-to-r from-pink-500/80 to-purple-600/80 text-white shadow-[0_4px_14px_rgba(236,72,153,0.25)]'
+                : 'border border-white/10 bg-white/5 text-gray-400'
             }`}>
               {isPremium ? 'Premium' : 'Free'}
             </span>
@@ -163,12 +163,34 @@ const SettingsContent = () => {
             </div>
           )}
         </div>
+
+        {/* Danger zone */}
+        <div className="danger-zone p-6">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="rounded-xl bg-red-500/15 p-2.5">
+              <Shield className="h-5 w-5 text-red-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-white">Account Actions</h3>
+              <p className="text-xs text-gray-400">Irreversible or sensitive actions</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <Link
+              to="/deactivate"
+              className="flex items-center justify-between rounded-2xl border border-red-500/15 bg-red-500/5 p-4 text-sm font-medium text-red-300 transition hover:bg-red-500/10 hover:border-red-500/25"
+            >
+              <span>Deactivate account</span>
+              <ArrowLeft className="h-4 w-4 rotate-180 opacity-50" />
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 text-white overflow-x-hidden pb-20 no-horizontal-scroll dashboard-main">
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-gray-900 to-slate-950 text-white overflow-x-hidden pb-[calc(var(--nav-height,88px)+max(1rem,env(safe-area-inset-bottom)))] no-horizontal-scroll dashboard-main">
       <div className="hidden lg:flex min-h-screen">
         <div className="w-80 flex-shrink-0">
           <SidePanel userName={layoutName} userImage={layoutImage} user={layoutUser} onClose={() => setShowSidePanel(false)} />

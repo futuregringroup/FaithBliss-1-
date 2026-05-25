@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import type { User as AppUser } from '@/types/User';
 import {
   AlertTriangle,
@@ -32,6 +32,8 @@ interface SidePanelProps {
 }
 
 export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps) => {
+  const location = useLocation();
+  const isActive = (path: string) => location.pathname === path;
   const { logout, isLoggingOut } = useAuthContext();
   const { data: unreadData } = useNotificationUnreadCount();
   const { data: unreadMessagesData } = useUnreadCount();
@@ -57,8 +59,8 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
   };
 
   return (
-    <div className="flex h-screen flex-col border-r border-gray-700/30 bg-gray-900 lg:bg-gray-800/50 lg:backdrop-blur-sm">
-      <div className="flex-shrink-0 border-b border-gray-700/50 p-6">
+    <div className="flex h-screen flex-col border-r border-white/8 bg-slate-950 lg:bg-slate-950/85 lg:backdrop-blur-xl">
+      <div className="flex-shrink-0 border-b border-white/8 p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-purple-600">
@@ -163,11 +165,11 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
 
       <div className="side-panel-scroll flex-1 min-h-0 space-y-2 overflow-y-auto p-6">
         <div className="mb-6">
-          <h5 className="mb-3 px-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Navigation</h5>
+          <h5 className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Navigation</h5>
 
           <Link to="/dashboard" onClick={onClose}>
-            <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl p-4 transition-colors hover:bg-gray-800/50">
-              <div className="rounded-xl bg-pink-500/20 p-2 transition-colors group-hover:bg-pink-500/30">
+            <div className={`group flex cursor-pointer items-center space-x-4 rounded-2xl p-3.5 transition-colors border ${isActive('/dashboard') ? 'bg-pink-500/10 border-pink-500/15' : 'border-transparent hover:bg-white/5'}`}>
+              <div className={`rounded-xl p-2 transition-colors ${isActive('/dashboard') ? 'bg-pink-500/30' : 'bg-pink-500/20 group-hover:bg-pink-500/30'}`}>
                 <Home className="h-5 w-5 text-pink-400" />
               </div>
               <div>
@@ -178,8 +180,8 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
           </Link>
 
           <Link to="/explore" onClick={onClose}>
-            <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl p-4 transition-colors hover:bg-gray-800/50">
-              <div className="rounded-xl bg-cyan-500/20 p-2 transition-colors group-hover:bg-cyan-500/30">
+            <div className={`group flex cursor-pointer items-center space-x-4 rounded-2xl p-3.5 transition-colors border ${isActive('/explore') ? 'bg-pink-500/10 border-pink-500/15' : 'border-transparent hover:bg-white/5'}`}>
+              <div className={`rounded-xl p-2 transition-colors ${isActive('/explore') ? 'bg-cyan-500/30' : 'bg-cyan-500/20 group-hover:bg-cyan-500/30'}`}>
                 <Compass className="h-5 w-5 text-cyan-300" />
               </div>
               <div>
@@ -190,8 +192,8 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
           </Link>
 
           <Link to="/matches" onClick={onClose}>
-            <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl p-4 transition-colors hover:bg-gray-800/50">
-              <div className="rounded-xl bg-pink-500/20 p-2 transition-colors group-hover:bg-pink-500/30">
+            <div className={`group flex cursor-pointer items-center space-x-4 rounded-2xl p-3.5 transition-colors border ${isActive('/matches') ? 'bg-pink-500/10 border-pink-500/15' : 'border-transparent hover:bg-white/5'}`}>
+              <div className={`rounded-xl p-2 transition-colors ${isActive('/matches') ? 'bg-pink-500/30' : 'bg-pink-500/20 group-hover:bg-pink-500/30'}`}>
                 <Heart className="h-5 w-5 text-pink-400" />
               </div>
               <div>
@@ -202,8 +204,8 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
           </Link>
 
           <Link to="/messages" onClick={onClose}>
-            <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl p-4 transition-colors hover:bg-gray-800/50">
-              <div className="relative rounded-xl bg-blue-500/20 p-2 transition-colors group-hover:bg-blue-500/30">
+            <div className={`group flex cursor-pointer items-center space-x-4 rounded-2xl p-3.5 transition-colors border ${isActive('/messages') ? 'bg-pink-500/10 border-pink-500/15' : 'border-transparent hover:bg-white/5'}`}>
+              <div className={`relative rounded-xl p-2 transition-colors ${isActive('/messages') ? 'bg-blue-500/30' : 'bg-blue-500/20 group-hover:bg-blue-500/30'}`}>
                 <MessageCircle className="h-5 w-5 text-blue-400" />
                 {unreadMessageCount > 0 ? (
                   <span className="absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-red-500 px-1 text-[10px] font-semibold text-white">
@@ -219,8 +221,8 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
           </Link>
 
           <Link to="/community" onClick={onClose}>
-            <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl p-4 transition-colors hover:bg-gray-800/50">
-              <div className="rounded-xl bg-violet-500/20 p-2 transition-colors group-hover:bg-violet-500/30">
+            <div className={`group flex cursor-pointer items-center space-x-4 rounded-2xl p-3.5 transition-colors border ${isActive('/community') ? 'bg-pink-500/10 border-pink-500/15' : 'border-transparent hover:bg-white/5'}`}>
+              <div className={`rounded-xl p-2 transition-colors ${isActive('/community') ? 'bg-violet-500/30' : 'bg-violet-500/20 group-hover:bg-violet-500/30'}`}>
                 <Users className="h-5 w-5 text-violet-300" />
               </div>
               <div>
@@ -230,12 +232,12 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
             </div>
           </Link>
 
-          <div className="mt-4 border-t border-gray-700/50 pt-4 lg:mt-0 lg:border-t-0 lg:pt-0">
-            <h5 className="mb-3 px-4 text-xs font-semibold uppercase tracking-wider text-gray-400 lg:hidden">Account</h5>
+          <div className="mt-4 border-t border-white/8 pt-4 lg:mt-0 lg:border-t-0 lg:pt-0">
+            <h5 className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 lg:hidden">Account</h5>
 
             <Link to="/profile" onClick={onClose}>
-              <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl p-4 transition-colors hover:bg-gray-800/50">
-                <div className="rounded-xl bg-green-500/20 p-2 transition-colors group-hover:bg-green-500/30">
+              <div className={`group flex cursor-pointer items-center space-x-4 rounded-2xl p-3.5 transition-colors border ${isActive('/profile') ? 'bg-pink-500/10 border-pink-500/15' : 'border-transparent hover:bg-white/5'}`}>
+                <div className={`rounded-xl p-2 transition-colors ${isActive('/profile') ? 'bg-green-500/30' : 'bg-green-500/20 group-hover:bg-green-500/30'}`}>
                   <User className="h-5 w-5 text-green-400" />
                 </div>
                 <div>
@@ -246,8 +248,8 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
             </Link>
 
             <Link to="/notifications" onClick={onClose}>
-              <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl p-4 transition-colors hover:bg-gray-800/50">
-                <div className="relative rounded-xl bg-amber-500/20 p-2 transition-colors group-hover:bg-amber-500/30">
+              <div className={`group flex cursor-pointer items-center space-x-4 rounded-2xl p-3.5 transition-colors border ${isActive('/notifications') ? 'bg-pink-500/10 border-pink-500/15' : 'border-transparent hover:bg-white/5'}`}>
+                <div className={`relative rounded-xl p-2 transition-colors ${isActive('/notifications') ? 'bg-amber-500/30' : 'bg-amber-500/20 group-hover:bg-amber-500/30'}`}>
                   <Bell className="h-5 w-5 text-amber-400" />
                   {unreadCount > 0 ? (
                     <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-pink-500 to-red-500 text-xs text-white">
@@ -263,8 +265,8 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
             </Link>
 
             <Link to="/premium" onClick={onClose}>
-              <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl p-4 transition-colors hover:bg-gray-800/50">
-                <div className="rounded-xl bg-yellow-500/20 p-2 transition-colors group-hover:bg-yellow-500/30">
+              <div className={`group flex cursor-pointer items-center space-x-4 rounded-2xl p-3.5 transition-colors border ${isActive('/premium') ? 'bg-pink-500/10 border-pink-500/15' : 'border-transparent hover:bg-white/5'}`}>
+                <div className={`rounded-xl p-2 transition-colors ${isActive('/premium') ? 'bg-yellow-500/30' : 'bg-yellow-500/20 group-hover:bg-yellow-500/30'}`}>
                   <Star className="h-5 w-5 text-yellow-400" />
                 </div>
                 <div>
@@ -280,7 +282,7 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
 
             {isAdminUser ? (
               <Link to="/admin" onClick={onClose}>
-                <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl p-4 transition-colors hover:bg-gray-800/50">
+                <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl border border-transparent p-3.5 transition-colors hover:bg-white/5">
                   <div className="rounded-xl bg-cyan-500/20 p-2 transition-colors group-hover:bg-cyan-500/30">
                     <ShieldCheck className="h-5 w-5 text-cyan-300" />
                   </div>
@@ -294,7 +296,7 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
 
             {isDeveloperUser ? (
               <Link to="/developer" onClick={onClose}>
-                <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl p-4 transition-colors hover:bg-gray-800/50">
+                <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl border border-transparent p-3.5 transition-colors hover:bg-white/5">
                   <div className="rounded-xl bg-violet-500/20 p-2 transition-colors group-hover:bg-violet-500/30">
                     <Wrench className="h-5 w-5 text-violet-300" />
                   </div>
@@ -308,13 +310,13 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
           </div>
         </div>
 
-        <div className="border-t border-gray-700/50 pt-4">
-          <h5 className="mb-3 px-4 text-xs font-semibold uppercase tracking-wider text-gray-400">More</h5>
+        <div className="border-t border-white/8 pt-4">
+          <h5 className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">More</h5>
 
-          <div className="mt-4 border-t border-gray-700/50 pt-4">
+          <div className="mt-2 border-t border-white/8 pt-2">
             <Link to="/settings" onClick={onClose}>
-              <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl p-4 transition-colors hover:bg-gray-800/50">
-                <div className="rounded-xl bg-gray-500/20 p-2 transition-colors group-hover:bg-gray-500/30">
+              <div className={`group flex cursor-pointer items-center space-x-4 rounded-2xl p-3.5 transition-colors border ${isActive('/settings') ? 'bg-pink-500/10 border-pink-500/15' : 'border-transparent hover:bg-white/5'}`}>
+                <div className={`rounded-xl p-2 transition-colors ${isActive('/settings') ? 'bg-gray-500/30' : 'bg-gray-500/20 group-hover:bg-gray-500/30'}`}>
                   <Settings className="h-5 w-5 text-gray-400" />
                 </div>
                 <div>
@@ -325,7 +327,7 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
             </Link>
 
             <Link to="/help" onClick={onClose}>
-              <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl p-4 transition-colors hover:bg-gray-800/50">
+              <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl border border-transparent p-3.5 transition-colors hover:bg-white/5">
                 <div className="rounded-xl bg-gray-500/20 p-2 transition-colors group-hover:bg-gray-500/30">
                   <HelpCircle className="h-5 w-5 text-gray-400" />
                 </div>
@@ -337,7 +339,7 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
             </Link>
 
             <Link to="/report" onClick={onClose}>
-              <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl p-4 transition-colors hover:bg-gray-800/50">
+              <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl border border-transparent p-3.5 transition-colors hover:bg-white/5">
                 <div className="rounded-xl bg-orange-500/20 p-2 transition-colors group-hover:bg-orange-500/30">
                   <AlertTriangle className="h-5 w-5 text-orange-400" />
                 </div>
@@ -349,7 +351,7 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
             </Link>
 
             <Link to="/deactivate" onClick={onClose}>
-              <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl p-4 transition-colors hover:bg-gray-800/50">
+              <div className="group flex cursor-pointer items-center space-x-4 rounded-2xl border border-transparent p-3.5 transition-colors hover:bg-white/5">
                 <div className="rounded-xl bg-red-500/20 p-2 transition-colors group-hover:bg-red-500/30">
                   <UserX className="h-5 w-5 text-red-400" />
                 </div>
@@ -363,7 +365,7 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
         </div>
       </div>
 
-      <div className="flex-shrink-0 border-t border-gray-700/50 p-6">
+      <div className="flex-shrink-0 border-t border-white/8 p-6">
         <button
           onClick={handleLogout}
           disabled={isLoggingOut}

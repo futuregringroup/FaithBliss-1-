@@ -532,7 +532,7 @@ export const HingeStyleProfileCard = ({
       : 'flex h-full w-full flex-col bg-white px-3 pb-3 pt-3 text-slate-900';
     const mobileFiltersBarClass = useDesktopMobileLayout
       ? 'mb-6 flex flex-wrap items-center gap-3 overflow-visible'
-      : `flex items-center gap-2 overflow-x-auto ${isCompactHeight ? 'mb-2 pb-0.5' : 'mb-3 pb-1'}`;
+      : `flex items-center gap-2 overflow-x-auto scroll-fade-x scrollbar-none ${isCompactHeight ? 'mb-2 pb-0.5' : 'mb-3 pb-1'}`;
     const mobileContentScrollClass = useDesktopMobileLayout
       ? 'overflow-visible px-0 pb-8 pt-2'
       : 'min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-1 pb-4 pt-2 [-webkit-overflow-scrolling:touch] [touch-action:pan-y]';
@@ -559,11 +559,17 @@ export const HingeStyleProfileCard = ({
       if (!value && !children) return null;
 
       return (
-        <div className={`relative ${useDesktopMobileLayout ? 'mt-5 rounded-[30px] px-6 py-6 shadow-[0_16px_36px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.82)]' : 'mt-4 rounded-[26px] px-5 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]'} bg-slate-100`}>
+        <motion.div
+          className={`relative ${useDesktopMobileLayout ? 'mt-5 rounded-[30px] px-6 py-6 shadow-[0_16px_36px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.82)]' : 'mt-4 rounded-[26px] px-5 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]'} bg-slate-100`}
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+        >
           <p className={mobileSectionLabelClass}>{title}</p>
           {value ? <p className={`${useDesktopMobileLayout ? 'mt-4 text-[1.28rem] leading-8' : 'mt-3 text-[1.18rem] leading-7'} font-semibold text-slate-900`}>{value}</p> : null}
           {children}
-        </div>
+        </motion.div>
       );
     };
     const renderMobileLikeButton = (positionClassName = 'absolute top-4 right-4') => (
@@ -585,7 +591,7 @@ export const HingeStyleProfileCard = ({
           touchAction: 'manipulation',
         }}
       >
-        <span className="relative inline-flex h-[3.2rem] w-[3.2rem] items-center justify-center rounded-full border border-white/70 bg-white/82 backdrop-blur-md shadow-[0_14px_24px_rgba(15,23,42,0.22),0_0_0_1px_rgba(255,255,255,0.18)]">
+        <span className="relative inline-flex h-[3.2rem] w-[3.2rem] items-center justify-center rounded-full border border-white/70 bg-white/82 backdrop-blur-md shadow-[0_14px_24px_rgba(15,23,42,0.22),0_0_0_1px_rgba(255,255,255,0.18),0_4px_12px_rgba(236,72,153,0.18)]">
           <span className="relative inline-flex h-[2.45rem] w-[2.45rem] items-center justify-center rounded-[1rem] bg-gradient-to-br from-fuchsia-500 via-pink-500 to-rose-500 shadow-[0_8px_14px_rgba(236,72,153,0.2)]">
             <span className="absolute inset-[1px] rounded-[0.95rem] bg-gradient-to-br from-white/18 to-transparent" />
             <Heart className="relative h-[1.05rem] w-[1.05rem] fill-white text-white stroke-[2.35]" />
@@ -646,10 +652,10 @@ export const HingeStyleProfileCard = ({
                 key={chip.label}
                 type="button"
                 onClick={() => onOpenFilterSection?.(chip.section)}
-                className={`inline-flex shrink-0 items-center rounded-full border text-xs font-semibold shadow-sm ${
+                className={`inline-flex shrink-0 items-center rounded-full border text-xs font-semibold shadow-sm transition-all duration-150 hover:-translate-y-px ${
                   index === 0
-                    ? 'border-slate-900 bg-slate-900 text-white'
-                    : 'border-slate-300 bg-white text-slate-900'
+                    ? 'border-pink-400/30 bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_4px_14px_rgba(236,72,153,0.25)]'
+                    : 'border-slate-200 bg-white text-slate-700 shadow-[0_2px_8px_rgba(15,23,42,0.06)]'
                 } ${useDesktopMobileLayout ? 'px-5 py-2.5 text-sm' : isCompactHeight ? 'px-3.5 py-1.5' : 'px-4 py-2'}`}
               >
                 {chip.label}
@@ -820,14 +826,14 @@ export const HingeStyleProfileCard = ({
                 <div className={desktopWideSectionClass}>
                   <Link
                     to={`/profile/${profileId}`}
-                    className={`inline-flex items-center justify-center rounded-full font-semibold transition-all duration-200 ${useDesktopMobileLayout ? 'min-w-[240px] border border-white/14 bg-[linear-gradient(135deg,rgba(255,255,255,0.12),rgba(255,255,255,0.06))] px-7 py-4 text-base text-white/95 shadow-[0_18px_36px_rgba(15,23,42,0.2)] backdrop-blur-xl hover:-translate-y-0.5 hover:border-white/24 hover:bg-[linear-gradient(135deg,rgba(255,255,255,0.16),rgba(255,255,255,0.08))] hover:shadow-[0_24px_44px_rgba(15,23,42,0.24)]' : 'mt-4 w-full bg-slate-900 px-5 py-4 text-sm text-white shadow-[0_16px_30px_rgba(15,23,42,0.18)]'}`}
+                    className={`inline-flex items-center justify-center rounded-full font-semibold transition-all duration-200 hover:-translate-y-0.5 ${useDesktopMobileLayout ? 'min-w-[240px] border border-white/14 bg-[linear-gradient(135deg,rgba(255,255,255,0.12),rgba(255,255,255,0.06))] px-7 py-4 text-base text-white/95 shadow-[0_18px_36px_rgba(15,23,42,0.2)] backdrop-blur-xl hover:border-white/24 hover:bg-[linear-gradient(135deg,rgba(255,255,255,0.16),rgba(255,255,255,0.08))] hover:shadow-[0_24px_44px_rgba(15,23,42,0.24)]' : 'mt-4 w-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 px-5 py-4 text-sm text-white shadow-[0_14px_28px_rgba(236,72,153,0.25)] hover:from-pink-400 hover:via-fuchsia-400 hover:to-purple-500'}`}
                   >
                     View Full Profile
                   </Link>
                 </div>
 
                 <div className={desktopWideSectionClass}>
-                  <div className={`pointer-events-none z-30 flex ${useDesktopMobileLayout ? 'sticky bottom-4 mt-3 justify-end pr-1' : 'fixed bottom-[calc(env(safe-area-inset-bottom,0px)+5.25rem)] left-5 justify-start'}`}>
+                  <div className={`pointer-events-none z-[60] flex ${useDesktopMobileLayout ? 'sticky bottom-4 mt-3 justify-end pr-1' : 'fixed bottom-[calc(env(safe-area-inset-bottom,0px)+var(--nav-height,88px)+0.5rem)] left-4 justify-start'}`}>
                     <button
                       type="button"
                       onPointerDown={stopEvent}
@@ -847,6 +853,7 @@ export const HingeStyleProfileCard = ({
                     </button>
                   </div>
               </div>
+              <div className="pointer-events-none sticky bottom-0 h-8 w-full bg-gradient-to-t from-white/90 to-transparent" aria-hidden="true" />
               </div>
             </div>
           </article>
@@ -983,7 +990,7 @@ export const HingeStyleProfileCard = ({
         </AnimatePresence>
 
         <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/95 via-black/75 to-transparent px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-24 sm:px-4 sm:pb-5 sm:pt-20">
-          <div className="mb-2 inline-flex items-center rounded-full bg-emerald-500/85 px-3 py-1 text-sm font-semibold text-white">
+          <div className="mb-2 inline-flex items-center rounded-full border border-emerald-400/40 bg-emerald-500/15 px-3 py-1 text-sm font-semibold text-emerald-200 backdrop-blur-sm">
             {distanceBadge}
           </div>
           <h2 className="text-[2rem] font-semibold leading-tight text-white sm:text-[2.7rem]">
@@ -1004,22 +1011,22 @@ export const HingeStyleProfileCard = ({
           {formattedGender || profile.height || locationText || formattedDenomination ? (
             <div className="mt-3 flex max-w-xl flex-wrap gap-2">
               {formattedGender ? (
-                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">
+                <span className="rounded-full border border-white/20 bg-white/12 px-3 py-1.5 text-xs font-semibold text-white/95 backdrop-blur-sm">
                   {formattedGender}
                 </span>
               ) : null}
               {profile.height ? (
-                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">
+                <span className="rounded-full border border-white/20 bg-white/12 px-3 py-1.5 text-xs font-semibold text-white/95 backdrop-blur-sm">
                   {profile.height.split('(')[0].trim()}
                 </span>
               ) : null}
               {locationText ? (
-                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">
+                <span className="rounded-full border border-white/20 bg-white/12 px-3 py-1.5 text-xs font-semibold text-white/95 backdrop-blur-sm">
                   {locationText}
                 </span>
               ) : null}
               {formattedDenomination ? (
-                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">
+                <span className="rounded-full border border-white/20 bg-white/12 px-3 py-1.5 text-xs font-semibold text-white/95 backdrop-blur-sm">
                   {formattedDenomination}
                 </span>
               ) : null}
@@ -1031,7 +1038,7 @@ export const HingeStyleProfileCard = ({
               {spiritualGifts.map((gift) => (
                 <span
                   key={gift}
-                  className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white/85"
+                  className="rounded-full border border-white/20 bg-white/12 px-3 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-sm"
                 >
                   {gift}
                 </span>
@@ -1047,12 +1054,12 @@ export const HingeStyleProfileCard = ({
 
           <Link
             to={`/profile/${profileId}`}
-            className="mt-4 inline-flex items-center justify-center rounded-full border border-cyan-300/50 bg-cyan-500/20 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/30 hover:text-white"
+            className="mt-4 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(236,72,153,0.28)] transition hover:brightness-110 hover:-translate-y-0.5"
           >
             View Full Profile
           </Link>
 
-          <div className="mt-4 border-t border-white/15 pt-4">
+          <div className="mt-5">
             <FloatingActionButtons onPass={onPass} onLike={onLike} />
           </div>
         </div>

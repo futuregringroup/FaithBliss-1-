@@ -32,6 +32,7 @@ interface SwipeDeckProps {
   noProfilesDescription?: string;
   noProfilesActionLabel?: string;
   onNoProfilesAction?: () => void;
+  noProfilesActionLoading?: boolean;
   noProfilesSecondaryActionLabel?: string;
   onNoProfilesSecondaryAction?: () => void;
   onOpenFilterSection?: (section?: DashboardFilterFocusSection | null) => void;
@@ -50,6 +51,7 @@ export const SwipeDeck = ({
   noProfilesDescription,
   noProfilesActionLabel,
   onNoProfilesAction,
+  noProfilesActionLoading,
   noProfilesSecondaryActionLabel,
   onNoProfilesSecondaryAction,
   onOpenFilterSection,
@@ -189,6 +191,7 @@ export const SwipeDeck = ({
         description={noProfilesDescription}
         actionLabel={noProfilesActionLabel}
         onAction={onNoProfilesAction}
+        actionLoading={noProfilesActionLoading}
         secondaryActionLabel={noProfilesSecondaryActionLabel}
         onSecondaryAction={onNoProfilesSecondaryAction}
         onStartOver={onStartOver}

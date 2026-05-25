@@ -384,7 +384,7 @@ const OnboardingPage = () => {
   }, []);
 
   return (
-    <div className="h-dvh overflow-y-auto overscroll-none bg-gray-950 text-white">
+    <div className="h-dvh overflow-y-auto overflow-x-hidden overscroll-none bg-gray-950 text-white">
       <OnboardingHeader
         currentSlide={currentStep}
         totalSlides={totalSteps}
@@ -392,7 +392,7 @@ const OnboardingPage = () => {
         canGoBack={currentStep > 0}
       />
 
-      <main className="container mx-auto px-4 sm:px-6 py-6 pb-[calc(env(safe-area-inset-bottom,0px)+160px)] max-w-2xl">
+      <main className="container mx-auto max-w-full px-4 sm:px-6 py-6 pb-[calc(env(safe-area-inset-bottom,0px)+160px)] sm:max-w-2xl">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentStep}

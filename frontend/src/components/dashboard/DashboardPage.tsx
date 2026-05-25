@@ -127,6 +127,7 @@ export const DashboardPage = ({ user: activeUser }: { user: User }) => {
     const [passportModeEnabled, setPassportModeEnabled] = useState(false);
     const [activePassportCountry, setActivePassportCountry] = useState<string | null>(null);
     const [isRefreshingDefaultFeed, setIsRefreshingDefaultFeed] = useState(false);
+    const [isReloadingProfiles, setIsReloadingProfiles] = useState(false);
 
   // Fetch real potential matches from backend
   const { 
@@ -452,21 +453,27 @@ export const DashboardPage = ({ user: activeUser }: { user: User }) => {
     };
     
     const handleNoProfilesAction = async () => {
-      reset();
-      setIsReviewingPassedProfiles(false);
-      // Clear all passed profiles so they reappear in the feed on reload
-      if (passedProfilesStorageKey) {
-        try {
-          localStorage.setItem(passedProfilesStorageKey, JSON.stringify({}));
-        } catch {
-          // Ignore localStorage access errors.
+      if (isReloadingProfiles) return;
+      setIsReloadingProfiles(true);
+      try {
+        reset();
+        setIsReviewingPassedProfiles(false);
+        // Clear passed profiles so previously-seen people can reappear
+        if (passedProfilesStorageKey) {
+          try {
+            localStorage.setItem(passedProfilesStorageKey, JSON.stringify({}));
+          } catch {
+            // Ignore localStorage access errors.
+          }
         }
+        setPersistedPassedProfileMap({});
+        if (filteredProfiles !== null) {
+          setFilteredProfiles(null);
+        }
+        await refetch();
+      } finally {
+        setIsReloadingProfiles(false);
       }
-      setPersistedPassedProfileMap({});
-      if (filteredProfiles !== null) {
-        setFilteredProfiles(null);
-      }
-      await refetch();
     };
 
     const handleReviewPassedProfiles = async () => {
@@ -754,6 +761,7 @@ const handleApplyFilters = async (filters: DashboardFiltersPayload) => {
                         }
                         noProfilesActionLabel={isReviewingPassedProfiles ? "Back to Fresh Feed" : "Reload Profiles"}
                         onNoProfilesAction={handleNoProfilesAction}
+                        noProfilesActionLoading={isReloadingProfiles}
                         noProfilesSecondaryActionLabel={isReviewingPassedProfiles || !isPremiumUser ? undefined : "Review Skipped Profiles"}
                         onNoProfilesSecondaryAction={isReviewingPassedProfiles || !isPremiumUser ? undefined : handleReviewPassedProfiles}
                         onOpenFilterSection={openFiltersToSection}
@@ -800,6 +808,7 @@ const handleApplyFilters = async (filters: DashboardFiltersPayload) => {
                         }
                         noProfilesActionLabel={isReviewingPassedProfiles ? "Back to Fresh Feed" : "Reload Profiles"}
                         onNoProfilesAction={handleNoProfilesAction}
+                        noProfilesActionLoading={isReloadingProfiles}
                         noProfilesSecondaryActionLabel={isReviewingPassedProfiles || !isPremiumUser ? undefined : "Review Skipped Profiles"}
                         onNoProfilesSecondaryAction={isReviewingPassedProfiles || !isPremiumUser ? undefined : handleReviewPassedProfiles}
                         onOpenFilterSection={openFiltersToSection}

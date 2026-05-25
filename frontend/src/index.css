@@ -133,15 +133,13 @@ html, body {
   overscroll-behavior: none; /* kills iOS rubber-band scroll */
 }
 
-@media (max-width: 768px) {
-  .no-horizontal-scroll {
-    max-width: 100vw;
-    overflow-x: hidden !important;
-  }
-  .dashboard-main {
-    max-width: 100vw;
-    overflow-x: hidden !important;
-  }
+.no-horizontal-scroll {
+  max-width: 100vw;
+  overflow-x: hidden !important;
+}
+.dashboard-main {
+  max-width: 100vw;
+  overflow-x: hidden !important;
 }
 
 
@@ -328,6 +326,29 @@ button, a, [role="button"] {
 }
 .scrollbar-none::-webkit-scrollbar {
   display: none;
+}
+
+/* Photo carousel strip — horizontal-only panning, isolated from outer vertical/swipe gestures */
+.carousel-strip {
+  display: flex;
+  touch-action: pan-x;
+  user-select: none;
+  -webkit-user-select: none;
+  will-change: transform;
+}
+
+/* Carousel dot indicator */
+.carousel-dot {
+  height: 6px;
+  width: 6px;
+  border-radius: 9999px;
+  background: rgba(255,255,255,0.45);
+  transition: all 0.2s ease;
+}
+.carousel-dot-active {
+  width: 18px !important;
+  background: #ffffff;
+  opacity: 1 !important;
 }
 
 /* Shimmer skeleton loader */

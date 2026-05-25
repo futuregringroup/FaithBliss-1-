@@ -5,6 +5,7 @@ interface NoProfilesStateProps {
   description?: string;
   actionLabel?: string;
   onAction?: () => void;
+  actionLoading?: boolean;
   secondaryActionLabel?: string;
   onSecondaryAction?: () => void;
   onStartOver?: () => void;
@@ -15,6 +16,7 @@ export const NoProfilesState = ({
   description = 'You are all caught up for the moment. New people will appear here as soon as they join or become available.',
   actionLabel = 'Reload Profiles',
   onAction,
+  actionLoading = false,
   secondaryActionLabel,
   onSecondaryAction,
   onStartOver,
@@ -76,10 +78,16 @@ export const NoProfilesState = ({
       >
         {action && (
           <button
-            onClick={action}
-            className="min-w-[13rem] rounded-full border border-pink-300/20 bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 px-6 py-3.5 font-semibold text-white shadow-[0_14px_28px_rgba(217,70,239,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(217,70,239,0.3)]"
+            onClick={actionLoading ? undefined : action}
+            disabled={actionLoading}
+            className="min-w-[13rem] rounded-full border border-pink-300/20 bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 px-6 py-3.5 font-semibold text-white shadow-[0_14px_28px_rgba(217,70,239,0.22)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(217,70,239,0.3)] disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {actionLabel}
+            {actionLoading ? (
+              <span className="inline-flex items-center justify-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                Loading...
+              </span>
+            ) : actionLabel}
           </button>
         )}
         {onSecondaryAction && secondaryActionLabel && (

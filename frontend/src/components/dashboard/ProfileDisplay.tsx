@@ -16,6 +16,7 @@ interface ProfileDisplayProps {
   noProfilesDescription?: string;
   noProfilesActionLabel?: string;
   onNoProfilesAction?: () => void;
+  noProfilesActionLoading?: boolean;
   noProfilesSecondaryActionLabel?: string;
   onNoProfilesSecondaryAction?: () => void;
   onOpenFilterSection?: (section?: DashboardFilterFocusSection | null) => void;
@@ -35,6 +36,7 @@ export const ProfileDisplay = ({
   noProfilesDescription,
   noProfilesActionLabel,
   onNoProfilesAction,
+  noProfilesActionLoading,
   noProfilesSecondaryActionLabel,
   onNoProfilesSecondaryAction,
   onOpenFilterSection,
@@ -61,6 +63,7 @@ export const ProfileDisplay = ({
         noProfilesDescription={noProfilesDescription}
         noProfilesActionLabel={noProfilesActionLabel}
         onNoProfilesAction={onNoProfilesAction}
+        noProfilesActionLoading={noProfilesActionLoading}
         noProfilesSecondaryActionLabel={noProfilesSecondaryActionLabel}
         onNoProfilesSecondaryAction={onNoProfilesSecondaryAction}
         onOpenFilterSection={onOpenFilterSection}

@@ -187,25 +187,24 @@ const clearPendingGoogleRedirect = (): void => {
 };
 
 
-// Returns true when the current environment is likely to block or mishandle
-// OAuth popups. iOS Safari blocks cross-origin popup auth due to ITP;
-// in-app browsers (Facebook, Instagram, etc.) block popups entirely.
-// iOS standalone PWA is excluded: it opens popups in a new Safari tab,
-// which completes successfully and returns control to the PWA.
+// Returns true when the current environment must use signInWithRedirect instead
+// of signInWithPopup.
+//
+// iOS Safari (non-standalone and standalone) now uses signInWithPopup. Firebase
+// v10+ popup flow works on iOS Safari because the popup window itself is a
+// first-party context for firebaseapp.com — ITP does not clear its storage.
+// signInWithRedirect was the previous fix, but ITP partitions/clears the
+// IndexedDB state token stored by firebaseapp.com when the main page navigates
+// away, so getRedirectResult returns null on return and the user lands back on
+// the login page.
+//
+// Only true in-app browsers that block popups entirely still need the redirect.
 const shouldUseRedirectForGoogleAuth = (): boolean => {
   if (typeof navigator === "undefined" || typeof window === "undefined")
     return false;
   const ua = navigator.userAgent;
 
-  const isIOS = /iPad|iPhone|iPod/.test(ua);
-  if (isIOS) {
-    const isStandalonePWA =
-      (navigator as unknown as { standalone?: boolean }).standalone === true ||
-      window.matchMedia("(display-mode: standalone)").matches;
-    return !isStandalonePWA;
-  }
-
-  // In-app browsers on Android/other platforms that restrict popups
+  // In-app browsers that intercept window.open and block cross-origin popups
   return /FBAN|FBAV|Instagram|Twitter|Line|WeChat|MicroMessenger/.test(ua);
 };
 
@@ -1050,10 +1049,12 @@ export function useAuth() {
         provider.setCustomParameters({ prompt: "select_account" });
 
         if (shouldUseRedirectForGoogleAuth()) {
-          // iOS Safari (non-standalone) and in-app browsers cannot reliably open
-          // cross-origin popups. Use a full-page redirect instead.
-          // Both storage locations are written so the pending state survives a
-          // tab restoration (sessionStorage) and a full cold start (localStorage).
+          // In-app browsers (Facebook, Instagram, etc.) intercept window.open and
+          // block cross-origin popups. Use a full-page redirect for these only.
+          // iOS Safari uses signInWithPopup (Firebase v10+ popup works correctly
+          // on iOS; the redirect path is broken because ITP clears the OAuth state
+          // token stored by firebaseapp.com when the page navigates away, so
+          // getRedirectResult returns null on return and the user ends up back at login).
           sessionStorage.setItem(GOOGLE_REDIRECT_PENDING_KEY, "1");
           localStorage.setItem(GOOGLE_REDIRECT_PENDING_PERSIST_KEY, "1");
           await signInWithRedirect(auth, provider);

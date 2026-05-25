@@ -201,7 +201,7 @@ export const TopBar = ({
                 <img
                   src="/FaithBliss-Logo%20Source.svg"
                   alt="FaithBliss"
-                  className="-mt-1 h-8 w-24 shrink-0 object-cover object-left sm:-mt-2 sm:h-14 sm:w-44"
+                  className="-mt-1 h-10 w-28 shrink-0 object-cover object-left sm:-mt-2 sm:h-14 sm:w-44"
                   loading="eager"
                   decoding="async"
                 />

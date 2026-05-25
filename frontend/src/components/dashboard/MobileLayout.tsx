@@ -91,8 +91,12 @@ export const MobileLayout = ({
 
       {/* Mobile Profile Display */}
       <div
-        className={`flex min-h-[calc(100svh-62px)] sm:min-h-[calc(100svh-74px)] flex-col px-0 pt-0 ${showBottomNav ? 'pb-[calc(88px+env(safe-area-inset-bottom,0px))]' : 'pb-[env(safe-area-inset-bottom,0px)]'}`}
-        style={contentHeight ? { height: `${contentHeight}px` } : undefined}
+        className={`flex flex-col px-0 pt-0 overflow-hidden ${showBottomNav ? 'pb-[calc(88px+env(safe-area-inset-bottom,0px))]' : 'pb-[env(safe-area-inset-bottom,0px)]'}`}
+        style={
+          contentHeight
+            ? { height: `${contentHeight}px` }
+            : { minHeight: 'calc(100svh - 62px)' }
+        }
       >
         <div className="relative mx-auto h-full min-h-0 w-full flex-1">
           {children}

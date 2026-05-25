@@ -67,6 +67,9 @@ export const HingeStyleProfileCard = ({
     if (typeof window === 'undefined') return false;
     return window.matchMedia('(max-height: 760px)').matches;
   });
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const carouselTouchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const carouselLockRef = useRef<'horizontal' | 'vertical' | null>(null);
   const viewerStageRef = useRef<HTMLDivElement | null>(null);
   const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
   const pinchStartDistanceRef = useRef<number | null>(null);
@@ -501,6 +504,45 @@ export const HingeStyleProfileCard = ({
     };
   }, [rawPhotos]);
 
+  // Reset carousel to first photo whenever the profile changes
+  useEffect(() => {
+    setCarouselIndex(0);
+  }, [profileId]);
+
+  const CAROUSEL_THRESHOLD = 40;
+
+  const handleCarouselTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    const t = e.touches[0];
+    carouselTouchStartRef.current = { x: t.clientX, y: t.clientY };
+    carouselLockRef.current = null;
+  };
+
+  const handleCarouselTouchMove = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    if (!carouselTouchStartRef.current) return;
+    const dx = e.touches[0].clientX - carouselTouchStartRef.current.x;
+    const dy = e.touches[0].clientY - carouselTouchStartRef.current.y;
+    if (!carouselLockRef.current) {
+      carouselLockRef.current = Math.abs(dx) > Math.abs(dy) + 5 ? 'horizontal' : 'vertical';
+    }
+    if (carouselLockRef.current === 'horizontal') e.preventDefault();
+  };
+
+  const handleCarouselTouchEnd = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    if (!carouselTouchStartRef.current || carouselLockRef.current !== 'horizontal') {
+      carouselTouchStartRef.current = null;
+      carouselLockRef.current = null;
+      return;
+    }
+    const dx = e.changedTouches[0].clientX - carouselTouchStartRef.current.x;
+    if (dx < -CAROUSEL_THRESHOLD) setCarouselIndex((i) => Math.min(cardPhotos.length - 1, i + 1));
+    else if (dx > CAROUSEL_THRESHOLD) setCarouselIndex((i) => Math.max(0, i - 1));
+    carouselTouchStartRef.current = null;
+    carouselLockRef.current = null;
+  };
+
   if (isMobileView || forceMobileStyle) {
     const mobileCoverPosition = currentPhotoAspectRatio < 0.95 ? '50% 24%' : '50% 35%';
     const aboutMeBody = profile.bio?.trim() || 'Still filling this out.';
@@ -514,12 +556,6 @@ export const HingeStyleProfileCard = ({
       .filter((item): item is string => Boolean(item))
       .slice(0, 8);
     const mobileHeight = profile.height ? profile.height.split('(')[0].trim() : '';
-    const currentMobilePhoto = cardPhotos[0] ?? '/default-avatar.png';
-    const remainingMobilePhotos = cardPhotos.slice(1);
-    const secondInlinePhoto = remainingMobilePhotos[0];
-    const laterDetailPhoto = remainingMobilePhotos.length > 2 ? remainingMobilePhotos[1] : undefined;
-    const usedPreInterestPhotoCount = (secondInlinePhoto ? 1 : 0) + (laterDetailPhoto ? 1 : 0);
-    const postInterestsPhotos = remainingMobilePhotos.slice(usedPreInterestPhotoCount);
     const mobileSectionLabelClass = 'pr-4 text-[0.72rem] font-bold uppercase tracking-[0.12em] text-slate-500';
     const mobileBodyTextClass = isCompactHeight
       ? 'mt-2 text-[1.4rem] font-semibold leading-[1.12] tracking-[-0.03em] text-slate-950'
@@ -539,12 +575,6 @@ export const HingeStyleProfileCard = ({
     const mobileHeaderClass = useDesktopMobileLayout
       ? 'text-[3.35rem] min-w-0 flex-1 font-bold leading-[0.92] tracking-[-0.05em] text-white/95 drop-shadow-[0_10px_30px_rgba(15,23,42,0.28)]'
       : `${isCompactHeight ? 'text-[1.9rem]' : 'text-[2.08rem]'} min-w-0 flex-1 truncate font-bold leading-[0.96] tracking-[-0.035em] text-slate-950`;
-    const primaryPhotoClass = useDesktopMobileLayout
-      ? 'relative isolate w-full cursor-zoom-in overflow-hidden rounded-[34px] bg-slate-100 shadow-[0_24px_52px_rgba(15,23,42,0.14)] aspect-[16/9] min-h-[560px] xl:min-h-[640px]'
-      : `relative isolate w-full cursor-zoom-in overflow-hidden rounded-[26px] bg-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.08)] ${isCompactHeight ? 'aspect-[4/5] min-h-[352px]' : 'aspect-[4/5] min-h-[420px]'}`;
-    const inlinePhotoClass = useDesktopMobileLayout
-      ? 'relative isolate mt-6 w-full cursor-zoom-in overflow-hidden rounded-[34px] bg-slate-100 shadow-[0_24px_52px_rgba(15,23,42,0.14)] aspect-[16/9] min-h-[500px] xl:min-h-[580px]'
-      : `relative isolate mt-4 w-full cursor-zoom-in overflow-hidden rounded-[26px] bg-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.08)] ${isCompactHeight ? 'aspect-[4/5] min-h-[352px]' : 'aspect-[4/5] min-h-[420px]'}`;
     const desktopDetailGridClass = useDesktopMobileLayout ? 'mt-6 grid gap-5 lg:grid-cols-2' : '';
     const desktopWideSectionClass = useDesktopMobileLayout ? 'lg:col-span-2' : '';
     const renderMobileInfoSection = ({
@@ -599,40 +629,6 @@ export const HingeStyleProfileCard = ({
         </span>
       </button>
     );
-    const renderInlineMobilePhoto = (photoUrl: string, photoIndex: number) => (
-      <div
-        key={`${profileId}-${photoIndex}-inline`}
-        className={inlinePhotoClass}
-        onClick={() => openImageViewer(photoIndex)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            openImageViewer(photoIndex);
-          }
-        }}
-        role="button"
-        tabIndex={0}
-        aria-label={`Open profile image ${photoIndex + 1}`}
-      >
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.img
-            key={`${profileId}-${photoIndex}-mobile-inline`}
-            src={photoUrl}
-            alt={`${profile.name} profile ${photoIndex + 1}`}
-            className="absolute inset-0 h-full w-full object-cover object-center [image-rendering:auto] [backface-visibility:hidden] [transform:translateZ(0)]"
-            style={{ objectPosition: mobileCoverPosition }}
-            initial={{ opacity: 0.5 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0.5 }}
-            transition={{ duration: 0.28, ease: 'easeOut' }}
-            draggable={false}
-            loading="eager"
-            decoding="async"
-          />
-        </AnimatePresence>
-        {renderMobileLikeButton('absolute bottom-4 right-4')}
-      </div>
-    );
-
     return (
       <>
         <div className={mobileShellClass}>
@@ -695,35 +691,84 @@ export const HingeStyleProfileCard = ({
                 </div>
               </div>
 
+              {/* Photo carousel — swipe horizontally to cycle photos, isolated from card swipe */}
               <div
-                className={primaryPhotoClass}
-                onClick={() => openImageViewer(0)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    openImageViewer(0);
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-                aria-label="Open full image"
+                className="relative w-full overflow-hidden rounded-[26px] bg-slate-100 shadow-[0_14px_34px_rgba(15,23,42,0.08)]"
+                style={{ aspectRatio: '4/5', minHeight: isCompactHeight ? '352px' : '420px' }}
               >
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.img
-                    key={`${profileId}-0-mobile`}
-                    src={currentMobilePhoto}
-                    alt={profile.name}
-                    className="absolute inset-0 h-full w-full object-cover object-center [image-rendering:auto] [backface-visibility:hidden] [transform:translateZ(0)]"
-                    style={{ objectPosition: mobileCoverPosition }}
-                    initial={{ opacity: 0.5 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0.5 }}
-                    transition={{ duration: 0.28, ease: 'easeOut' }}
-                    draggable={false}
-                    loading="eager"
-                    decoding="async"
-                  />
-                </AnimatePresence>
+                {/* Sliding strip */}
+                <div
+                  className="carousel-strip absolute inset-0 h-full"
+                  style={{
+                    width: `${cardPhotos.length * 100}%`,
+                    transform: `translateX(-${(carouselIndex * 100) / cardPhotos.length}%)`,
+                    transition: 'transform 0.26s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                  }}
+                  onTouchStart={handleCarouselTouchStart}
+                  onTouchMove={handleCarouselTouchMove}
+                  onTouchEnd={handleCarouselTouchEnd}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  {cardPhotos.map((photoUrl, idx) => (
+                    <div
+                      key={`${profileId}-c-${idx}`}
+                      className="relative inline-block h-full"
+                      style={{ width: `${100 / cardPhotos.length}%` }}
+                      onClick={() => openImageViewer(idx)}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Photo ${idx + 1} of ${cardPhotos.length}`}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openImageViewer(idx); }}
+                    >
+                      <img
+                        src={photoUrl}
+                        alt={`${profile.name} photo ${idx + 1}`}
+                        className="absolute inset-0 h-full w-full object-cover [backface-visibility:hidden] [transform:translateZ(0)]"
+                        style={{ objectPosition: mobileCoverPosition }}
+                        draggable={false}
+                        loading={idx === 0 ? 'eager' : 'lazy'}
+                        decoding="async"
+                      />
+                    </div>
+                  ))}
+                </div>
 
+                {/* Tap zones: left 28% = prev, right area before like button = next */}
+                {carouselIndex > 0 && (
+                  <button
+                    type="button"
+                    aria-label="Previous photo"
+                    className="absolute inset-y-0 left-0 z-20 w-[28%]"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); setCarouselIndex((i) => Math.max(0, i - 1)); }}
+                  />
+                )}
+                {carouselIndex < cardPhotos.length - 1 && (
+                  <button
+                    type="button"
+                    aria-label="Next photo"
+                    className="absolute inset-y-0 right-[4.5rem] z-20 w-[calc(100%-4.5rem-28%)]"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); setCarouselIndex((i) => Math.min(cardPhotos.length - 1, i + 1)); }}
+                  />
+                )}
+
+                {/* Bottom gradient for dot readability */}
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 rounded-b-[26px] bg-gradient-to-t from-black/35 to-transparent" />
+
+                {/* Dot indicators */}
+                {cardPhotos.length > 1 && (
+                  <div className="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5">
+                    {cardPhotos.map((_, idx) => (
+                      <div
+                        key={idx}
+                        className={`carousel-dot ${idx === carouselIndex ? 'carousel-dot-active' : 'w-1.5 opacity-50'}`}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Like button */}
                 {renderMobileLikeButton('absolute bottom-4 right-4')}
               </div>
 
@@ -757,16 +802,8 @@ export const HingeStyleProfileCard = ({
                   })}
                 </div>
 
-                <div className={desktopWideSectionClass}>
-                  {secondInlinePhoto ? renderInlineMobilePhoto(secondInlinePhoto, 1) : null}
-                </div>
-
                 {renderMobileInfoSection({ title: 'Height', value: mobileHeight })}
                 {renderMobileInfoSection({ title: 'Denomination', value: formattedDenomination })}
-
-                <div className={desktopWideSectionClass}>
-                  {laterDetailPhoto ? renderInlineMobilePhoto(laterDetailPhoto, 2) : null}
-                </div>
 
                 {promptQuestion || promptAnswer ? (
                   <div className={`relative bg-slate-100 ${useDesktopMobileLayout ? 'rounded-[30px] px-6 py-7 shadow-[0_16px_36px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.82)]' : 'mt-4 rounded-[26px] px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]'}`}>
@@ -815,12 +852,6 @@ export const HingeStyleProfileCard = ({
                       </div>
                     </div>
                   ) : null}
-                </div>
-
-                <div className={desktopWideSectionClass}>
-                  {postInterestsPhotos.map((photoUrl, offset) =>
-                    renderInlineMobilePhoto(photoUrl, usedPreInterestPhotoCount + offset + 1)
-                  )}
                 </div>
 
                 <div className={desktopWideSectionClass}>

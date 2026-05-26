@@ -108,9 +108,9 @@ const PreferenceSlide: React.FC<PreferenceSlideProps> = ({
                 onClick={() =>
                   handleMultiSelectChange("preferredFaithJourney", value)
                 }
-                className={`px-5 py-3 rounded-full text-md font-semibold transition-all duration-300 ease-in-out transform hover:scale-105 ${
+                className={`px-5 py-3 rounded-full text-md font-semibold transition-colors duration-100 active:scale-95 ${
                   (onboardingData.preferredFaithJourney || [])?.includes(value)
-                    ? "bg-pink-600 text-white shadow-lg"
+                    ? "bg-pink-600 text-white ring-2 ring-pink-400 ring-offset-1 ring-offset-transparent"
                     : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                 }`}
               >
@@ -137,11 +137,11 @@ const PreferenceSlide: React.FC<PreferenceSlideProps> = ({
                 onClick={() =>
                   handleMultiSelectChange("preferredChurchAttendance", value)
                 }
-                className={`px-5 py-3 rounded-full text-md font-semibold transition-all duration-300 ease-in-out transform hover:scale-105 ${
+                className={`px-5 py-3 rounded-full text-md font-semibold transition-colors duration-100 active:scale-95 ${
                   (onboardingData.preferredChurchAttendance || [])?.includes(
                     value,
                   )
-                    ? "bg-pink-600 text-white shadow-lg"
+                    ? "bg-pink-600 text-white ring-2 ring-pink-400 ring-offset-1 ring-offset-transparent"
                     : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                 }`}
               >
@@ -170,11 +170,11 @@ const PreferenceSlide: React.FC<PreferenceSlideProps> = ({
                 onClick={() =>
                   handleMultiSelectChange("preferredRelationshipGoals", value)
                 }
-                className={`px-5 py-3 rounded-full text-md font-semibold transition-all duration-300 ease-in-out transform hover:scale-105 ${
+                className={`px-5 py-3 rounded-full text-md font-semibold transition-colors duration-100 active:scale-95 ${
                   (onboardingData.preferredRelationshipGoals || [])?.includes(
                     value,
                   )
-                    ? "bg-pink-600 text-white shadow-lg"
+                    ? "bg-pink-600 text-white ring-2 ring-pink-400 ring-offset-1 ring-offset-transparent"
                     : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                 }`}
               >
@@ -198,9 +198,9 @@ const PreferenceSlide: React.FC<PreferenceSlideProps> = ({
               onClick={() =>
                 handleSingleSelectChange("preferredDenomination", option)
               }
-              className={`px-5 py-3 rounded-full text-md font-semibold transition-all duration-300 ease-in-out transform hover:scale-105 ${
+              className={`px-5 py-3 rounded-full text-md font-semibold transition-colors duration-100 active:scale-95 ${
                 onboardingData.preferredDenomination === option
-                  ? "bg-pink-600 text-white shadow-lg"
+                  ? "bg-pink-600 text-white ring-2 ring-pink-400 ring-offset-1 ring-offset-transparent"
                   : "bg-gray-700 text-gray-300 hover:bg-gray-600"
               }`}
             >
@@ -229,9 +229,9 @@ const PreferenceSlide: React.FC<PreferenceSlideProps> = ({
                       prev.preferredGender === value ? null : value,
                   }))
                 }
-                className={`px-5 py-3 rounded-full text-md font-semibold transition-all duration-300 ease-in-out transform hover:scale-105 ${
+                className={`px-5 py-3 rounded-full text-md font-semibold transition-colors duration-100 active:scale-95 ${
                   onboardingData.preferredGender === value
-                    ? "bg-pink-600 text-white shadow-lg"
+                    ? "bg-pink-600 text-white ring-2 ring-pink-400 ring-offset-1 ring-offset-transparent"
                     : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                 }`}
               >

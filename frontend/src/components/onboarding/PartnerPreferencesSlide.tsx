@@ -63,9 +63,9 @@ const ChipButton = ({
   <button
     type="button"
     onClick={onClick}
-    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-150 active:scale-95 ${
+    className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-100 active:scale-95 ${
       selected
-        ? 'bg-pink-600 text-white scale-95'
+        ? 'bg-pink-600 text-white ring-2 ring-pink-400 ring-offset-1 ring-offset-transparent'
         : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
     }`}
   >

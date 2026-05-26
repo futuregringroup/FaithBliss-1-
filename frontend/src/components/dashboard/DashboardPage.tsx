@@ -79,6 +79,7 @@ const getBaseDashboardProfiles = (sourceProfiles: User[], currentUserId: string 
     .filter((profile) => Boolean(getDashboardProfileId(profile)))
     .filter(hasDashboardDisplayName)
     .filter((profile) => profile.onboardingCompleted === true)
+    .filter((profile) => profile.isActive !== false)
     .filter((profile) => !currentUserId || getDashboardProfileId(profile) !== currentUserId);
 
 const getDefaultDashboardFeedProfiles = (

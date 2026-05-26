@@ -17,7 +17,7 @@ interface AuthenticatedSocket extends Socket {
   user?: { id: string };
 }
 
-const PRIMARY_ADMIN_EMAIL = 'aginaemmanuel6@gmail.com';
+const PRIMARY_ADMIN_EMAIL = process.env.PRIMARY_ADMIN_EMAIL ?? '';
 
 const hasDeveloperAccess = async (userId: string): Promise<boolean> => {
   const userDoc = await usersCollection.doc(userId).get();

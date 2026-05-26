@@ -159,6 +159,13 @@ export const getApiClient = (accessToken: string | null) => ({
         { method: 'DELETE' },
         accessToken
       ),
+
+    deleteAccount: () =>
+      apiClientRequest<{ message: string }>(
+        '/api/users/me',
+        { method: 'DELETE' },
+        accessToken
+      ),
   },
 
   Message: {

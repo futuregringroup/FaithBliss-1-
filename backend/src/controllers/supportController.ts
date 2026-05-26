@@ -6,7 +6,7 @@ import { db } from '../config/firebase-admin';
 import { createNotification } from '../services/notificationService';
 
 type TicketType = 'HELP' | 'REPORT';
-const PRIMARY_ADMIN_EMAIL = 'aginaemmanuel6@gmail.com';
+const PRIMARY_ADMIN_EMAIL = process.env.PRIMARY_ADMIN_EMAIL ?? '';
 
 type SupportReply = {
   adminId: string;

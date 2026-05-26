@@ -26,6 +26,7 @@ import type { User as FirebaseAuthUser } from "firebase/auth";
 //  NEW FIREBASE IMPORTS FOR FIRESTORE
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db, serverTimestamp } from "@/firebase/config"; // Assuming db and serverTimestamp are exported
+import { useClearApiCache } from "./useAPI";
 
 // --------------------
 //  CORRECTED Interface for Onboarding Data (accepts all fields, including the resulting photo URLs)
@@ -93,7 +94,9 @@ interface OnboardingData {
 
 const GOOGLE_REDIRECT_PENDING_KEY = "faithbliss_google_redirect_pending";
 const GOOGLE_REDIRECT_PENDING_PERSIST_KEY = "faithbliss_google_redirect_pending_persist";
-const PRIMARY_ADMIN_EMAIL = "aginaemmanuel6@gmail.com";
+const PRIMARY_ADMIN_EMAIL = import.meta.env.VITE_PRIMARY_ADMIN_EMAIL ?? '';
+const FEATURE_SETTINGS_CACHE_KEY = "faithbliss:feature-settings-cache";
+const FEATURE_SETTINGS_SYNC_KEY = "faithbliss:feature-settings-updated-at";
 
 const resolveUserRole = (email: unknown, role: unknown): User["role"] => {
   if (
@@ -610,6 +613,7 @@ const fetchUserDataFromFirestore = async (
         : null,
     subscription: normalizedSubscription,
     settings: backendData.settings,
+    isActive: backendData.isActive !== false,
   };
 };
 
@@ -666,14 +670,29 @@ export function useAuth() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const lastNetworkToastAtRef = useRef(0);
 
+  const clearApiCache = useClearApiCache();
+
   const clearAppStorage = useCallback(() => {
-    // Avoid nuking Firebase auth storage used for redirect/persistence.
     localStorage.removeItem("user");
     localStorage.removeItem("faithbliss-auth");
     localStorage.removeItem("authToken");
     localStorage.removeItem("accessToken");
     sessionStorage.removeItem("authToken");
-  }, []);
+    sessionStorage.removeItem("faithbliss_google_redirect_pending");
+    localStorage.removeItem("faithbliss_onboarding_pause_state");
+    localStorage.removeItem("faithbliss_show_post_onboarding_offer");
+    localStorage.removeItem(FEATURE_SETTINGS_CACHE_KEY);
+    localStorage.removeItem(FEATURE_SETTINGS_SYNC_KEY);
+    Object.keys(localStorage)
+      .filter(
+        (k) =>
+          k.startsWith("faithbliss_seen_notifications:") ||
+          k.startsWith("faithbliss_notification_prompt_seen:") ||
+          k.startsWith("faithbliss_dashboard_passed_profiles:")
+      )
+      .forEach((k) => localStorage.removeItem(k));
+    clearApiCache();
+  }, [clearApiCache]);
 
   const isAuthenticated = !!(accessToken && user);
 
@@ -1283,6 +1302,11 @@ export function useAuth() {
         }
 
         const data = docSnap.data();
+
+        if (data.isActive === false || data.isDeleted === true) {
+          return null;
+        }
+
         const normalizedSubscription = normalizeSubscription(data.subscription);
 
         const profile: User = {
@@ -1393,6 +1417,21 @@ export function useAuth() {
     [],
   );
 
+  const deleteAccount = useCallback(async () => {
+    try {
+      await API.User.deleteAccount();
+    } catch {
+      // best-effort — proceed with local cleanup regardless
+    }
+    clearAppStorage();
+    try {
+      await signOut(auth);
+    } catch {
+      // ignore signOut errors; local state is already cleared
+    }
+    navigate("/login", { replace: true });
+  }, [clearAppStorage, navigate]);
+
   return {
     isLoading,
     isAuthenticated,
@@ -1403,6 +1442,7 @@ export function useAuth() {
     isLoggingOut,
     isCompletingOnboarding,
     logout,
+    deleteAccount,
     refetchUser,
     completeOnboarding,
     getUserProfileById,

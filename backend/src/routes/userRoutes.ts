@@ -21,6 +21,7 @@ import {
   updateUserByAdmin,
   resetUserPasswordByAdmin,
   deleteUserByAdmin,
+  deleteMe,
   deactivateAccount,
   reactivateAccount,
   submitPostPaymentSurvey,
@@ -54,6 +55,9 @@ router.delete('/:id', protect, deleteUserByAdmin);
 // Deactivate/reactivate account
 router.post('/me/deactivate', protect, deactivateAccount);
 router.post('/me/reactivate', protect, reactivateAccount);
+
+// Self-service hard account deletion (must be before /:id routes)
+router.delete('/me', protect, deleteMe);
 
 // Submit post-payment survey (asks who reached out)
 router.post('/me/post-payment-survey', protect, submitPostPaymentSurvey);

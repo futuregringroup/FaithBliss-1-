@@ -63,7 +63,7 @@ interface CustomRequest extends Request {
   userId?: string;
 }
 
-const PRIMARY_ADMIN_EMAIL = 'aginaemmanuel6@gmail.com';
+const PRIMARY_ADMIN_EMAIL = process.env.PRIMARY_ADMIN_EMAIL ?? '';
 
 function isErrorWithMessage(error: unknown): error is { message: string } {
   return (
@@ -1328,6 +1328,74 @@ const resetUserPasswordByAdmin = async (req: CustomRequest, res: Response) => {
   }
 };
 
+const performUserDeletion = async (uid: string): Promise<void> => {
+  // Mark deleted immediately so live queries stop returning this user
+  await usersCollection.doc(uid).set(
+    { isActive: false, isDeleted: true, deletedAt: admin.firestore.FieldValue.serverTimestamp() },
+    { merge: true }
+  );
+
+  // Remove uid from other users' likes and passes arrays
+  const [likersSnap, passersSnap] = await Promise.all([
+    usersCollection.where('likes', 'array-contains', uid).get(),
+    usersCollection.where('passes', 'array-contains', uid).get(),
+  ]);
+
+  if (!likersSnap.empty || !passersSnap.empty) {
+    const refsBatch = db.batch();
+    likersSnap.forEach((doc) => {
+      refsBatch.update(doc.ref, { likes: admin.firestore.FieldValue.arrayRemove(uid) });
+    });
+    passersSnap.forEach((doc) => {
+      refsBatch.update(doc.ref, { passes: admin.firestore.FieldValue.arrayRemove(uid) });
+    });
+    await refsBatch.commit();
+  }
+
+  // Delete match documents where this user is a participant
+  const matchesSnap = await db.collection('matches').where('users', 'array-contains', uid).get();
+  if (!matchesSnap.empty) {
+    const matchBatch = db.batch();
+    matchesSnap.forEach((doc) => matchBatch.delete(doc.ref));
+    await matchBatch.commit();
+  }
+
+  // Delete messages sent or received by this user
+  const [sentMsgsSnap, receivedMsgsSnap] = await Promise.all([
+    db.collection('messages').where('senderId', '==', uid).get(),
+    db.collection('messages').where('receiverId', '==', uid).get(),
+  ]);
+  const allMessageDocs = [
+    ...sentMsgsSnap.docs,
+    ...receivedMsgsSnap.docs.filter((d) => !sentMsgsSnap.docs.some((s) => s.id === d.id)),
+  ];
+  if (allMessageDocs.length > 0) {
+    const msgBatch = db.batch();
+    allMessageDocs.forEach((doc) => msgBatch.delete(doc.ref));
+    await msgBatch.commit();
+  }
+
+  // Delete notifications addressed to this user
+  const notificationsSnap = await db.collection('notifications').where('userId', '==', uid).get();
+  if (!notificationsSnap.empty) {
+    const notifBatch = db.batch();
+    notificationsSnap.forEach((doc) => notifBatch.delete(doc.ref));
+    await notifBatch.commit();
+  }
+
+  // Delete stories authored by this user
+  const storiesSnap = await db.collection('stories').where('authorId', '==', uid).get();
+  if (!storiesSnap.empty) {
+    const storyBatch = db.batch();
+    storiesSnap.forEach((doc) => storyBatch.delete(doc.ref));
+    await storyBatch.commit();
+  }
+
+  // Hard-delete Firestore doc then Firebase Auth account
+  await usersCollection.doc(uid).delete();
+  await admin.auth().deleteUser(uid);
+};
+
 const deleteUserByAdmin = async (req: CustomRequest, res: Response) => {
   const firebaseUid = req.userId;
   const currentUser = await requireAdmin(firebaseUid, res);
@@ -1350,14 +1418,28 @@ const deleteUserByAdmin = async (req: CustomRequest, res: Response) => {
       return res.status(404).json({ message: 'Target user not found.' });
     }
 
-    await admin.auth().deleteUser(targetUserId);
-    await usersCollection.doc(targetUserId).delete();
+    await performUserDeletion(targetUserId);
 
     return res.status(200).json({ message: 'User deleted successfully.' });
   } catch (error) {
     const errorMessage = isErrorWithMessage(error) ? error.message : 'An unknown error occurred';
     console.error('Error deleting user by admin:', error);
     return res.status(500).json({ message: `Failed to delete user: ${errorMessage}` });
+  }
+};
+
+const deleteMe = async (req: Request, res: Response) => {
+  try {
+    const uid = (req as CustomRequest).userId;
+    if (!uid) return res.status(401).json({ message: 'Unauthorized' });
+
+    await performUserDeletion(uid);
+
+    return res.status(200).json({ message: 'Account deleted successfully.' });
+  } catch (error) {
+    const errorMessage = isErrorWithMessage(error) ? error.message : 'An unknown error occurred';
+    console.error('Error deleting own account:', error);
+    return res.status(500).json({ message: `Failed to delete account: ${errorMessage}` });
   }
 };
 
@@ -1427,6 +1509,7 @@ export {
   updateUserByAdmin,
   resetUserPasswordByAdmin,
   deleteUserByAdmin,
+  deleteMe,
   deactivateAccount,
   reactivateAccount,
 };

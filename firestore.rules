@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function getMatch(matchId) {
+      return get(/databases/$(database)/documents/matches/$(matchId)).data;
+    }
+
+    function matchExists(matchId) {
+      return exists(/databases/$(database)/documents/matches/$(matchId));
+    }
+
+    // users — any signed-in user can read (needed for profile discovery via
+    // syncUserFromFirebase and the backend's Admin SDK queries).
+    // Only the document owner can write their own profile.
+    match /users/{userId} {
+      allow read:   if isSignedIn();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // matches — only participants (users[] array members) can read or update.
+    // Creation and deletion are done exclusively by the backend via Admin SDK.
+    match /matches/{matchId} {
+      allow read:   if isSignedIn() && request.auth.uid in resource.data.users;
+      allow update: if isSignedIn() && request.auth.uid in resource.data.users;
+      allow create: if false;
+      allow delete: if false;
+    }
+
+    // messages — only the sender or receiver can read/update.
+    // Creation requires: caller is the sender, the referenced match exists,
+    // and caller is a participant in that match.
+    match /messages/{messageId} {
+      allow read:   if isSignedIn() &&
+                       (request.auth.uid == resource.data.senderId ||
+                        request.auth.uid == resource.data.receiverId);
+      allow create: if isSignedIn() &&
+                       request.auth.uid == request.resource.data.senderId &&
+                       matchExists(request.resource.data.matchId) &&
+                       request.auth.uid in getMatch(request.resource.data.matchId).users;
+      allow update: if isSignedIn() &&
+                       (request.auth.uid == resource.data.senderId ||
+                        request.auth.uid == resource.data.receiverId);
+      allow delete: if false;
+    }
+
+    // notifications — recipient only.
+    // Client may only toggle the isRead field; all other writes are backend-only.
+    match /notifications/{notificationId} {
+      allow read:   if isOwner(resource.data.userId);
+      allow update: if isOwner(resource.data.userId) &&
+                       request.resource.data.diff(resource.data)
+                         .affectedKeys().hasOnly(['isRead']);
+      allow create: if false;
+      allow delete: if false;
+    }
+
+    // stories — all signed-in users can read.
+    // Only the author can create or delete their story.
+    // Any signed-in user may mark a story as seen or liked (seenBy/likedBy only).
+    match /stories/{storyId} {
+      allow read:   if isSignedIn();
+      allow create: if isSignedIn() &&
+                       request.auth.uid == request.resource.data.authorId;
+      allow update: if isSignedIn() &&
+                       (request.auth.uid == resource.data.authorId ||
+                        request.resource.data.diff(resource.data)
+                          .affectedKeys().hasOnly(['seenBy', 'likedBy']));
+      allow delete: if isOwner(resource.data.authorId);
+    }
+
+    // supportTickets — owner can read their own tickets and create new ones.
+    // Admin replies are written exclusively by the backend via Admin SDK.
+    match /supportTickets/{ticketId} {
+      allow read:   if isOwner(resource.data.userId);
+      allow create: if isSignedIn() &&
+                       request.auth.uid == request.resource.data.userId;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // Deny all other collections not explicitly listed above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

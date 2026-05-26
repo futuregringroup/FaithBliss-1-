@@ -991,6 +991,13 @@ export const UserAPI = {
     });
   },
 
+  // Permanently delete own account and all associated data
+  deleteAccount: async (): Promise<{ message: string }> => {
+    return apiRequest("/api/users/me", {
+      method: "DELETE",
+    });
+  },
+
   // Get user by ID
   getUserById: async (id: string): Promise<User> => {
     // FIX: Added /api prefix

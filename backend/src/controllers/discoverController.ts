@@ -515,10 +515,14 @@ export const discoverByInterests = async (req: Request, res: Response) => {
   );
 };
 
-export const getProfileFitCounts = async (_req: Request, res: Response) => {
+export const getProfileFitCounts = async (req: Request, res: Response) => {
+  if (!req.userId) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
   try {
     const snapshot = await usersCollection
       .where('onboardingCompleted', '==', true)
+      .where('isActive', '==', true)
       .get();
 
     const counts: Record<string, number> = {};

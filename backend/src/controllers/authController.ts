@@ -37,7 +37,7 @@ export interface IUserProfile extends DocumentData {
   [key: string]: unknown;
 }
 
-const PRIMARY_ADMIN_EMAIL = "aginaemmanuel6@gmail.com";
+const PRIMARY_ADMIN_EMAIL = process.env.PRIMARY_ADMIN_EMAIL ?? '';
 
 const resolveUserRole = (email: unknown, role?: unknown): string => {
   if (

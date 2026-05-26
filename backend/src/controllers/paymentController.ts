@@ -106,7 +106,7 @@ type PaymentAnalyticsRecord = {
 type PaymentProductType = 'subscription' | 'profile_booster';
 type ProfileBoosterBundleKey = 'single' | 'bundle';
 
-const PRIMARY_ADMIN_EMAIL = 'aginaemmanuel6@gmail.com';
+const PRIMARY_ADMIN_EMAIL = process.env.PRIMARY_ADMIN_EMAIL ?? '';
 
 const PLAN_METADATA: Record<PlanTier, { name: string }> = {
   premium: { name: 'Premium Plan' },

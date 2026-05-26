@@ -241,7 +241,7 @@ type SocketFeatureGateUser = {
     roles?: string[];
 };
 
-const PRIMARY_ADMIN_EMAIL = 'aginaemmanuel6@gmail.com';
+const PRIMARY_ADMIN_EMAIL = process.env.PRIMARY_ADMIN_EMAIL ?? '';
 
 // Map to store connected users and their socket IDs (for direct messaging/notifications)
 // In a production environment, this should be a distributed cache like Redis

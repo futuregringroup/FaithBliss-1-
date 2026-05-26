@@ -5,7 +5,6 @@ import type { SwipeDirection } from './swipeStateMachine';
 interface SwipeCardProps {
   children: ReactNode;
   mode: 'top-idle' | 'top-committing' | 'top-entering' | 'underlay' | 'skeleton';
-  direction: SwipeDirection | null;
   interactive?: boolean;
   locked?: boolean;
   onSwipeCommit?: (direction: SwipeDirection) => void;
@@ -17,7 +16,6 @@ const SWIPE_VELOCITY_THRESHOLD = 540;
 export const SwipeCard = ({
   children,
   mode,
-  direction,
   interactive = false,
   locked = false,
   onSwipeCommit,

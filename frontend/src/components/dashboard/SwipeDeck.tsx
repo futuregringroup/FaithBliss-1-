@@ -214,7 +214,7 @@ export const SwipeDeck = ({
     <div className={useFlowDesktopLayout ? 'relative w-full overflow-visible' : 'relative h-full w-full overflow-hidden'}>
       {!useFlowDesktopLayout && underlayProfile && underlayProfileId && (
         <div className="pointer-events-none absolute inset-0">
-          <SwipeCard mode="underlay" direction={null} locked>
+          <SwipeCard mode="underlay" locked>
             <div className={desktopCardShellClass}>
               <HingeStyleProfileCard
                 profile={underlayProfile}
@@ -233,7 +233,7 @@ export const SwipeDeck = ({
 
       {!useFlowDesktopLayout && showSkeletonCard && (
         <div className="absolute inset-0">
-          <SwipeCard mode="skeleton" direction={null} locked>
+          <SwipeCard mode="skeleton" locked>
             <div className={desktopCardShellClass}>
               <div className="h-full w-full overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900/60 p-4">
                 <div className="h-full w-full animate-pulse rounded-[1.5rem] bg-gradient-to-br from-slate-800/70 via-slate-700/40 to-slate-800/70" />
@@ -248,7 +248,6 @@ export const SwipeDeck = ({
           <SwipeCard
             key={`${topProfileId}-${topMode}`}
             mode={topMode}
-            direction={state.direction}
             interactive
             locked={isInteractionLocked}
             onSwipeCommit={requestCommit}

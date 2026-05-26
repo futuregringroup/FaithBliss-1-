@@ -59,7 +59,7 @@ export const SidePanel = ({ userName, userImage, user, onClose }: SidePanelProps
   };
 
   return (
-    <div className="relative flex h-full min-h-screen flex-col border-r border-white/[0.06] bg-slate-950 lg:bg-slate-950/85 lg:backdrop-blur-xl">
+    <div className="relative flex h-screen max-h-screen flex-col border-r border-white/[0.06] bg-slate-950 lg:bg-slate-950/85 lg:backdrop-blur-xl">
       <div className="flex-shrink-0 border-b border-white/8 p-5 xl:p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">

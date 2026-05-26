@@ -724,6 +724,7 @@ export function useNotifications() {
     data: notifications,
     loading: loading || !isAuthenticated,
     error,
+    refetch: refetchNotifications,
   };
 }
 

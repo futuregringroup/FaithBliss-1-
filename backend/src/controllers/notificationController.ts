@@ -11,24 +11,48 @@ export const getNotifications = async (req: Request, res: Response) => {
   }
 
   try {
-    const snapshot = await notificationsCollection
-      .where('userId', '==', userId)
-      .orderBy('createdAt', 'desc')
-      .limit(50)
-      .get();
+    let snapshot;
+    try {
+      snapshot = await notificationsCollection
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'desc')
+        .limit(50)
+        .get();
+    } catch (indexError: any) {
+      // Composite index may not be deployed yet — fall back to unordered query and sort in memory.
+      // Run `firebase deploy --only firestore:indexes` to deploy the index and remove this fallback.
+      console.warn(
+        '[notificationController] Ordered query failed (index likely missing), falling back to unordered:',
+        indexError?.message
+      );
+      snapshot = await notificationsCollection
+        .where('userId', '==', userId)
+        .limit(200)
+        .get();
+    }
 
     const notifications = snapshot.docs.map((doc) => {
       const data = doc.data() as any;
       return {
         id: doc.id,
         ...data,
-        createdAt: data.createdAt?.toDate?.().toISOString?.() || data.createdAt,
+        createdAt: data.createdAt?.toDate?.().toISOString?.() ?? data.createdAt ?? null,
       };
     });
 
-    return res.status(200).json(notifications);
-  } catch (error) {
-    console.error('[notificationController] getNotifications failed:', error);
+    notifications.sort((a: any, b: any) => {
+      const aMs = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bMs = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bMs - aMs;
+    });
+
+    return res.status(200).json(notifications.slice(0, 50));
+  } catch (error: any) {
+    console.error('[notificationController] getNotifications failed:', {
+      userId,
+      message: error?.message,
+      code: error?.code,
+    });
     return res.status(500).json({ message: 'Failed to fetch notifications.' });
   }
 };

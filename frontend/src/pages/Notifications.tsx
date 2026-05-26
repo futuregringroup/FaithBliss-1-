@@ -60,7 +60,7 @@ const NotificationsContent = () => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const clearCache = useClearApiCache();
-  const { data, loading, error } = useNotifications();
+  const { data, loading, error, refetch } = useNotifications();
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [showSidePanel, setShowSidePanel] = useState(false);
 
@@ -157,13 +157,21 @@ const NotificationsContent = () => {
             <p className="text-sm text-slate-300 mb-6">
               We couldn’t load your notifications. Please try again.
             </p>
-            <Link
-              to="/dashboard"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 transition-all"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
-            </Link>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={() => { void refetch(); }}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-amber-400/80 to-emerald-400/80 text-slate-900 font-semibold hover:from-amber-300 hover:to-emerald-300 transition-all"
+              >
+                Try again
+              </button>
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 transition-all"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Dashboard
+              </Link>
+            </div>
           </div>
         </div>
       );

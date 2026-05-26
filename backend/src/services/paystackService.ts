@@ -13,6 +13,17 @@ const getHeaders = () => {
   if (!secret) {
     throw new Error('PAYSTACK_SECRET_KEY is not set');
   }
+  if (process.env.NODE_ENV === 'production' && secret.startsWith('sk_test_')) {
+    console.error(
+      '[PAYSTACK] CRITICAL: PAYSTACK_SECRET_KEY is a TEST key in production. ' +
+      'Update PAYSTACK_SECRET_KEY in Vercel environment variables to your sk_live_ key. ' +
+      'Paystack hosted checkout will show the TEST badge until this is fixed.'
+    );
+    throw new Error(
+      'Payment is misconfigured: production environment must not use Paystack test credentials. ' +
+      'Please contact support.'
+    );
+  }
   return {
     Authorization: `Bearer ${secret}`,
     'Content-Type': 'application/json',

@@ -47,17 +47,17 @@ router.get('/admin/platform-stats', protect, getAdminPlatformStats);
 router.get('/developer/overview', protect, getDeveloperOverview);
 router.patch('/feature-settings', protect, updateFeatureSettings);
 router.patch('/developer/feature-settings', protect, updateDeveloperFeatureSettings);
-router.patch('/:id/role', protect, updateUserRole);
-router.patch('/:id', protect, updateUserByAdmin);
-router.post('/:id/reset-password', protect, resetUserPasswordByAdmin);
-router.delete('/:id', protect, deleteUserByAdmin);
+// Self-service hard account deletion (must be before /:id routes)
+router.delete('/me', protect, deleteMe);
 
 // Deactivate/reactivate account
 router.post('/me/deactivate', protect, deactivateAccount);
 router.post('/me/reactivate', protect, reactivateAccount);
 
-// Self-service hard account deletion (must be before /:id routes)
-router.delete('/me', protect, deleteMe);
+router.patch('/:id/role', protect, updateUserRole);
+router.patch('/:id', protect, updateUserByAdmin);
+router.post('/:id/reset-password', protect, resetUserPasswordByAdmin);
+router.delete('/:id', protect, deleteUserByAdmin);
 
 // Submit post-payment survey (asks who reached out)
 router.post('/me/post-payment-survey', protect, submitPostPaymentSurvey);

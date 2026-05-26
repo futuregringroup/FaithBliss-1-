@@ -59,29 +59,19 @@ const ChipButton = ({
   selected: boolean;
   onClick: () => void;
   children: React.ReactNode;
-}) => {
-  const [pressed, setPressed] = React.useState(false);
-
-  const handleClick = () => {
-    setPressed(true);
-    onClick();
-    setTimeout(() => setPressed(false), 150);
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-150 active:scale-95 ${
-        selected || pressed
-          ? 'bg-pink-600 text-white scale-95'
-          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-      }`}
-    >
-      {children}
-    </button>
-  );
-};
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-150 active:scale-95 ${
+      selected
+        ? 'bg-pink-600 text-white scale-95'
+        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+    }`}
+  >
+    {children}
+  </button>
+);
 
 const PartnerPreferencesSlide: React.FC<PartnerPreferencesSlideProps> = ({
   onboardingData,
@@ -113,10 +103,15 @@ const PartnerPreferencesSlide: React.FC<PartnerPreferencesSlideProps> = ({
   };
 
   const handleDenomSelect = (value: string) => {
-    setOnboardingData((prev) => ({
-      ...prev,
-      preferredDenomination: prev.preferredDenomination === value ? '' : value,
-    }));
+    setOnboardingData((prev) => {
+      if (prev.preferredDenomination === 'all') {
+        return { ...prev, preferredDenomination: value };
+      }
+      return {
+        ...prev,
+        preferredDenomination: prev.preferredDenomination === value ? '' : value,
+      };
+    });
   };
 
   const handleAddCustomDenom = () => {
@@ -305,10 +300,24 @@ const PartnerPreferencesSlide: React.FC<PartnerPreferencesSlideProps> = ({
       <div className="space-y-4">
         <h3 className="text-xl font-semibold text-white">Any denomination preference?</h3>
         <div className="flex flex-wrap gap-2 rounded-2xl p-2">
+          <ChipButton
+            selected={onboardingData.preferredDenomination === 'all'}
+            onClick={() =>
+              setOnboardingData((prev) => ({
+                ...prev,
+                preferredDenomination: prev.preferredDenomination === 'all' ? '' : 'all',
+              }))
+            }
+          >
+            All
+          </ChipButton>
           {denominationOptions.map((option) => (
             <ChipButton
               key={option}
-              selected={onboardingData.preferredDenomination === option}
+              selected={
+                onboardingData.preferredDenomination === 'all' ||
+                onboardingData.preferredDenomination === option
+              }
               onClick={() => handleDenomSelect(option)}
             >
               {option.replace(/_/g, ' ')}
@@ -333,7 +342,9 @@ const PartnerPreferencesSlide: React.FC<PartnerPreferencesSlideProps> = ({
             Add
           </button>
         </div>
-        {onboardingData.preferredDenomination && !denominationOptions.includes(onboardingData.preferredDenomination) ? (
+        {onboardingData.preferredDenomination &&
+         onboardingData.preferredDenomination !== 'all' &&
+         !denominationOptions.includes(onboardingData.preferredDenomination) ? (
           <p className="text-sm text-pink-300">Added: {onboardingData.preferredDenomination}</p>
         ) : null}
       </div>

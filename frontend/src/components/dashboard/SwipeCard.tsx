@@ -57,11 +57,11 @@ export const SwipeCard = ({
       animate={
         isCommitting
           ? {
-              x: direction === 'right' ? '120vw' : '-120vw',
-              rotate: direction === 'right' ? 12 : -12,
-              opacity: 1,
-              scale: 1,
-              y: 0,
+              opacity: 0,
+              scale: 0.92,
+              y: -8,
+              x: 0,
+              rotate: 0,
             }
           : isEntering
           ? {

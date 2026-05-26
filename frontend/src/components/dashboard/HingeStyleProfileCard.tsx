@@ -70,6 +70,8 @@ export const HingeStyleProfileCard = ({
   const [carouselIndex, setCarouselIndex] = useState(0);
   const carouselTouchStartRef = useRef<{ x: number; y: number } | null>(null);
   const carouselLockRef = useRef<'horizontal' | 'vertical' | null>(null);
+  const autoplayTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const userInteractingRef = useRef(false);
   const viewerStageRef = useRef<HTMLDivElement | null>(null);
   const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
   const pinchStartDistanceRef = useRef<number | null>(null);
@@ -133,6 +135,23 @@ export const HingeStyleProfileCard = ({
 
   const cardPhotos = useMemo(() => rawPhotos.map(toCardCloudinary), [rawPhotos]);
   const viewerPhotos = useMemo(() => rawPhotos.map(toViewerCloudinary), [rawPhotos]);
+
+  const stopAutoplay = useCallback(() => {
+    if (autoplayTimerRef.current !== null) {
+      clearInterval(autoplayTimerRef.current);
+      autoplayTimerRef.current = null;
+    }
+  }, []);
+
+  const startAutoplay = useCallback(() => {
+    stopAutoplay();
+    if (cardPhotos.length <= 1) return;
+    autoplayTimerRef.current = setInterval(() => {
+      if (!userInteractingRef.current) {
+        setCarouselIndex((i) => (i + 1) % cardPhotos.length);
+      }
+    }, 3000);
+  }, [cardPhotos.length, stopAutoplay]);
   const currentViewerPhotoIndex = viewerPhotoIndex ?? 0;
   const currentViewerPhoto = viewerPhotos[currentViewerPhotoIndex] || viewerPhotos[0];
   const viewerCanNavigate = false;
@@ -504,15 +523,23 @@ export const HingeStyleProfileCard = ({
     };
   }, [rawPhotos]);
 
-  // Reset carousel to first photo whenever the profile changes
+  // Reset carousel and restart autoplay whenever the profile changes
   useEffect(() => {
     setCarouselIndex(0);
-  }, [profileId]);
+    startAutoplay();
+  }, [profileId, startAutoplay]);
+
+  // Cleanup autoplay on unmount
+  useEffect(() => {
+    return () => stopAutoplay();
+  }, [stopAutoplay]);
 
   const CAROUSEL_THRESHOLD = 40;
 
   const handleCarouselTouchStart = (e: React.TouchEvent) => {
     e.stopPropagation();
+    userInteractingRef.current = true;
+    stopAutoplay();
     const t = e.touches[0];
     carouselTouchStartRef.current = { x: t.clientX, y: t.clientY };
     carouselLockRef.current = null;
@@ -534,6 +561,8 @@ export const HingeStyleProfileCard = ({
     if (!carouselTouchStartRef.current || carouselLockRef.current !== 'horizontal') {
       carouselTouchStartRef.current = null;
       carouselLockRef.current = null;
+      userInteractingRef.current = false;
+      window.setTimeout(() => { startAutoplay(); }, 1000);
       return;
     }
     const dx = e.changedTouches[0].clientX - carouselTouchStartRef.current.x;
@@ -541,6 +570,8 @@ export const HingeStyleProfileCard = ({
     else if (dx > CAROUSEL_THRESHOLD) setCarouselIndex((i) => Math.max(0, i - 1));
     carouselTouchStartRef.current = null;
     carouselLockRef.current = null;
+    userInteractingRef.current = false;
+    window.setTimeout(() => { startAutoplay(); }, 1000);
   };
 
   if (isMobileView || forceMobileStyle) {
@@ -740,7 +771,12 @@ export const HingeStyleProfileCard = ({
                     aria-label="Previous photo"
                     className="absolute inset-y-0 left-0 z-20 w-[28%]"
                     onPointerDown={(e) => e.stopPropagation()}
-                    onClick={(e) => { e.stopPropagation(); setCarouselIndex((i) => Math.max(0, i - 1)); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      stopAutoplay();
+                      setCarouselIndex((i) => Math.max(0, i - 1));
+                      window.setTimeout(() => startAutoplay(), 1000);
+                    }}
                   />
                 )}
                 {carouselIndex < cardPhotos.length - 1 && (
@@ -749,7 +785,12 @@ export const HingeStyleProfileCard = ({
                     aria-label="Next photo"
                     className="absolute inset-y-0 right-[4.5rem] z-20 w-[calc(100%-4.5rem-28%)]"
                     onPointerDown={(e) => e.stopPropagation()}
-                    onClick={(e) => { e.stopPropagation(); setCarouselIndex((i) => Math.min(cardPhotos.length - 1, i + 1)); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      stopAutoplay();
+                      setCarouselIndex((i) => Math.min(cardPhotos.length - 1, i + 1));
+                      window.setTimeout(() => startAutoplay(), 1000);
+                    }}
                   />
                 )}
 

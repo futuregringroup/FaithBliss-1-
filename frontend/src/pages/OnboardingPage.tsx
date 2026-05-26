@@ -308,6 +308,11 @@ const OnboardingPage = () => {
           onboardingData.languageSpoken?.[0] || onboardingData.language || "",
       } as Record<string, any>;
 
+      // 'all' denomination preference means no filter — send null so backend skips the denomination filter
+      if (rawData.preferredDenomination === 'all') {
+        rawData.preferredDenomination = null;
+      }
+
       // Assign Cloudinary URLs to profilePhoto1,2,3,4
       photoUrls.forEach((url, index) => {
         (rawData as any)[`profilePhoto${index + 1}`] = url;

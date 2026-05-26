@@ -397,7 +397,7 @@ const OnboardingPage = () => {
         canGoBack={currentStep > 0}
       />
 
-      <main className="container mx-auto max-w-full px-4 sm:px-6 py-6 pb-[calc(env(safe-area-inset-bottom,0px)+160px)] sm:max-w-2xl">
+      <main className="container mx-auto max-w-full px-4 sm:px-6 py-6 pb-[calc(env(safe-area-inset-bottom,0px)+120px)] sm:max-w-2xl">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentStep}

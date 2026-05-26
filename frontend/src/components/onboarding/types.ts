@@ -46,7 +46,7 @@ export interface OnboardingData {
   preferredFaithJourney?: FaithJourney[] | null;
   preferredChurchAttendance?: ChurchAttendance[] | null;
   preferredRelationshipGoals?: RelationshipGoals[] | null;
-  preferredDenomination?: string | null;
+  preferredDenomination?: string[] | null;
   preferredGender?: 'MALE' | 'FEMALE' | null;
   minAge?: number | null;
   maxAge?: number | null;

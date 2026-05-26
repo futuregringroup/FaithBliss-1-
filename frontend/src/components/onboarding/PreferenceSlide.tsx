@@ -72,8 +72,11 @@ const PreferenceSlide: React.FC<PreferenceSlideProps> = ({
     value: string,
   ) => {
     setOnboardingData((prev) => {
-      const newValue = prev[field] === value ? null : value;
-      return { ...prev, [field]: newValue };
+      const current = Array.isArray(prev[field]) ? (prev[field] as string[]) : [];
+      const newList = current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value];
+      return { ...prev, [field]: newList };
     });
   };
 
@@ -185,10 +188,10 @@ const PreferenceSlide: React.FC<PreferenceSlideProps> = ({
         </div>
       </div>
 
-      {/* Preferred Denominations (Single Select) */}
+      {/* Preferred Denominations (Multi Select) */}
       <div>
         <label className="block text-lg font-medium text-gray-300 mb-3">
-          🕊️ Preferred Denomination (Select one)
+          🕊️ Preferred Denomination
         </label>
         <div className="flex flex-wrap gap-3">
           {denominations.map((option) => (
@@ -199,7 +202,8 @@ const PreferenceSlide: React.FC<PreferenceSlideProps> = ({
                 handleSingleSelectChange("preferredDenomination", option)
               }
               className={`px-5 py-3 rounded-full text-md font-semibold transition-colors duration-100 active:scale-95 ${
-                onboardingData.preferredDenomination === option
+                Array.isArray(onboardingData.preferredDenomination) &&
+                onboardingData.preferredDenomination.includes(option)
                   ? "bg-pink-600 text-white ring-2 ring-pink-400 ring-offset-1 ring-offset-transparent"
                   : "bg-gray-700 text-gray-300 hover:bg-gray-600"
               }`}

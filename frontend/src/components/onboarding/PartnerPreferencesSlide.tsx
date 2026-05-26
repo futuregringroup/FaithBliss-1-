@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Heart, MapPin, Ruler, UserRoundSearch, Plus } from 'lucide-react';
+import { Heart, MapPin, Ruler, UserRoundSearch } from 'lucide-react';
 import type { OnboardingData, FaithJourney, ChurchAttendance, RelationshipGoals } from './types';
 import SelectableCard from './SelectableCard';
 
@@ -79,8 +79,6 @@ const PartnerPreferencesSlide: React.FC<PartnerPreferencesSlideProps> = ({
   isVisible,
   showValidationErrors = false,
 }) => {
-  const [denomInput, setDenomInput] = React.useState('');
-
   if (!isVisible) return null;
 
   const handleRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,21 +102,13 @@ const PartnerPreferencesSlide: React.FC<PartnerPreferencesSlideProps> = ({
 
   const handleDenomSelect = (value: string) => {
     setOnboardingData((prev) => {
-      if (prev.preferredDenomination === 'all') {
-        return { ...prev, preferredDenomination: value };
-      }
-      return {
-        ...prev,
-        preferredDenomination: prev.preferredDenomination === value ? '' : value,
-      };
+      const current = Array.isArray(prev.preferredDenomination) ? prev.preferredDenomination : [];
+      const filtered = current.filter((v) => v !== 'all');
+      const newList = filtered.includes(value)
+        ? filtered.filter((v) => v !== value)
+        : [...filtered, value];
+      return { ...prev, preferredDenomination: newList };
     });
-  };
-
-  const handleAddCustomDenom = () => {
-    const trimmed = denomInput.trim();
-    if (!trimmed) return;
-    setOnboardingData((prev) => ({ ...prev, preferredDenomination: trimmed }));
-    setDenomInput('');
   };
 
   const preferredMinHeight = onboardingData.preferredMinHeight ?? 160;
@@ -301,12 +291,16 @@ const PartnerPreferencesSlide: React.FC<PartnerPreferencesSlideProps> = ({
         <h3 className="text-xl font-semibold text-white">Any denomination preference?</h3>
         <div className="flex flex-wrap gap-2 rounded-2xl p-2">
           <ChipButton
-            selected={onboardingData.preferredDenomination === 'all'}
+            selected={
+              Array.isArray(onboardingData.preferredDenomination) &&
+              onboardingData.preferredDenomination.includes('all')
+            }
             onClick={() =>
-              setOnboardingData((prev) => ({
-                ...prev,
-                preferredDenomination: prev.preferredDenomination === 'all' ? '' : 'all',
-              }))
+              setOnboardingData((prev) => {
+                const current = Array.isArray(prev.preferredDenomination) ? prev.preferredDenomination : [];
+                const isAllActive = current.includes('all');
+                return { ...prev, preferredDenomination: isAllActive ? [] : ['all'] };
+              })
             }
           >
             All
@@ -315,8 +309,10 @@ const PartnerPreferencesSlide: React.FC<PartnerPreferencesSlideProps> = ({
             <ChipButton
               key={option}
               selected={
-                onboardingData.preferredDenomination === 'all' ||
-                onboardingData.preferredDenomination === option
+                Array.isArray(onboardingData.preferredDenomination) && (
+                  onboardingData.preferredDenomination.includes('all') ||
+                  onboardingData.preferredDenomination.includes(option)
+                )
               }
               onClick={() => handleDenomSelect(option)}
             >
@@ -324,29 +320,6 @@ const PartnerPreferencesSlide: React.FC<PartnerPreferencesSlideProps> = ({
             </ChipButton>
           ))}
         </div>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={denomInput}
-            onChange={(e) => setDenomInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCustomDenom(); } }}
-            placeholder="Type a denomination..."
-            className="flex-1 rounded-xl border border-white/20 bg-slate-900/75 px-4 py-2.5 text-sm text-white placeholder-slate-400 outline-none focus:border-pink-500"
-          />
-          <button
-            type="button"
-            onClick={handleAddCustomDenom}
-            className="flex items-center gap-1.5 rounded-xl bg-pink-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-pink-700 active:scale-95 transition-all"
-          >
-            <Plus className="h-4 w-4" />
-            Add
-          </button>
-        </div>
-        {onboardingData.preferredDenomination &&
-         onboardingData.preferredDenomination !== 'all' &&
-         !denominationOptions.includes(onboardingData.preferredDenomination) ? (
-          <p className="text-sm text-pink-300">Added: {onboardingData.preferredDenomination}</p>
-        ) : null}
       </div>
     </motion.div>
   );

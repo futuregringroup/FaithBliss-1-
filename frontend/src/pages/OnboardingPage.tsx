@@ -247,7 +247,7 @@ const OnboardingPage = () => {
     preferredFaithJourney: null,
     preferredChurchAttendance: null,
     preferredRelationshipGoals: null,
-    preferredDenomination: null,
+    preferredDenomination: [],
   });
 
   useEffect(() => {
@@ -308,8 +308,12 @@ const OnboardingPage = () => {
           onboardingData.languageSpoken?.[0] || onboardingData.language || "",
       } as Record<string, any>;
 
-      // 'all' denomination preference means no filter — send null so backend skips the denomination filter
-      if (rawData.preferredDenomination === 'all') {
+      // Empty array or ['all'] means no denomination filter — send null so backend skips it
+      if (
+        !rawData.preferredDenomination ||
+        (rawData.preferredDenomination as string[]).length === 0 ||
+        (rawData.preferredDenomination as string[]).includes('all')
+      ) {
         rawData.preferredDenomination = null;
       }
 

@@ -18,11 +18,12 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/matches/$(matchId));
     }
 
-    // users — any signed-in user can read (needed for profile discovery via
-    // syncUserFromFirebase and the backend's Admin SDK queries).
-    // Only the document owner can write their own profile.
+    // users — only the document owner may read their own profile via the client
+    // SDK (syncUserFromFirebase, fetchUserDataFromFirestore). All other profile
+    // reads (e.g. UserProfileView) go through the backend API which filters out
+    // PII before responding. The backend uses the Admin SDK which bypasses rules.
     match /users/{userId} {
-      allow read:   if isSignedIn();
+      allow read:   if isOwner(userId);
       allow create: if isOwner(userId);
       allow update: if isOwner(userId);
       allow delete: if isOwner(userId);

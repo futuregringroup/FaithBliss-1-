@@ -36,6 +36,48 @@ interface IFirestoreUser {
   likes?: string[];
   matches?: string[];
   profileFits?: string[];
+  // Faith profile
+  faithJourney?: string;
+  churchAttendance?: string;
+  sundayActivity?: string;
+  baptismStatus?: string;
+  spiritualGifts?: string[];
+  favoriteVerse?: string;
+  // Personality & interests
+  interests?: string[];
+  hobbies?: string[];
+  values?: string[];
+  personality?: string[];
+  relationshipGoals?: string[];
+  lookingFor?: string[];
+  communicationStyle?: string[];
+  loveStyle?: string[];
+  languageSpoken?: string[];
+  // Lifestyle
+  lifestyle?: string;
+  drinkingHabit?: string;
+  smokingHabit?: string;
+  workoutHabit?: string;
+  petPreference?: string;
+  height?: string;
+  language?: string;
+  // Profession / education
+  fieldOfStudy?: string;
+  profession?: string;
+  educationLevel?: string;
+  zodiacSign?: string;
+  // Personal prompt
+  personalPromptQuestion?: string;
+  personalPromptAnswer?: string;
+  // Dating preferences
+  preferredDenomination?: string;
+  preferredGender?: string;
+  preferredFaithJourney?: string[];
+  preferredChurchAttendance?: string[];
+  preferredRelationshipGoals?: string[];
+  minAge?: number;
+  maxAge?: number;
+  // Subscription
   subscriptionStatus?: string;
   subscriptionTier?: string;
   subscriptionCurrency?: string;
@@ -228,19 +270,89 @@ const getUserById = async (req: CustomRequest, res: Response) => {
 
     const user = userDoc.data() as IFirestoreUser;
 
+    // Deactivated or deleted accounts are not visible to other users
+    if (user.isActive !== true && user.isActive !== undefined) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    const raw = userDoc.data() as Record<string, unknown>;
+    if (raw['isDeleted'] === true) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    const arr = (field: unknown): unknown[] =>
+      Array.isArray(field) ? field : [];
+
+    // Return all public profile fields. Excluded (PII): email, phoneNumber,
+    // countryCode, latitude, longitude, birthday, passportCountry, payment
+    // authorization codes, raw subscription details.
     return res.status(200).json({
       id: userDoc.id,
       name: user.name,
       role: getEffectiveRole(user),
       roles: getNormalizedRoles(user),
+      onboardingCompleted: user.onboardingCompleted,
+      isActive: user.isActive !== undefined ? user.isActive : true,
+      // Photos
       profilePhoto1: user.profilePhoto1,
+      profilePhoto2: user.profilePhoto2,
+      profilePhoto3: user.profilePhoto3,
+      profilePhoto4: user.profilePhoto4,
+      profilePhoto5: user.profilePhoto5,
+      profilePhoto6: user.profilePhoto6,
       profilePhotoCount: countProfilePhotos(user),
+      // Core demographics
       age: user.age,
       gender: user.gender,
       location: user.location,
       bio: user.bio,
+      // Faith profile
       denomination: user.denomination,
-      profileFits: Array.isArray(user.profileFits) ? user.profileFits : [],
+      faithJourney: user.faithJourney,
+      churchAttendance: user.churchAttendance,
+      sundayActivity: user.sundayActivity,
+      baptismStatus: user.baptismStatus,
+      spiritualGifts: arr(user.spiritualGifts),
+      favoriteVerse: user.favoriteVerse,
+      // Personality & interests
+      profileFits: arr(user.profileFits),
+      interests: arr(user.interests),
+      hobbies: arr(user.hobbies),
+      values: arr(user.values),
+      personality: arr(user.personality),
+      relationshipGoals: arr(user.relationshipGoals),
+      lookingFor: arr(user.lookingFor),
+      communicationStyle: arr(user.communicationStyle),
+      loveStyle: arr(user.loveStyle),
+      languageSpoken: arr(user.languageSpoken),
+      // Lifestyle
+      lifestyle: user.lifestyle,
+      drinkingHabit: user.drinkingHabit,
+      smokingHabit: user.smokingHabit,
+      workoutHabit: user.workoutHabit,
+      petPreference: user.petPreference,
+      height: user.height,
+      language: user.language,
+      // Profession / education
+      fieldOfStudy: user.fieldOfStudy,
+      profession: user.profession,
+      educationLevel: user.educationLevel,
+      zodiacSign: user.zodiacSign,
+      // Personal prompt
+      personalPromptQuestion: user.personalPromptQuestion,
+      personalPromptAnswer: user.personalPromptAnswer,
+      // Dating preferences (public)
+      preferredDenomination: user.preferredDenomination,
+      preferredGender: user.preferredGender,
+      preferredFaithJourney: arr(user.preferredFaithJourney),
+      preferredChurchAttendance: arr(user.preferredChurchAttendance),
+      preferredRelationshipGoals: arr(user.preferredRelationshipGoals),
+      minAge: user.minAge,
+      maxAge: user.maxAge,
+      // Subscription display (tier/status only — no payment codes)
+      subscriptionStatus: user.subscriptionStatus,
+      subscriptionTier: user.subscriptionTier,
+      profileBoosterActiveUntil: user.profileBoosterActiveUntil,
     });
   } catch (error) {
     const errorMessage = isErrorWithMessage(error) ? error.message : 'An unknown error occurred';

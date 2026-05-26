@@ -4,6 +4,7 @@ dotenv.config();
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { Request, Response } from "express";
+import helmet from "helmet";
 import http from "http";
 import mongoose from "mongoose";
 import multer from "multer";
@@ -25,12 +26,23 @@ import uploadRoutes from "./routes/uploadRoutes";
 import userRoutes from "./routes/userRoutes";
 import { protect } from "./middleware/authMiddleware";
 import { backendAvailabilityGate } from "./middleware/backendAvailabilityMiddleware";
+import {
+  authRateLimit,
+  globalRateLimit,
+  matchRateLimit,
+  paymentRateLimit,
+  supportSubmitRateLimit,
+} from "./middleware/rateLimitMiddleware";
+import cronRoutes from "./routes/cronRoutes";
 import { startStoryCleanupService } from "./services/storyCleanupService";
 import { startSubscriptionRenewalService } from "./services/subscriptionRenewalService";
 import { initializeSocketIO } from "./socket/socket";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Trust the first proxy hop (Vercel edge) so rate limiter sees real client IPs
+app.set('trust proxy', 1);
 
 const allowedOrigins = [
   "http://localhost:5173",
@@ -53,6 +65,15 @@ const io = new Server(httpServer, {
 initializeSocketIO(io);
 
 app.use(
+  helmet({
+    // CSP is enforced at the Vercel edge for the SPA; not needed on the API.
+    contentSecurityPolicy: false,
+    // Firebase Storage and Cloudinary CDN require cross-origin resource loading.
+    crossOriginEmbedderPolicy: false,
+  }),
+);
+
+app.use(
   cors({
     origin: allowedOrigins,
     credentials: true,
@@ -65,6 +86,8 @@ app.use(
     ],
   }),
 );
+
+app.use(globalRateLimit);
 
 app.use(
   express.json({
@@ -99,19 +122,20 @@ app.get("/api/health", (_req: Request, res: Response) => {
 
 app.use("/api", backendAvailabilityGate);
 
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRateLimit, authRoutes);
 app.get("/api/users/public-feature-settings", getPublicFeatureSettings);
 app.use("/api/users", protect, userRoutes);
-app.use("/api/matches", protect, matchRoutes);
+app.use("/api/matches", protect, matchRateLimit, matchRoutes);
 app.use("/api/messages", protect, messageRoutes);
 app.use("/api/discover", protect, discoverRoutes);
 app.use("/api/notifications", protect, notificationRoutes);
-app.use("/api/payments", paymentRoutes);
-app.post("/api/pay", protect, initializeLocalizedSubscription);
-app.use("/api/support", protect, supportRoutes);
+app.use("/api/payments", paymentRateLimit, paymentRoutes);
+app.post("/api/pay", protect, paymentRateLimit, initializeLocalizedSubscription);
+app.use("/api/support", protect, supportSubmitRateLimit, supportRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/users", photoRoutes);
 app.use("/api/stories", protect, storyRoutes);
+app.use("/api/cron", cronRoutes);
 
 app.use((err: any, _req: Request, res: Response, _next: any) => {
   if (err instanceof multer.MulterError) {
@@ -137,8 +161,14 @@ const startServer = async () => {
     await connectDB();
 
     httpServer.listen(PORT, () => {
-      startStoryCleanupService();
-      startSubscriptionRenewalService();
+      // Only start long-running interval services on persistent platforms.
+      // On Vercel serverless, setInterval timers are destroyed when the function
+      // invocation ends, so these services are driven by cron routes instead
+      // (see /api/cron/* and backend/vercel.json crons config).
+      if (process.env.VERCEL !== '1') {
+        startStoryCleanupService();
+        startSubscriptionRenewalService();
+      }
       console.log(`Server running on port ${PORT}`);
     });
   } catch (error) {

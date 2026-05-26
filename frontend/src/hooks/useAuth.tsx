@@ -14,6 +14,7 @@ import { API } from "@/services/api";
 import {
   signOut,
   onAuthStateChanged,
+  onIdTokenChanged,
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
@@ -94,41 +95,28 @@ interface OnboardingData {
 
 const GOOGLE_REDIRECT_PENDING_KEY = "faithbliss_google_redirect_pending";
 const GOOGLE_REDIRECT_PENDING_PERSIST_KEY = "faithbliss_google_redirect_pending_persist";
-const PRIMARY_ADMIN_EMAIL = import.meta.env.VITE_PRIMARY_ADMIN_EMAIL ?? '';
 const FEATURE_SETTINGS_CACHE_KEY = "faithbliss:feature-settings-cache";
 const FEATURE_SETTINGS_SYNC_KEY = "faithbliss:feature-settings-updated-at";
 
-const resolveUserRole = (email: unknown, role: unknown): User["role"] => {
-  if (
-    typeof email === "string" &&
-    email.trim().toLowerCase() === PRIMARY_ADMIN_EMAIL
-  ) {
-    return "admin";
-  }
-
+// Role is set server-side in Firestore during profile creation and propagated here.
+// No email comparison in the frontend bundle — admin identity stays server-side.
+const resolveUserRole = (_email: unknown, role: unknown): User["role"] => {
   if (typeof role === "string" && role.trim()) {
-    return role;
+    return role as User["role"];
   }
-
   return "user";
 };
 
-const normalizeUserRoles = (email: unknown, roles: unknown): string[] => {
-  const normalizedRoles = Array.isArray(roles)
-    ? roles
-        .filter((role): role is string => typeof role === "string")
-        .map((role) => role.trim().toLowerCase())
-        .filter(Boolean)
-    : [];
-
-  if (
-    typeof email === "string" &&
-    email.trim().toLowerCase() === PRIMARY_ADMIN_EMAIL
-  ) {
-    return Array.from(new Set([...normalizedRoles, "developer"]));
-  }
-
-  return Array.from(new Set(normalizedRoles));
+const normalizeUserRoles = (_email: unknown, roles: unknown): string[] => {
+  if (!Array.isArray(roles)) return [];
+  return Array.from(
+    new Set(
+      roles
+        .filter((r): r is string => typeof r === "string")
+        .map((r) => r.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  );
 };
 
 const isFirebaseNetworkError = (error: unknown): boolean => {
@@ -695,6 +683,22 @@ export function useAuth() {
   }, [clearApiCache]);
 
   const isAuthenticated = !!(accessToken && user);
+
+  // Proactively refresh the stored token whenever Firebase rotates it (every ~55 min).
+  // onIdTokenChanged fires on sign-in, sign-out, AND silent token refresh events.
+  useEffect(() => {
+    const unsubscribeTokenRefresh = onIdTokenChanged(auth, async (fbUser) => {
+      if (!fbUser) return;
+      try {
+        const freshToken = await fbUser.getIdToken();
+        setAccessToken(freshToken);
+        localStorage.setItem("accessToken", freshToken);
+      } catch {
+        // Silent failure; syncUserFromFirebase will handle auth recovery on next action.
+      }
+    });
+    return () => unsubscribeTokenRefresh();
+  }, []);
 
   useEffect(() => {
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
@@ -1283,134 +1287,24 @@ export function useAuth() {
   }, [isLoading, user, navigate, location.pathname]);
 
   // -----------------------------------------------------------
-  //  NEW: View Another Users Profile (by UID)
+  //  View Another User's Profile (by UID)
+  //  Routes through the backend API so Firestore rules can restrict
+  //  client reads to own-profile-only without breaking profile views.
+  //  The backend filters out PII (phone, GPS, birthday, email) before responding.
   // -----------------------------------------------------------
   const getUserProfileById = useCallback(
     async (userId: string): Promise<User | null> => {
       if (!userId) {
-        console.warn(" getUserProfileById called with empty userId");
+        console.warn("getUserProfileById called with empty userId");
         return null;
       }
-
       try {
-        const docRef = doc(db, "users", userId);
-        const docSnap = await getDoc(docRef);
-
-        if (!docSnap.exists()) {
-          console.warn(` No user profile found for UID: ${userId}`);
-          return null;
-        }
-
-        const data = docSnap.data();
-
-        if (data.isActive === false || data.isDeleted === true) {
-          return null;
-        }
-
-        const normalizedSubscription = normalizeSubscription(data.subscription);
-
-        const profile: User = {
-          id: userId,
-          email: data.email || "",
-          name: data.name || "Unknown User",
-          role: resolveUserRole(data.email, data.role),
-          roles: normalizeUserRoles(data.email, data.roles),
-          onboardingCompleted: data.onboardingCompleted || false,
-          emailVerified: data.emailVerified === false ? false : true,
-          age: data.age || 0,
-          gender: data.gender || "MALE",
-          denomination: data.denomination || "",
-          bio: data.bio || "",
-          location: data.location || "",
-
-          // Optional fields
-          latitude: data.latitude,
-          longitude: data.longitude,
-          phoneNumber: data.phoneNumber,
-          countryCode: data.countryCode,
-          passportCountry: data.passportCountry || null,
-          birthday: data.birthday
-            ? new Date(data.birthday.seconds * 1000)
-            : undefined,
-          fieldOfStudy: data.fieldOfStudy || data.education,
-          profession: data.profession || data.occupation,
-          faithJourney: data.faithJourney,
-          sundayActivity: data.sundayActivity || data.churchAttendance,
-          churchAttendance: data.churchAttendance || data.sundayActivity,
-          baptismStatus: data.baptismStatus,
-          spiritualGifts: data.spiritualGifts,
-          relationshipGoals: data.relationshipGoals,
-          lifestyle: data.lifestyle,
-          lookingFor: data.lookingFor,
-          personality: data.personality,
-          hobbies: data.hobbies,
-          interests: data.interests,
-          values: data.values,
-          profileFits: data.profileFits,
-          favoriteVerse: data.favoriteVerse,
-          drinkingHabit: data.drinkingHabit,
-          smokingHabit: data.smokingHabit,
-          workoutHabit: data.workoutHabit,
-          petPreference: data.petPreference,
-          height: data.height,
-          language: data.language,
-          languageSpoken: data.languageSpoken,
-          personalPromptQuestion: data.personalPromptQuestion,
-          personalPromptAnswer: data.personalPromptAnswer,
-          communicationStyle: data.communicationStyle,
-          loveStyle: data.loveStyle,
-          educationLevel: data.educationLevel,
-          zodiacSign: data.zodiacSign,
-          preferredFaithJourney: data.preferredFaithJourney,
-          preferredChurchAttendance: data.preferredChurchAttendance,
-          preferredRelationshipGoals: data.preferredRelationshipGoals,
-          preferredDenomination: data.preferredDenomination,
-          preferredGender: data.preferredGender,
-          minAge: data.minAge,
-          maxAge: data.maxAge,
-          maxDistance: data.maxDistance,
-          preferredMinHeight: data.preferredMinHeight,
-
-          // Photos
-          profilePhoto1: data.profilePhoto1,
-          profilePhoto2: data.profilePhoto2,
-          profilePhoto3: data.profilePhoto3,
-          profilePhoto4: data.profilePhoto4,
-          profilePhoto5: data.profilePhoto5,
-          profilePhoto6: data.profilePhoto6,
-          profilePhotoCount: getProfilePhotoCount(data as Record<string, any>),
-          subscriptionStatus:
-            data.subscriptionStatus || normalizedSubscription?.status,
-          subscriptionTier:
-            data.subscriptionTier || normalizedSubscription?.tier,
-          subscriptionCurrency:
-            data.subscriptionCurrency || normalizedSubscription?.currency,
-          profileBoosterCredits:
-            typeof data.profileBoosterCredits === "number"
-              ? data.profileBoosterCredits
-              : 0,
-          profileBoosterActiveUntil:
-            typeof data.profileBoosterActiveUntil === "string"
-              ? data.profileBoosterActiveUntil
-              : null,
-          profileBoosterLastGrantedReference:
-            typeof data.profileBoosterLastGrantedReference === "string"
-              ? data.profileBoosterLastGrantedReference
-              : null,
-          profileBoosterLastUsedAt:
-            typeof data.profileBoosterLastUsedAt === "string"
-              ? data.profileBoosterLastUsedAt
-              : null,
-          subscription: normalizedSubscription,
-          settings: data.settings,
-        };
-
-        return profile;
+        const profile = await API.User.getUserById(userId);
+        return profile ?? null;
       } catch (error: any) {
-        console.error(
-          ` Failed to fetch user profile for UID: ${userId}`,
-          error,
-        );
+        const status = error?.status ?? error?.statusCode ?? error?.response?.status;
+        if (status === 404) return null;
+        console.error(`Failed to fetch user profile for UID: ${userId}`, error);
         return null;
       }
     },

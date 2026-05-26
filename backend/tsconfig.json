@@ -11,10 +11,9 @@
         "skipLibCheck": true,
         "resolveJsonModule": true, 
         
-        // 🌟 CRITICAL FIX: Ensures module resolution works correctly with pnpm's symlinks
-        "moduleResolution": "node", 
-        "ignoreDeprecations": "6.0",
-        
+        // Ensures module resolution works correctly with pnpm's symlinks
+        "moduleResolution": "node",
+
         "typeRoots": [
             "./node_modules/@types",
             "./src/types" 

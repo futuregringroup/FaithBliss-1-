@@ -146,7 +146,7 @@ function App() {
 
     const refreshInterval = window.setInterval(() => {
       void loadFeatureSettings();
-    }, 15000);
+    }, 5 * 60 * 1000); // 5 minutes — maintenance/shutdown flags change rarely
 
     window.addEventListener("focus", handleFocus);
     window.addEventListener("pageshow", handleFocus);

@@ -315,7 +315,8 @@ const ProfilePage = () => {
   const preferenceFaithJourney = normalizeList(profile.preferredFaithJourney);
   const preferenceChurchAttendance = normalizeList(profile.preferredChurchAttendance);
   const preferenceRelationshipGoals = normalizeList(profile.preferredRelationshipGoals);
-  const contactNumber = [profile.countryCode, profile.phoneNumber].filter(Boolean).join(' ').trim();
+  // Own-profile view uses contextUser for PII fields (not returned by the public API)
+  const contactNumber = [contextUser?.countryCode, contextUser?.phoneNumber].filter(Boolean).join(' ').trim();
   const primaryGoal = profile.relationshipGoals?.[0] || profile.lookingFor?.[0] || '';
   const quickHighlights = [
     { label: 'Denomination', value: formatValue(profile.denomination) },
@@ -743,7 +744,7 @@ const ProfilePage = () => {
             {isOwnProfile && (
               <DashboardPanel eyebrow="Private" title="Your Saved Account Details">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <DetailTile label="Email" value={profile.email || 'Not provided'} />
+                  <DetailTile label="Email" value={contextUser?.email || 'Not provided'} />
                   <DetailTile label="Phone Number" value={contactNumber || 'Not provided'} />
                 </div>
               </DashboardPanel>

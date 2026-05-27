@@ -128,8 +128,7 @@ export default function PublicPremium() {
                 can compare plans here, then create an account or sign in when you are ready to start.
               </p>
               <p className="text-sm text-gray-400">
-                Prices are shown in USD on this public page. Paystack charges in NGN at checkout, and
-                final localized pricing is confirmed before payment.
+                Prices are shown in USD on this public page. Nigerian users are charged in NGN; all other countries are charged in USD at checkout.
               </p>
               <div className="flex flex-wrap gap-3">
                 <Link

@@ -96,9 +96,9 @@ const fallbackQuote: LocalizedPricingQuoteResponse = {
       countryCode: null,
       displayCurrency: 'USD',
       displayAmountMajor: 11.99,
-      chargeCurrency: 'NGN',
-      chargeAmountMajor: 0,
-      chargeAmountSubunits: 0,
+      chargeCurrency: 'USD',
+      chargeAmountMajor: 11.99,
+      chargeAmountSubunits: 1199,
       exchangeRate: 1,
       displayLabel: '$11.99',
     },
@@ -109,9 +109,9 @@ const fallbackQuote: LocalizedPricingQuoteResponse = {
       countryCode: null,
       displayCurrency: 'USD',
       displayAmountMajor: 23.97,
-      chargeCurrency: 'NGN',
-      chargeAmountMajor: 0,
-      chargeAmountSubunits: 0,
+      chargeCurrency: 'USD',
+      chargeAmountMajor: 23.97,
+      chargeAmountSubunits: 2397,
       exchangeRate: 1,
       displayLabel: '$23.97',
     },
@@ -130,9 +130,9 @@ const fallbackBoosterQuote: ProfileBoosterPricingQuoteResponse = {
       countryCode: null,
       displayCurrency: 'USD',
       displayAmountMajor: 4,
-      chargeCurrency: 'NGN',
-      chargeAmountMajor: 0,
-      chargeAmountSubunits: 0,
+      chargeCurrency: 'USD',
+      chargeAmountMajor: 4,
+      chargeAmountSubunits: 400,
       exchangeRate: 1,
       displayLabel: '$4.00',
     },
@@ -144,9 +144,9 @@ const fallbackBoosterQuote: ProfileBoosterPricingQuoteResponse = {
       countryCode: null,
       displayCurrency: 'USD',
       displayAmountMajor: 7,
-      chargeCurrency: 'NGN',
-      chargeAmountMajor: 0,
-      chargeAmountSubunits: 0,
+      chargeCurrency: 'USD',
+      chargeAmountMajor: 7,
+      chargeAmountSubunits: 700,
       exchangeRate: 1,
       displayLabel: '$7.00',
     },
@@ -177,10 +177,10 @@ const getPricingNote = (region: 'nigeria' | 'africa' | 'global', displayCurrency
   }
 
   if (region === 'africa') {
-    return `Shown in ${displayCurrency}. Paystack still charges in NGN.`;
+    return `Shown in ${displayCurrency}. Charged in USD at checkout.`;
   }
 
-  return 'Shown in USD. Paystack charges in NGN at checkout.';
+  return 'Charged in USD at checkout.';
 };
 
 const formatProfileBoosterCountdown = (activeUntil: string | null | undefined) => {
@@ -562,7 +562,7 @@ const PremiumContent = () => {
                 gives you clarity, priority visibility, and a beautifully guided path to the right match.
               </p>
               <p className="text-sm text-gray-400">
-                Your displayed price is localized by country. Paystack checkout is processed in NGN.
+                Your displayed price is localized by country. Nigerian users are charged in NGN; all other countries are charged in USD.
               </p>
               <div className="flex flex-wrap gap-3">
                 <button

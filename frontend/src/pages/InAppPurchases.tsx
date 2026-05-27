@@ -33,9 +33,9 @@ const fallbackBoosterQuote: ProfileBoosterPricingQuoteResponse = {
       countryCode: null,
       displayCurrency: 'USD',
       displayAmountMajor: 4,
-      chargeCurrency: 'NGN',
-      chargeAmountMajor: 0,
-      chargeAmountSubunits: 0,
+      chargeCurrency: 'USD',
+      chargeAmountMajor: 4,
+      chargeAmountSubunits: 400,
       exchangeRate: 1,
       displayLabel: '$4.00',
     },
@@ -47,9 +47,9 @@ const fallbackBoosterQuote: ProfileBoosterPricingQuoteResponse = {
       countryCode: null,
       displayCurrency: 'USD',
       displayAmountMajor: 7,
-      chargeCurrency: 'NGN',
-      chargeAmountMajor: 0,
-      chargeAmountSubunits: 0,
+      chargeCurrency: 'USD',
+      chargeAmountMajor: 7,
+      chargeAmountSubunits: 700,
       exchangeRate: 1,
       displayLabel: '$7.00',
     },
@@ -80,10 +80,10 @@ const getPricingNote = (region: 'nigeria' | 'africa' | 'global', displayCurrency
   }
 
   if (region === 'africa') {
-    return `Shown in ${displayCurrency}. Paystack still charges in NGN.`;
+    return `Shown in ${displayCurrency}. Charged in USD at checkout.`;
   }
 
-  return 'Shown in USD. Paystack charges in NGN at checkout.';
+  return 'Charged in USD at checkout.';
 };
 
 const formatProfileBoosterCountdown = (activeUntil: string | null | undefined) => {

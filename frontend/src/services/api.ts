@@ -324,7 +324,7 @@ export interface LocalizedPaymentInitResponse {
   authorizationUrl: string;
   accessCode: string;
   reference: string;
-  chargeCurrency: "NGN";
+  chargeCurrency: "NGN" | "USD";
   chargeAmountMajor: number;
   chargeAmountSubunits: number;
   displayCurrency: string;
@@ -345,7 +345,7 @@ export interface ProfileBoosterPaymentInitResponse {
   displayCurrency: string;
   displayAmountMajor: number;
   displayLabel: string;
-  chargeCurrency: "NGN";
+  chargeCurrency: "NGN" | "USD";
   chargeAmountMajor: number;
   chargeAmountSubunits: number;
 }
@@ -358,7 +358,7 @@ export interface ProfileBoosterPricingQuote {
   countryCode: string | null;
   displayCurrency: string;
   displayAmountMajor: number;
-  chargeCurrency: "NGN";
+  chargeCurrency: "NGN" | "USD";
   chargeAmountMajor: number;
   chargeAmountSubunits: number;
   exchangeRate: number;
@@ -393,7 +393,7 @@ export interface LocalizedPricingQuote {
   countryCode: string | null;
   displayCurrency: string;
   displayAmountMajor: number;
-  chargeCurrency: "NGN";
+  chargeCurrency: "NGN" | "USD";
   chargeAmountMajor: number;
   chargeAmountSubunits: number;
   exchangeRate: number;

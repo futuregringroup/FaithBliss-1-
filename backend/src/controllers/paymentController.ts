@@ -646,6 +646,7 @@ export const initializeLocalizedSubscription = async (req: Request, res: Respons
     const userPricingContext = await getUserPricingContext(userId);
     const fallbackCountryCode = inferCountryCodeFromUser(userPricingContext);
     const pricingQuote = await getRegionalPricingQuote(billingCycle, clientIp, fallbackCountryCode);
+    console.log(`[checkout] region=${pricingQuote.region} country=${pricingQuote.countryCode} chargeCurrency=${pricingQuote.chargeCurrency} chargeAmountSubunits=${pricingQuote.chargeAmountSubunits}`);
     const shouldUsePlanSubscription = pricingQuote.region === 'nigeria';
     const planCode = shouldUsePlanSubscription
       ? resolveLocalizedSubscriptionPlanConfig(billingCycle).planCode

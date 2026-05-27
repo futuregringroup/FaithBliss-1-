@@ -646,10 +646,8 @@ export const initializeLocalizedSubscription = async (req: Request, res: Respons
     const userPricingContext = await getUserPricingContext(userId);
     const fallbackCountryCode = inferCountryCodeFromUser(userPricingContext);
     const pricingQuote = await getRegionalPricingQuote(billingCycle, clientIp, fallbackCountryCode);
-    const shouldUsePlanSubscription = pricingQuote.region === 'nigeria';
-    const planCode = shouldUsePlanSubscription
-      ? resolveLocalizedSubscriptionPlanConfig(billingCycle).planCode
-      : null;
+    const shouldUsePlanSubscription = false;
+    const planCode = null;
 
     const response = await initializeTransaction({
       email,

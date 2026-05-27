@@ -243,12 +243,46 @@ const getMe = async (req: CustomRequest, res: Response) => {
   if (!user) return;
 
   const { firebaseUid: uid, ...userData } = user as IFirestoreUser & { firebaseUid: string };
+
+  // Auto-heal Firestore roles for the PRIMARY_ADMIN_EMAIL account.
+  // The backend applies email-based elevation at runtime (getEffectiveRole /
+  // getNormalizedRoles) but never persists it. The frontend reads Firestore
+  // directly and therefore sees the un-elevated values, blocking access to
+  // /admin and /developer. Writing the correct values here on the first
+  // authenticated API call ensures subsequent Firestore reads are accurate.
+  const effectiveRole = getEffectiveRole(userData);
+  const effectiveRoles = getNormalizedRoles(userData);
+  const rawRole = typeof userData.role === 'string' ? userData.role.trim().toLowerCase() : 'user';
+  const rawRoles: string[] = Array.isArray(userData.roles)
+    ? (userData.roles as unknown[])
+        .filter((r): r is string => typeof r === 'string')
+        .map((r) => r.trim().toLowerCase())
+    : [];
+
+  const needsRoleHeal = effectiveRole === 'admin' && rawRole !== 'admin';
+  const needsRolesHeal = effectiveRoles.includes('developer') && !rawRoles.includes('developer');
+
+  if (needsRoleHeal || needsRolesHeal) {
+    const updates: Record<string, unknown> = {
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+    if (needsRoleHeal) {
+      updates.role = 'admin';
+    }
+    if (needsRolesHeal) {
+      updates.roles = Array.from(new Set([...rawRoles, 'developer']));
+    }
+    usersCollection.doc(firebaseUid).update(updates).catch((err: unknown) => {
+      console.error('Failed to bootstrap admin/developer roles in Firestore:', err);
+    });
+  }
+
   return res.status(200).json({
     id: uid,
     firebaseUid: uid,
     ...userData,
-    role: getEffectiveRole(userData),
-    roles: getNormalizedRoles(userData),
+    role: effectiveRole,
+    roles: effectiveRoles,
     passportCountry: normalizeCountryCode(userData.passportCountry) || null,
     profilePhotoCount: countProfilePhotos(userData),
   });

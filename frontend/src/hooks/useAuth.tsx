@@ -783,6 +783,21 @@ export function useAuth() {
       }
 
       if (userToStore) {
+        // Override role/roles with backend-authoritative values.
+        // The backend applies PRIMARY_ADMIN_EMAIL elevation that Firestore
+        // doesn't store; without this call the frontend route guards (/admin,
+        // /developer) would block the admin even when the server allows it.
+        try {
+          const meData = await API.User.getMe();
+          if (typeof meData.role === 'string') {
+            userToStore.role = meData.role as User["role"];
+          }
+          if (Array.isArray(meData.roles)) {
+            userToStore.roles = meData.roles as string[];
+          }
+        } catch {
+          // Silent fallback — Firestore values are still valid for normal users
+        }
         persistUser(userToStore);
         return;
       }
@@ -923,10 +938,24 @@ export function useAuth() {
         throw new Error("User profile not found in Firestore during refetch.");
 
       const freshToken = await fbUser.getIdToken();
+      localStorage.setItem("accessToken", freshToken);
+
+      // Override role/roles with backend-authoritative values (mirrors
+      // the same fix applied in syncUserFromFirebase).
+      try {
+        const meData = await API.User.getMe();
+        if (typeof meData.role === 'string') {
+          userToStore.role = meData.role as User["role"];
+        }
+        if (Array.isArray(meData.roles)) {
+          userToStore.roles = meData.roles as string[];
+        }
+      } catch {
+        // Silent fallback — Firestore values remain valid for normal users
+      }
 
       setUser(userToStore);
       setAccessToken(freshToken);
-      localStorage.setItem("accessToken", freshToken);
       localStorage.setItem("user", JSON.stringify(userToStore));
     } catch (err) {
       console.error("Refetch user failed:", err);

@@ -10,8 +10,6 @@ import {
   getLocalizedPricingQuote,
   initializeProfileBoosterPurchase,
   initializeLocalizedSubscription,
-  initializeSubscription,
-  listSubscriptionPlans,
   updateSubscriptionAutoRenew,
   verifySubscription,
 } from '../controllers/paymentController';
@@ -26,11 +24,9 @@ router.get('/admin/analytics', protect, getAdminPaymentAnalytics);
 router.delete('/admin/records/:userId', protect, deleteAdminPaymentRecord);
 router.get('/quote', protect, getLocalizedPricingQuote);
 router.get('/profile-booster/quote', protect, getLocalizedProfileBoosterQuote);
-router.get('/plans', protect, listSubscriptionPlans);
 router.post('/pay', protect, initializeLocalizedSubscription);
 router.patch('/subscription/auto-renew', protect, updateSubscriptionAutoRenew);
 router.post('/profile-booster/pay', protect, initializeProfileBoosterPurchase);
-router.post('/initialize', protect, initializeSubscription);
 router.post('/verify', protect, verifySubscription);
 
 export default router;

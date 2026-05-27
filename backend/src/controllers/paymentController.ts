@@ -7,7 +7,6 @@ import { usersCollection } from '../config/firebase-admin';
 import {
   disableSubscription as disablePaystackSubscription,
   enableSubscription as enablePaystackSubscription,
-  getPlanDetails,
   initializeTransaction,
   verifyTransaction,
 } from '../services/paystackService';
@@ -25,14 +24,6 @@ import {
 
 type PlanTier = 'premium' | 'elite';
 type Currency = 'NGN' | 'USD';
-type PaymentCurrency = Currency | string;
-type PublicPlan = {
-  tier: PlanTier;
-  name: string;
-  amount: number;
-  currency: PaymentCurrency;
-  interval: 'monthly';
-};
 type StoredSubscription = {
   status?: string;
   tier?: string;
@@ -287,35 +278,6 @@ const addSubscriptionDuration = (date: Date, billingCycle: BillingCycle | undefi
   return nextDate;
 };
 
-const resolvePlanConfig = (tier: PlanTier, currency: Currency) => {
-  const envSuffix = `${tier}_${currency}`.toUpperCase();
-  const planCode = process.env[`PAYSTACK_PLAN_CODE_${envSuffix}`]?.trim();
-  const amountRaw = process.env[`PAYSTACK_AMOUNT_${envSuffix}`];
-  const fallbackAmount = amountRaw ? Number(amountRaw) : 0;
-
-  if (!planCode) {
-    throw new Error(`Missing PAYSTACK_PLAN_CODE_${envSuffix}. Create the plan in Paystack and set this env var.`);
-  }
-  if (!fallbackAmount || Number.isNaN(fallbackAmount)) {
-    throw new Error(`Missing PAYSTACK_AMOUNT_${envSuffix}`);
-  }
-
-  return { planCode, fallbackAmount };
-};
-
-const resolveLocalizedSubscriptionPlanConfig = (billingCycle: BillingCycle) => {
-  const envSuffix = billingCycle.toUpperCase();
-  const planCode = process.env[`PAYSTACK_PLAN_CODE_PREMIUM_${envSuffix}`]?.trim();
-  const fallbackAmount = billingCycle === 'quarterly' ? 10000 : 5000;
-
-  if (!planCode) {
-    throw new Error(
-      `Missing PAYSTACK_PLAN_CODE_PREMIUM_${envSuffix}. Create the ${billingCycle} recurring plan in Paystack and set this env var.`
-    );
-  }
-
-  return { planCode, fallbackAmount };
-};
 
 const resolveRenewalProvider = (
   region: PricingRegion | string | undefined,
@@ -335,54 +297,6 @@ const resolveRenewalProvider = (
 const isAutoRenewEnabled = (subscription: StoredSubscription | null | undefined) =>
   subscription?.autoRenewEnabled !== false;
 
-const resolveLivePlanConfig = async (tier: PlanTier, currency: Currency) => {
-  const { planCode, fallbackAmount } = resolvePlanConfig(tier, currency);
-
-  try {
-    const response = await getPlanDetails(planCode);
-    const liveAmount = typeof response?.data?.amount === 'number' ? response.data.amount : fallbackAmount;
-    const liveCurrency = typeof response?.data?.currency === 'string'
-      ? response.data.currency.trim().toUpperCase()
-      : currency;
-
-    return {
-      planCode,
-      amount: liveAmount,
-      currency: (liveCurrency === 'USD' ? 'USD' : 'NGN') as Currency,
-    };
-  } catch {
-    return {
-      planCode,
-      amount: fallbackAmount,
-      currency,
-    };
-  }
-};
-
-const listConfiguredPlans = async (): Promise<PublicPlan[]> => {
-  const plans: PublicPlan[] = [];
-  const tiers: PlanTier[] = ['premium', 'elite'];
-  const currencies: Currency[] = ['NGN', 'USD'];
-
-  for (const tier of tiers) {
-    for (const currency of currencies) {
-      try {
-        const { amount, currency: resolvedCurrency } = await resolveLivePlanConfig(tier, currency);
-        plans.push({
-          tier,
-          name: PLAN_METADATA[tier].name,
-          amount,
-          currency: resolvedCurrency,
-          interval: 'monthly',
-        });
-      } catch {
-        continue;
-      }
-    }
-  }
-
-  return plans.sort((left, right) => left.amount - right.amount);
-};
 
 const getStoredSubscription = async (userId: string): Promise<StoredSubscription | null> => {
   const snapshot = await usersCollection.doc(userId).get();
@@ -559,64 +473,6 @@ const updateSubscription = async (
   );
 };
 
-export const initializeSubscription = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).userId as string | undefined;
-    const email = (req as any).user?.email || req.body?.email;
-    const { tier, currency } = req.body as { tier: PlanTier; currency: Currency };
-
-    if (!userId) {
-      return res.status(401).json({ message: 'Unauthorized: Firebase UID missing.' });
-    }
-    if (!email) {
-      return res.status(400).json({ message: 'Email is required for payment.' });
-    }
-    if (!tier || !['premium', 'elite'].includes(tier)) {
-      return res.status(400).json({ message: 'Invalid tier provided.' });
-    }
-    if (!currency || !['NGN', 'USD'].includes(currency)) {
-      return res.status(400).json({ message: 'Invalid currency provided.' });
-    }
-
-    const { planCode, amount, currency: resolvedCurrency } = await resolveLivePlanConfig(tier, currency);
-
-    const payload = {
-      email,
-      amount,
-      currency: resolvedCurrency,
-      plan: planCode,
-      metadata: {
-        userId,
-        tier,
-        currency: resolvedCurrency,
-      },
-    };
-
-    const response = await initializeTransaction(payload);
-
-    await updateSubscription(userId, {
-      status: 'pending',
-      tier,
-      currency: resolvedCurrency,
-      planCode,
-      reference: response.data.reference,
-      autoRenewEnabled: true,
-      autoRenewDisabledAt: undefined,
-    });
-
-    return res.status(200).json({
-      authorizationUrl: response.data.authorization_url,
-      accessCode: response.data.access_code,
-      reference: response.data.reference,
-      amount,
-      currency: resolvedCurrency,
-    });
-  } catch (error: any) {
-    console.error('Paystack init error:', error);
-    const message = error?.message || 'Payment initialization failed.';
-    return res.status(400).json({ message });
-  }
-};
 
 export const initializeLocalizedSubscription = async (req: Request, res: Response) => {
   try {
@@ -910,14 +766,6 @@ export const updateSubscriptionAutoRenew = async (req: Request, res: Response) =
   }
 };
 
-export const listSubscriptionPlans = async (_req: Request, res: Response) => {
-  try {
-    const plans = await listConfiguredPlans();
-    return res.status(200).json({ plans });
-  } catch (error: any) {
-    return res.status(500).json({ message: error?.message || 'Failed to load plans.' });
-  }
-};
 
 export const getAdminPaymentAnalytics = async (req: Request, res: Response) => {
   try {

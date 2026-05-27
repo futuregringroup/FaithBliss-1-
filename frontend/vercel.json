@@ -1,47 +1,46 @@
 {
-  "headers": [
-    {
-      "source": "/.well-known/apple-developer-merchantid-domain-association",
-      "headers": [
-        { "key": "Content-Type", "value": "application/text" },
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(self)" },
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com wss://*.firebaseio.com https://api.cloudinary.com https://*.vercel.app https://faithblissafrica.com; img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com; font-src 'self' data:; frame-src https://faithbliss-79c63.firebaseapp.com; worker-src 'self' blob:; object-src 'none'"
-        }
-      ]
-    },
-    {
-      "source": "/sw.js",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-        { "key": "Content-Type", "value": "application/javascript" }
-      ]
-    },
-    {
-      "source": "/site.webmanifest",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache" },
-        { "key": "Content-Type", "value": "application/manifest+json" }
-      ]
-    }
-  ],
   "routes": [
+    {
+      "src": "/.well-known/apple-developer-merchantid-domain-association",
+      "headers": {
+        "Content-Type": "application/text",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+      },
+      "continue": true
+    },
+    {
+      "src": "/sw\\.js",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Content-Type": "application/javascript"
+      },
+      "continue": true
+    },
+    {
+      "src": "/site\\.webmanifest",
+      "headers": {
+        "Cache-Control": "no-cache",
+        "Content-Type": "application/manifest+json"
+      },
+      "continue": true
+    },
+    {
+      "src": "/(.*)",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=(self)",
+        "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com wss://*.firebaseio.com https://api.cloudinary.com https://*.vercel.app https://faithblissafrica.com; img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com; font-src 'self' data:; frame-src https://faithbliss-79c63.firebaseapp.com; worker-src 'self' blob:; object-src 'none'"
+      },
+      "continue": true
+    },
     {
       "src": "/__/auth/(.*)",
       "dest": "https://faithbliss-79c63.firebaseapp.com/__/auth/$1"
     },
     {
-      "src": "/__/firebase/init.json",
+      "src": "/__/firebase/init\\.json",
       "dest": "https://faithbliss-79c63.firebaseapp.com/__/firebase/init.json"
     },
     {

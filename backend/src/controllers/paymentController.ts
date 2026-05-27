@@ -619,6 +619,7 @@ export const initializeSubscription = async (req: Request, res: Response) => {
 };
 
 export const initializeLocalizedSubscription = async (req: Request, res: Response) => {
+  console.error('[pay] initializeLocalizedSubscription invoked — build: 2026-05-27-usd-routing');
   try {
     const userId = req.userId;
     const email = req.user?.email || req.body?.email;
@@ -646,7 +647,9 @@ export const initializeLocalizedSubscription = async (req: Request, res: Respons
     const userPricingContext = await getUserPricingContext(userId);
     const fallbackCountryCode = inferCountryCodeFromUser(userPricingContext);
     const pricingQuote = await getRegionalPricingQuote(billingCycle, clientIp, fallbackCountryCode);
-    console.log(`[checkout] region=${pricingQuote.region} country=${pricingQuote.countryCode} chargeCurrency=${pricingQuote.chargeCurrency} chargeAmountSubunits=${pricingQuote.chargeAmountSubunits}`);
+    console.error(`[pay] region=${pricingQuote.region} country=${pricingQuote.countryCode} currency=${pricingQuote.chargeCurrency} subunits=${pricingQuote.chargeAmountSubunits}`);
+    res.setHeader('X-Charge-Currency', pricingQuote.chargeCurrency);
+    res.setHeader('X-Pricing-Region', pricingQuote.region);
     const shouldUsePlanSubscription = pricingQuote.region === 'nigeria';
     const planCode = shouldUsePlanSubscription
       ? resolveLocalizedSubscriptionPlanConfig(billingCycle).planCode

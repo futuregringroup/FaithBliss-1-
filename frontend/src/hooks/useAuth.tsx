@@ -1154,6 +1154,15 @@ export function useAuth() {
           );
           return;
         }
+        // Domain not in Firebase Console → Authentication → Authorized Domains.
+        // Add faithblissafrica.com and www.faithblissafrica.com to unblock.
+        if (error?.code === "auth/unauthorized-domain") {
+          showError(
+            "This domain is not authorised for Google sign-in. Please contact support.",
+            "Unauthorised Domain",
+          );
+          return;
+        }
         showError(
           getAuthErrorMessage(error, "Google sign-in failed"),
           "Authentication Error",

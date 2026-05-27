@@ -151,7 +151,7 @@ const PaymentSuccessContent = () => {
 
 export default function ProtectedPaymentSuccess() {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute skipOnboardingCheck>
       <PaymentSuccessContent />
     </ProtectedRoute>
   );

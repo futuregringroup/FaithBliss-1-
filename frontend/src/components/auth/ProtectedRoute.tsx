@@ -11,11 +11,15 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   // This prop determines if the current route IS the onboarding route
   requireOnboarding?: boolean;
+  // Skip onboarding routing check — use for pages that must be reachable
+  // regardless of onboarding state (e.g. payment callbacks)
+  skipOnboardingCheck?: boolean;
 }
 
 export default function ProtectedRoute({
   children,
   requireOnboarding = false,
+  skipOnboardingCheck = false,
 }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, user } = useAuthContext();
   const navigate = useNavigate();
@@ -50,11 +54,14 @@ export default function ProtectedRoute({
   // --- Block rendering if useAuth is about to redirect ---
   const hasCompletedOnboarding = user.onboardingCompleted === true;
 
-  // If we are currently trying to access /dashboard but need /onboarding (or vice-versa),
-  // show the loader until the useAuth useEffect finishes its redirect.
+  // Pages like /payment-success must be reachable regardless of onboarding state.
+  // skipOnboardingCheck bypasses the routing logic below for those pages.
   if (
-    (!hasCompletedOnboarding && !requireOnboarding) ||
-    (hasCompletedOnboarding && requireOnboarding)
+    !skipOnboardingCheck &&
+    (
+      (!hasCompletedOnboarding && !requireOnboarding) ||
+      (hasCompletedOnboarding && requireOnboarding)
+    )
   ) {
     return <HeartBeatLoader message="Routing..." />;
   }

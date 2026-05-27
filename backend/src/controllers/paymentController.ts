@@ -496,8 +496,8 @@ export const initializeLocalizedSubscription = async (req: Request, res: Respons
       return res.status(400).json({ message: 'Invalid billing cycle provided.' });
     }
 
-    const callbackBaseUrl = process.env.CLIENT_URL?.trim();
-    const callbackUrl = callbackBaseUrl ? `${callbackBaseUrl.replace(/\/+$/, '')}/payment-success` : undefined;
+    const callbackBaseUrl = (process.env.CLIENT_URL?.trim()) || 'https://faithblissafrica.com';
+    const callbackUrl = `${callbackBaseUrl.replace(/\/+$/, '')}/payment-success`;
     const clientIp = extractClientIp(req.headers as Record<string, unknown>);
     const userPricingContext = await getUserPricingContext(userId);
     const fallbackCountryCode = inferCountryCodeFromUser(userPricingContext);
@@ -641,8 +641,8 @@ export const initializeProfileBoosterPurchase = async (req: Request, res: Respon
 
     const userData = userSnapshot.data() as Record<string, any> | undefined;
 
-    const callbackBaseUrl = process.env.CLIENT_URL?.trim();
-    const callbackUrl = callbackBaseUrl ? `${callbackBaseUrl.replace(/\/+$/, '')}/payment-success` : undefined;
+    const callbackBaseUrl = (process.env.CLIENT_URL?.trim()) || 'https://faithblissafrica.com';
+    const callbackUrl = `${callbackBaseUrl.replace(/\/+$/, '')}/payment-success`;
     const clientIp = extractClientIp(req.headers as Record<string, unknown>);
     const fallbackCountryCode = inferCountryCodeFromUser(userData as UserPricingContext);
     const pricingQuote = await getRegionalProfileBoosterQuote(clientIp, bundleKey, fallbackCountryCode);

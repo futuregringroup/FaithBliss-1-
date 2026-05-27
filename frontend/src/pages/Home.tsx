@@ -350,7 +350,7 @@ export default function Home() {
           <div>
             <h2 className="text-2xl font-bold">Need help or have a question?</h2>
             <p className="text-gray-300 mt-2 max-w-xl">
-              Our Trust & Safety team is here to help. Whether you have a question about getting started, a report to make, or feedback to share.
+              Our Trust & Safety team is here to help, whether you have a question about getting started, a report to make, or feedback to share.
             </p>
           </div>
 

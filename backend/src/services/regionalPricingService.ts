@@ -4,7 +4,7 @@ import { lookupCountryByIp } from './geoLocationService';
 export type BillingCycle = 'monthly' | 'quarterly';
 export type PricingRegion = 'nigeria' | 'africa' | 'global';
 export type DisplayCurrency = string;
-export type ChargeCurrency = 'NGN';
+export type ChargeCurrency = 'NGN' | 'USD';
 export type PaidTier = 'premium';
 
 export type RegionalPricingQuote = {
@@ -146,40 +146,17 @@ const getRateFromUsdRates = (rates: Record<string, number>, currency: string): n
   return rate;
 };
 
-const convertNgnToDisplayWholeAmount = (
-  amountInNgn: number,
+const convertUsdToDisplayWholeAmount = (
+  usdAmount: number,
   displayCurrency: string,
   usdRates: Record<string, number>,
 ): { amount: number; exchangeRate: number } => {
-  if (displayCurrency === 'NGN') {
-    return {
-      amount: amountInNgn,
-      exchangeRate: 1,
-    };
+  if (displayCurrency === 'USD') {
+    return { amount: usdAmount, exchangeRate: 1 };
   }
-
-  const ngnRate = getRateFromUsdRates(usdRates, 'NGN');
   const displayRate = getRateFromUsdRates(usdRates, displayCurrency);
-  const crossRate = displayRate / ngnRate;
-  const converted = Math.max(1, Math.ceil(amountInNgn * crossRate));
-
-  return {
-    amount: converted,
-    exchangeRate: crossRate,
-  };
-};
-
-const convertUsdToNgnWholeAmount = (
-  usdAmount: number,
-  usdRates: Record<string, number>,
-): { amount: number; exchangeRate: number } => {
-  const ngnRate = getRateFromUsdRates(usdRates, 'NGN');
-  const converted = Math.max(1, Math.ceil(usdAmount * ngnRate));
-
-  return {
-    amount: converted,
-    exchangeRate: ngnRate,
-  };
+  const converted = Math.max(1, Math.ceil(usdAmount * displayRate));
+  return { amount: converted, exchangeRate: displayRate };
 };
 
 const formatDisplayLabel = (currency: string, amount: number): string => {
@@ -224,8 +201,8 @@ export const getRegionalPricingQuote = async (
 
   if (region === 'africa') {
     const displayCurrency = getAfricanDisplayCurrency(resolvedCountryCode);
-    const ngnAmount = NGN_PRICE_CATALOG[billingCycle];
-    const converted = convertNgnToDisplayWholeAmount(ngnAmount, displayCurrency, usdRates);
+    const usdAmount = GLOBAL_USD_PRICE_CATALOG[billingCycle];
+    const converted = convertUsdToDisplayWholeAmount(usdAmount, displayCurrency, usdRates);
 
     return {
       tier: 'premium',
@@ -234,16 +211,15 @@ export const getRegionalPricingQuote = async (
       countryCode: resolvedCountryCode,
       displayCurrency,
       displayAmountMajor: converted.amount,
-      chargeCurrency: 'NGN',
-      chargeAmountMajor: ngnAmount,
-      chargeAmountSubunits: ngnAmount * 100,
+      chargeCurrency: 'USD',
+      chargeAmountMajor: usdAmount,
+      chargeAmountSubunits: Math.round(usdAmount * 100),
       exchangeRate: converted.exchangeRate,
       displayLabel: formatDisplayLabel(displayCurrency, converted.amount),
     };
   }
 
   const usdAmount = GLOBAL_USD_PRICE_CATALOG[billingCycle];
-  const ngnCharge = convertUsdToNgnWholeAmount(usdAmount, usdRates);
 
   return {
     tier: 'premium',
@@ -252,10 +228,10 @@ export const getRegionalPricingQuote = async (
     countryCode: resolvedCountryCode,
     displayCurrency: 'USD',
     displayAmountMajor: usdAmount,
-    chargeCurrency: 'NGN',
-    chargeAmountMajor: ngnCharge.amount,
-    chargeAmountSubunits: ngnCharge.amount * 100,
-    exchangeRate: ngnCharge.exchangeRate,
+    chargeCurrency: 'USD',
+    chargeAmountMajor: usdAmount,
+    chargeAmountSubunits: Math.round(usdAmount * 100),
+    exchangeRate: 1,
     displayLabel: formatDisplayLabel('USD', usdAmount),
   };
 };
@@ -289,11 +265,7 @@ const buildRegionalProfileBoosterQuote = (
 
   if (region === 'africa') {
     const displayCurrency = getAfricanDisplayCurrency(countryCode);
-    const converted = convertNgnToDisplayWholeAmount(
-      africaBasePrice,
-      displayCurrency,
-      usdRates,
-    );
+    const converted = convertUsdToDisplayWholeAmount(globalBasePrice, displayCurrency, usdRates);
 
     return {
       productType: 'profile_booster',
@@ -303,15 +275,13 @@ const buildRegionalProfileBoosterQuote = (
       countryCode,
       displayCurrency,
       displayAmountMajor: converted.amount,
-      chargeCurrency: 'NGN',
-      chargeAmountMajor: africaBasePrice,
-      chargeAmountSubunits: africaBasePrice * 100,
+      chargeCurrency: 'USD',
+      chargeAmountMajor: globalBasePrice,
+      chargeAmountSubunits: Math.round(globalBasePrice * 100),
       exchangeRate: converted.exchangeRate,
       displayLabel: formatDisplayLabel(displayCurrency, converted.amount),
     };
   }
-
-  const ngnCharge = convertUsdToNgnWholeAmount(globalBasePrice, usdRates);
 
   return {
     productType: 'profile_booster',
@@ -321,10 +291,10 @@ const buildRegionalProfileBoosterQuote = (
     countryCode,
     displayCurrency: 'USD',
     displayAmountMajor: globalBasePrice,
-    chargeCurrency: 'NGN',
-    chargeAmountMajor: ngnCharge.amount,
-    chargeAmountSubunits: ngnCharge.amount * 100,
-    exchangeRate: ngnCharge.exchangeRate,
+    chargeCurrency: 'USD',
+    chargeAmountMajor: globalBasePrice,
+    chargeAmountSubunits: Math.round(globalBasePrice * 100),
+    exchangeRate: 1,
     displayLabel: formatDisplayLabel('USD', globalBasePrice),
   };
 };

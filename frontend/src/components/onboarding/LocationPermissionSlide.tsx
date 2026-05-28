@@ -11,36 +11,61 @@ interface LocationPermissionSlideProps {
   showValidationErrors?: boolean;
 }
 
+const fetchWithTimeout = (url: string, options: RequestInit = {}, ms = 6000): Promise<Response> => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+};
+
 const reverseGeocode = async (latitude: number, longitude: number): Promise<string> => {
-  // Primary: BigDataCloud (no key required, client-side friendly)
+  // Provider 1: BigDataCloud
   try {
-    const response = await fetch(
+    const res = await fetchWithTimeout(
       `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
     );
-    if (response.ok) {
-      const data = await response.json();
+    if (res.ok) {
+      const data = await res.json();
       const city = data.city || data.locality || data.principalSubdivision || '';
       const country = data.countryName || '';
       const result = [city, country].filter(Boolean).join(', ');
       if (result) return result;
     }
-  } catch {
-    // fall through to next provider
-  }
+  } catch { /* fall through */ }
 
-  // Fallback: OpenStreetMap Nominatim
-  const response = await fetch(
-    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-    { headers: { 'Accept-Language': 'en' } }
-  );
-  if (!response.ok) throw new Error('Reverse geocoding failed');
-  const data = await response.json();
-  const addr = data.address || {};
-  const city = addr.city || addr.town || addr.village || addr.county || addr.state_district || addr.state || '';
-  const country = addr.country || '';
-  const result = [city, country].filter(Boolean).join(', ');
-  if (!result) throw new Error('No location data returned');
-  return result;
+  // Provider 2: OpenStreetMap Nominatim
+  try {
+    const res = await fetchWithTimeout(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+      { headers: { 'Accept-Language': 'en' } }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      if (!data.error) {
+        const addr = data.address || {};
+        const city = addr.city || addr.town || addr.village || addr.county || addr.state_district || addr.state || '';
+        const country = addr.country || '';
+        const result = [city, country].filter(Boolean).join(', ');
+        if (result) return result;
+      }
+    }
+  } catch { /* fall through */ }
+
+  // Provider 3: geocode.maps.co (no key needed)
+  try {
+    const res = await fetchWithTimeout(
+      `https://geocode.maps.co/reverse?lat=${latitude}&lon=${longitude}&format=json`
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const addr = data.address || {};
+      const city = addr.city || addr.town || addr.village || addr.county || addr.state || '';
+      const country = addr.country || '';
+      const result = [city, country].filter(Boolean).join(', ');
+      if (result) return result;
+    }
+  } catch { /* fall through */ }
+
+  throw new Error('All geocoding providers failed');
 };
 
 const LocationPermissionSlide: React.FC<LocationPermissionSlideProps> = ({

@@ -12,14 +12,5 @@
       "dest": "api/index.ts"
     }
   ],
-  "crons": [
-    {
-      "path": "/api/cron/cleanup-stories",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/renew-subscriptions",
-      "schedule": "*/15 * * * *"
-    }
-  ]
+  "crons": []
 }

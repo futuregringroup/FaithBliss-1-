@@ -12,14 +12,35 @@ interface LocationPermissionSlideProps {
 }
 
 const reverseGeocode = async (latitude: number, longitude: number): Promise<string> => {
+  // Primary: BigDataCloud (no key required, client-side friendly)
+  try {
+    const response = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+    );
+    if (response.ok) {
+      const data = await response.json();
+      const city = data.city || data.locality || data.principalSubdivision || '';
+      const country = data.countryName || '';
+      const result = [city, country].filter(Boolean).join(', ');
+      if (result) return result;
+    }
+  } catch {
+    // fall through to next provider
+  }
+
+  // Fallback: OpenStreetMap Nominatim
   const response = await fetch(
-    `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+    { headers: { 'Accept-Language': 'en' } }
   );
   if (!response.ok) throw new Error('Reverse geocoding failed');
   const data = await response.json();
-  const city = data.city || data.locality || data.principalSubdivision || '';
-  const country = data.countryName || '';
-  return [city, country].filter(Boolean).join(', ');
+  const addr = data.address || {};
+  const city = addr.city || addr.town || addr.village || addr.county || addr.state_district || addr.state || '';
+  const country = addr.country || '';
+  const result = [city, country].filter(Boolean).join(', ');
+  if (!result) throw new Error('No location data returned');
+  return result;
 };
 
 const LocationPermissionSlide: React.FC<LocationPermissionSlideProps> = ({

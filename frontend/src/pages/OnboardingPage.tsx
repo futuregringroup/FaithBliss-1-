@@ -425,9 +425,6 @@ const OnboardingPage = () => {
                 onboardingData={onboardingData}
                 setOnboardingData={setOnboardingData}
                 showValidationErrors={Boolean(validationError) && currentStep === 1}
-                onLocationResolved={() => {
-                  void nextStep();
-                }}
               />
             )}
             {currentStep === 2 && (

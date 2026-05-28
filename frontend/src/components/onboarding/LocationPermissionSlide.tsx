@@ -7,7 +7,6 @@ interface LocationPermissionSlideProps {
   onboardingData: OnboardingData;
   setOnboardingData: React.Dispatch<React.SetStateAction<OnboardingData>>;
   isVisible: boolean;
-  onLocationResolved?: () => void;
   showValidationErrors?: boolean;
 }
 
@@ -72,7 +71,6 @@ const LocationPermissionSlide: React.FC<LocationPermissionSlideProps> = ({
   onboardingData,
   setOnboardingData,
   isVisible,
-  onLocationResolved,
   showValidationErrors = false,
 }) => {
   const [isRequesting, setIsRequesting] = useState(false);

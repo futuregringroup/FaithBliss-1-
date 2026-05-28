@@ -78,7 +78,8 @@ const LocationPermissionSlide: React.FC<LocationPermissionSlideProps> = ({
   const [isRequesting, setIsRequesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showHowUsed, setShowHowUsed] = useState(false);
-  const isLocationMissing = !onboardingData.location?.trim();
+  const [coordsCaptured, setCoordsCaptured] = useState(false);
+  const isLocationMissing = !onboardingData.location?.trim() && !coordsCaptured;
 
   if (!isVisible) return null;
 
@@ -107,12 +108,9 @@ const LocationPermissionSlide: React.FC<LocationPermissionSlideProps> = ({
           }
         } catch {
           const { latitude, longitude } = position.coords;
-          setOnboardingData((prev) => ({
-            ...prev,
-            latitude,
-            longitude,
-          }));
-          onLocationResolved?.();
+          setOnboardingData((prev) => ({ ...prev, latitude, longitude }));
+          setCoordsCaptured(true);
+          setError(null);
         } finally {
           setIsRequesting(false);
         }
@@ -188,9 +186,11 @@ const LocationPermissionSlide: React.FC<LocationPermissionSlideProps> = ({
           <p className="mt-2 text-sm text-red-400">Please allow location access or type your location manually.</p>
         ) : null}
         {error && <p className="mt-2 text-sm text-amber-300">{error}</p>}
-        {onboardingData.location && (
+        {onboardingData.location ? (
           <p className="mt-2 text-sm text-emerald-300">Location set: {onboardingData.location}</p>
-        )}
+        ) : coordsCaptured ? (
+          <p className="mt-2 text-sm text-emerald-300">Location captured — you can continue or type your city below.</p>
+        ) : null}
       </div>
     </motion.div>
   );

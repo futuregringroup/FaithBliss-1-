@@ -6,7 +6,7 @@ import { ConversationSummary, Message } from '../types/chat';
 
 // Helper function to get the authenticated user ID
 const getUserIdFromRequest = (req: Request): string => {
-    return (req as any).user.id;
+    return (req as any).userId;
 };
 
 /**

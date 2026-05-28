@@ -106,8 +106,9 @@ const connectDB = async () => {
     await mongoose.connect(process.env.MONGO_URI as string);
     console.log("MongoDB connected successfully");
   } catch (error) {
-    console.error("MongoDB connection failed:", error);
-    process.exit(1);
+    // MongoDB is legacy/unused — all active controllers use Firestore. A connection
+    // failure must not take down the backend.
+    console.error("MongoDB connection failed (non-fatal):", error);
   }
 };
 

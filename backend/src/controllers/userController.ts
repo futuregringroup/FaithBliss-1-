@@ -485,9 +485,8 @@ const getAllUsers = async (req: CustomRequest, res: Response) => {
 
 const getMarketers = async (req: CustomRequest, res: Response) => {
   const firebaseUid = req.userId;
-  if (!firebaseUid) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
+  const currentUser = await requireAdmin(firebaseUid, res);
+  if (!currentUser) return;
 
   try {
     const [roleSnapshot, rolesSnapshot] = await Promise.all([

@@ -96,16 +96,12 @@ const LocationPermissionSlide: React.FC<LocationPermissionSlideProps> = ({
         try {
           const { latitude, longitude } = position.coords;
           const address = await reverseGeocode(latitude, longitude);
-          const resolvedLocation = (address || onboardingData.location || '').trim();
           setOnboardingData((prev) => ({
             ...prev,
             latitude,
             longitude,
             location: address || prev.location,
           }));
-          if (resolvedLocation) {
-            onLocationResolved?.();
-          }
         } catch {
           const { latitude, longitude } = position.coords;
           setOnboardingData((prev) => ({ ...prev, latitude, longitude }));

@@ -19,51 +19,48 @@ const fetchWithTimeout = (url: string, options: RequestInit = {}, ms = 6000): Pr
 const reverseGeocode = async (latitude: number, longitude: number): Promise<string> => {
   // Provider 1: BigDataCloud
   try {
-    const res = await fetchWithTimeout(
-      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-    );
+    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`;
+    console.debug('[geocode] BDC request:', url);
+    const res = await fetchWithTimeout(url);
+    console.debug('[geocode] BDC status:', res.status);
     if (res.ok) {
       const data = await res.json();
+      console.debug('[geocode] BDC body:', data);
       const city = data.city || data.locality || data.principalSubdivision || '';
       const country = data.countryName || '';
       const result = [city, country].filter(Boolean).join(', ');
+      console.debug('[geocode] BDC result:', result || '(empty)');
       if (result) return result;
     }
-  } catch { /* fall through */ }
+  } catch (e) {
+    console.debug('[geocode] BDC failed:', e);
+  }
 
   // Provider 2: OpenStreetMap Nominatim
   try {
-    const res = await fetchWithTimeout(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-      { headers: { 'Accept-Language': 'en' } }
-    );
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`;
+    console.debug('[geocode] Nominatim request:', url);
+    const res = await fetchWithTimeout(url, { headers: { 'Accept-Language': 'en' } });
+    console.debug('[geocode] Nominatim status:', res.status);
     if (res.ok) {
       const data = await res.json();
+      console.debug('[geocode] Nominatim body:', data);
       if (!data.error) {
         const addr = data.address || {};
         const city = addr.city || addr.town || addr.village || addr.county || addr.state_district || addr.state || '';
         const country = addr.country || '';
         const result = [city, country].filter(Boolean).join(', ');
+        console.debug('[geocode] Nominatim result:', result || '(empty)');
         if (result) return result;
+      } else {
+        console.debug('[geocode] Nominatim error field:', data.error);
       }
     }
-  } catch { /* fall through */ }
+  } catch (e) {
+    console.debug('[geocode] Nominatim failed:', e);
+  }
 
-  // Provider 3: geocode.maps.co (no key needed)
-  try {
-    const res = await fetchWithTimeout(
-      `https://geocode.maps.co/reverse?lat=${latitude}&lon=${longitude}&format=json`
-    );
-    if (res.ok) {
-      const data = await res.json();
-      const addr = data.address || {};
-      const city = addr.city || addr.town || addr.village || addr.county || addr.state || '';
-      const country = addr.country || '';
-      const result = [city, country].filter(Boolean).join(', ');
-      if (result) return result;
-    }
-  } catch { /* fall through */ }
-
+  console.debug('[geocode] All providers failed for', { latitude, longitude });
   throw new Error('All geocoding providers failed');
 };
 

@@ -112,7 +112,7 @@ const LocationPermissionSlide: React.FC<LocationPermissionSlideProps> = ({
             latitude,
             longitude,
           }));
-          setError('Location captured, but address lookup failed. Please type your city manually below.');
+          onLocationResolved?.();
         } finally {
           setIsRequesting(false);
         }

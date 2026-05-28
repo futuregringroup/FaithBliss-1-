@@ -96,7 +96,7 @@ const getStepValidationError = (
     return `Please upload at least ${MIN_ONBOARDING_PHOTOS} photos.`;
   }
 
-  if (step === 1 && !hasText(data.location)) {
+  if (step === 1 && !hasText(data.location) && !data.latitude) {
     return "Please allow location or enter your location manually.";
   }
 

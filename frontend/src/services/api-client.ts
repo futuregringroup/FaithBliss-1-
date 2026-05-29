@@ -75,20 +75,20 @@ export const getApiClient = (accessToken: string | null) => ({
     getMatches: () =>
       apiClientRequest<any[]>('/api/matches', { method: 'GET' }, accessToken),
 
-    getMutualMatches: () =>
-      apiClientRequest<any[]>('/api/matches/mutual', { method: 'GET' }, accessToken),
+    getMutualMatches: (signal?: AbortSignal) =>
+      apiClientRequest<any[]>('/api/matches/mutual', { method: 'GET', signal }, accessToken),
 
-    getSentMatches: () =>
-      apiClientRequest<any[]>('/api/matches/sent', { method: 'GET' }, accessToken),
+    getSentMatches: (signal?: AbortSignal) =>
+      apiClientRequest<any[]>('/api/matches/sent', { method: 'GET', signal }, accessToken),
 
     getPassedProfiles: () =>
       apiClientRequest<{ profiles: any[] }>('/api/matches/passed', { method: 'GET' }, accessToken),
 
-    getReceivedMatches: () =>
-      apiClientRequest<any[]>('/api/matches/received', { method: 'GET' }, accessToken),
+    getReceivedMatches: (signal?: AbortSignal) =>
+      apiClientRequest<any[]>('/api/matches/received', { method: 'GET', signal }, accessToken),
 
-    getPotentialMatches: () =>
-      apiClientRequest<any[]>('/api/matches/potential', { method: 'GET' }, accessToken),
+    getPotentialMatches: (signal?: AbortSignal) =>
+      apiClientRequest<any[]>('/api/matches/potential', { method: 'GET', signal }, accessToken),
 
     likeUser: (userId: string) =>
       apiClientRequest<any>(`/api/matches/like/${userId}`, { method: 'POST' }, accessToken),
@@ -112,11 +112,11 @@ export const getApiClient = (accessToken: string | null) => ({
   },
 
   User: {
-    getMe: () => apiClientRequest<User>('/api/users/me', { method: 'GET' }, accessToken),
+    getMe: (signal?: AbortSignal) => apiClientRequest<User>('/api/users/me', { method: 'GET', signal }, accessToken),
     getUserById: (userId: string) =>
       apiClientRequest<User>(`/api/users/${userId}`, { method: 'GET' }, accessToken),
 
-    getAllUsers: (filters?: { page?: number; limit?: number; search?: string }) => {
+    getAllUsers: (filters?: { page?: number; limit?: number; search?: string }, signal?: AbortSignal) => {
       const queryParams: Record<string, string> = {};
       if (filters?.page) queryParams.page = filters.page.toString();
       if (filters?.limit) queryParams.limit = filters.limit.toString();
@@ -127,7 +127,7 @@ export const getApiClient = (accessToken: string | null) => ({
           : '';
       return apiClientRequest<GetUsersResponse>(
         `/api/users${query}`,
-        { method: 'GET' },
+        { method: 'GET', signal },
         accessToken
       );
     },
@@ -181,20 +181,20 @@ export const getApiClient = (accessToken: string | null) => ({
         { method: 'POST', body: payload },
         accessToken
       ),
-    getCreateMatchMessages: (matchId: string, otherUserId?: string, page = 1, limit = 50) =>
+    getCreateMatchMessages: (matchId: string, otherUserId?: string, page = 1, limit = 50, signal?: AbortSignal) =>
       apiClientRequest<ConversationMessagesResponse>(
         `/api/messages/match/${matchId}?page=${page}&limit=${limit}${
           otherUserId ? `&otherUserId=${otherUserId}` : ''
         }`,
-        { method: 'GET' },
+        { method: 'GET', signal },
         accessToken
       ),
     markMessageAsRead: (messageId: string) =>
       apiClientRequest<void>(`/api/messages/${messageId}/read`, { method: 'PATCH' }, accessToken),
-    getUnreadCount: () =>
+    getUnreadCount: (signal?: AbortSignal) =>
       apiClientRequest<{ count: number }>(
         '/api/messages/unread-count',
-        { method: 'GET' },
+        { method: 'GET', signal },
         accessToken
       ),
     getMatchConversations: (params?: { limit?: number; cursor?: string | null }) => {
@@ -211,10 +211,10 @@ export const getApiClient = (accessToken: string | null) => ({
   Notification: {
     getNotifications: () =>
       apiClientRequest<any[]>('/api/notifications', { method: 'GET' }, accessToken),
-    getUnreadCount: () =>
+    getUnreadCount: (signal?: AbortSignal) =>
       apiClientRequest<{ count: number }>(
         '/api/notifications/unread-count',
-        { method: 'GET' },
+        { method: 'GET', signal },
         accessToken
       ),
     markAsRead: (id: string) =>
@@ -223,8 +223,8 @@ export const getApiClient = (accessToken: string | null) => ({
       apiClientRequest<void>('/api/notifications/read-all', { method: 'PATCH' }, accessToken),
   },
   Story: {
-    getFeed: () =>
-      apiClientRequest<{ stories: any[] }>('/api/stories/feed', { method: 'GET' }, accessToken),
+    getFeed: (signal?: AbortSignal) =>
+      apiClientRequest<{ stories: any[] }>('/api/stories/feed', { method: 'GET', signal }, accessToken),
     create: (payload: FormData) =>
       apiClientRequest<{ story: any }>('/api/stories', { method: 'POST', body: payload }, accessToken),
     markSeen: (storyId: string) =>

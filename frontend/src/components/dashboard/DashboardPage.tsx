@@ -121,6 +121,11 @@ export const DashboardPage = ({ user: activeUser }: { user: User }) => {
     const pendingActionIdsRef = useRef<Set<string>>(new Set());
     const lastPassedProfileIdRef = useRef<string | null>(null);
     const hasCompletedInitialLoadRef = useRef(false);
+    // Tracks whether matchesLoading has been true at least once during the
+    // current isRefreshingDefaultFeed cycle. Without this, the effect fires
+    // immediately after setIsRefreshingDefaultFeed(true) — before execute()
+    // has had a chance to set loading: true — and evaluates stale profiles.
+    const refreshLoadingSeenRef = useRef(false);
     const [showForcedOnboardingPrompt, setShowForcedOnboardingPrompt] = useState(false);
     const ONBOARDING_PAUSE_STORAGE_KEY = 'faithbliss_onboarding_pause_state';
     const [persistedPassedProfileMap, setPersistedPassedProfileMap] = useState<PersistedPassedProfilesMap>({});
@@ -266,7 +271,13 @@ export const DashboardPage = ({ user: activeUser }: { user: User }) => {
         if (currentProfile) return;
 
         const refresh = () => {
-            refetch().catch(() => null);
+            void refetch()
+                .then((result) => {
+                    if (Array.isArray(result) && result.length > 0) {
+                        reset();
+                    }
+                })
+                .catch(() => null);
         };
 
         const intervalId = window.setInterval(refresh, 10000);
@@ -285,15 +296,26 @@ export const DashboardPage = ({ user: activeUser }: { user: User }) => {
             window.removeEventListener('focus', handleVisibilityOrFocus);
             document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
         };
-    }, [currentProfile, filteredProfiles, matchesLoading, userLoading, refetch]);
+    }, [currentProfile, filteredProfiles, matchesLoading, userLoading, refetch, reset]);
 
     useEffect(() => {
-        if (!isRefreshingDefaultFeed) return;
+        if (!isRefreshingDefaultFeed) {
+            refreshLoadingSeenRef.current = false;
+            return;
+        }
         if (filteredProfiles !== null || isReviewingPassedProfiles) {
+            refreshLoadingSeenRef.current = false;
             setIsRefreshingDefaultFeed(false);
             return;
         }
-        if (matchesLoading) return;
+        if (matchesLoading) {
+            refreshLoadingSeenRef.current = true;
+            return;
+        }
+        // Bail out if matchesLoading has not yet become true in this refresh
+        // cycle. This prevents evaluating stale exhausted-feed state and
+        // showing a false "no more profiles" toast before the fetch starts.
+        if (!refreshLoadingSeenRef.current) return;
 
         const nextDefaultFeed = getDefaultDashboardFeedProfiles(
           Array.isArray(profiles) ? profiles : [],

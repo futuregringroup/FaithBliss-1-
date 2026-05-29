@@ -80,7 +80,7 @@ interface ConversationSummary {
 
 // Generic hook for API calls
 export function useApi<T>(
-  apiCall: (() => Promise<T>) | null,
+  apiCall: ((signal?: AbortSignal) => Promise<T>) | null,
   dependencies: unknown[] = [],
   options: UseApiOptions = { showErrorToast: false }
 ) {
@@ -132,6 +132,7 @@ export function useApi<T>(
     }
 
     abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
 
     if (isMountedRef.current) {
       setState(prev => ({ ...prev, loading: true, error: null }));
@@ -140,9 +141,10 @@ export function useApi<T>(
     // Create the promise for this request
     const requestPromise = (async () => {
       try {
-        const data = await apiCall();
+        const data = await apiCall(signal);
 
         if (!isMountedRef.current) return data;
+        if (signal.aborted) return data;
 
         // Cache the result
         requestCache.set(cacheKey, { data, timestamp: Date.now() });
@@ -157,8 +159,9 @@ export function useApi<T>(
       } catch (error: any) {
         console.error("Ã¢ÂÅ’ API call failed:", cacheKey, error);
         if (!isMountedRef.current) throw error;
+        if (signal.aborted) throw error;
 
-        // Ã¢Å“â€¦ FIX: Check for 'Unauthorized' message thrown by api-client.ts on 401
+        // Ã¢Å”â€¦ FIX: Check for 'Unauthorized' message thrown by api-client.ts on 401
         if (error?.message?.includes('Unauthorized')) {
           showError('Your session has expired. Please log in again.', 'Authentication Error');
           if (redirectOnUnauthorized) {
@@ -219,12 +222,12 @@ export function useUserProfile(currentUserId?: string, currentUserEmail?: string
   const { accessToken, isAuthenticated } = useRequireAuth();
   const apiClient = useMemo(() => getApiClient(accessToken ?? null), [accessToken]);
 
-  const apiCall = useCallback(async () => {
+  const apiCall = useCallback(async (signal?: AbortSignal) => {
     if (!accessToken) {
       throw new Error('Authentication required. Please log in.');
     }
 
-    const response = await apiClient.User.getMe();
+    const response = await apiClient.User.getMe(signal);
     if (Array.isArray(response)) {
       if (currentUserId) {
         const found = response.find((u: any) => String(u.id) === String(currentUserId) || String(u.firebaseUid) === String(currentUserId));
@@ -255,9 +258,9 @@ export function usePotentialMatches() {
   const { accessToken, isAuthenticated } = useRequireAuth();
   const apiClient = useMemo(() => getApiClient(accessToken ?? null), [accessToken]);
 
-  const apiCall = useCallback(() => {
+  const apiCall = useCallback((signal?: AbortSignal) => {
     if (!accessToken) throw new Error('Authentication required.');
-    return apiClient.Match.getPotentialMatches();
+    return apiClient.Match.getPotentialMatches(signal);
   }, [apiClient, accessToken]);
 
   return useApi(
@@ -321,9 +324,9 @@ export function useMutualMatches() {
   const { accessToken, isAuthenticated } = useRequireAuth();
   const apiClient = useMemo(() => getApiClient(accessToken ?? null), [accessToken]);
 
-  const apiCall = useCallback(() => {
+  const apiCall = useCallback((signal?: AbortSignal) => {
     if (!accessToken) throw new Error('Authentication required.');
-    return apiClient.Match.getMutualMatches();
+    return apiClient.Match.getMutualMatches(signal);
   }, [apiClient, accessToken]);
 
   return useApi<any[]>(
@@ -337,9 +340,9 @@ export function useSentMatches() {
   const { accessToken, isAuthenticated } = useRequireAuth();
   const apiClient = useMemo(() => getApiClient(accessToken ?? null), [accessToken]);
 
-  const apiCall = useCallback(() => {
+  const apiCall = useCallback((signal?: AbortSignal) => {
     if (!accessToken) throw new Error('Authentication required.');
-    return apiClient.Match.getSentMatches();
+    return apiClient.Match.getSentMatches(signal);
   }, [apiClient, accessToken]);
 
   return useApi<any[]>(
@@ -353,9 +356,9 @@ export function useReceivedMatches() {
   const { accessToken, isAuthenticated } = useRequireAuth();
   const apiClient = useMemo(() => getApiClient(accessToken ?? null), [accessToken]);
 
-  const apiCall = useCallback(() => {
+  const apiCall = useCallback((signal?: AbortSignal) => {
     if (!accessToken) throw new Error('Authentication required.');
-    return apiClient.Match.getReceivedMatches();
+    return apiClient.Match.getReceivedMatches(signal);
   }, [apiClient, accessToken]);
 
   return useApi<any[]>(
@@ -609,11 +612,11 @@ export function useConversationMessages(
   const { accessToken, isAuthenticated } = useRequireAuth();
   const apiClient = useMemo(() => getApiClient(accessToken ?? null), [accessToken]);
   
-  const apiCall = useCallback(async (): Promise<ConversationMessagesResponse> => {
+  const apiCall = useCallback(async (signal?: AbortSignal): Promise<ConversationMessagesResponse> => {
     if (!accessToken) throw new Error('Authentication required');
-    
+
     // Return the full response from backend
-    const response = await apiClient.Message.getCreateMatchMessages(matchId, otherUserId, page, limit);
+    const response = await apiClient.Message.getCreateMatchMessages(matchId, otherUserId, page, limit, signal);
     return response; // should be { match: ..., messages: [...] }
   }, [apiClient, accessToken, matchId, otherUserId, page, limit]);
 
@@ -732,7 +735,7 @@ export function useNotificationUnreadCount() {
   const { accessToken, isAuthenticated } = useRequireAuth();
   const apiClient = useMemo(() => getApiClient(accessToken ?? null), [accessToken]);
   const webSocketService = useWebSocket();
-  const apiCall = useCallback(() => apiClient.Notification.getUnreadCount(), [apiClient]);
+  const apiCall = useCallback((signal?: AbortSignal) => apiClient.Notification.getUnreadCount(signal), [apiClient]);
   const hook = useApi<{ count: number }>(
     isAuthenticated ? apiCall : null,
     [accessToken, isAuthenticated],
@@ -784,7 +787,7 @@ export function useStories() {
   const webSocketService = useWebSocket();
   const { showSuccess, showError } = useToast();
 
-  const apiCall = useCallback(() => apiClient.Story.getFeed(), [apiClient]);
+  const apiCall = useCallback((signal?: AbortSignal) => apiClient.Story.getFeed(signal), [apiClient]);
   const feedHook = useApi<{ stories: StoryGroup[] }>(
     isAuthenticated ? apiCall : null,
     [accessToken, isAuthenticated, 'stories'],
@@ -869,7 +872,7 @@ export function useAllUsers(filters?: {
   const { accessToken, isAuthenticated } = useRequireAuth();
   const apiClient = useMemo(() => getApiClient(accessToken ?? null), [accessToken]);
 
-  const apiCall = useCallback(() => {
+  const apiCall = useCallback((signal?: AbortSignal) => {
     if (!accessToken) {
       throw new Error('Authentication required. Please log in.');
     }
@@ -880,7 +883,7 @@ export function useAllUsers(filters?: {
       search: filters?.search || undefined,
     };
 
-    return apiClient.User.getAllUsers(normalizedFilters);
+    return apiClient.User.getAllUsers(normalizedFilters, signal);
   }, [apiClient, accessToken, filters?.page, filters?.limit, filters?.search]);
 
   return useApi<GetUsersResponse>(
@@ -896,11 +899,11 @@ export function useUnreadCount() {
   const apiClient = useMemo(() => getApiClient(accessToken ?? null), [accessToken]);
   const webSocketService = useWebSocket();
 
-  const apiCall = useCallback(() => {
+  const apiCall = useCallback((signal?: AbortSignal) => {
     if (!accessToken) {
       throw new Error('Authentication required. Please log in.');
     }
-    return apiClient.Message.getUnreadCount();
+    return apiClient.Message.getUnreadCount(signal);
   }, [apiClient, accessToken]);
 
   const hook = useApi<{ count: number }>(

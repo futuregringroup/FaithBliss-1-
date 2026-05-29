@@ -70,7 +70,13 @@ export const useProfileQueue = (
 
     cursorRef.current = clampedCursor;
     setCursor(clampedCursor);
-    refillAsync();
+    // Only trigger a refill when the queue is exhausted. Calling refillAsync on
+    // every advance replaces the full profile list while the user is mid-swipe,
+    // which causes the currently-displayed card to silently change to a different
+    // profile and permanently drops any profile that lands behind the new cursor.
+    if (!hasNextProfile) {
+      refillAsync();
+    }
 
     return hasNextProfile;
   }, [profiles.length, refillAsync]);

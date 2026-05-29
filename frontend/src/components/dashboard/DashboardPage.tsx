@@ -67,11 +67,8 @@ const getDashboardProfileId = (profile: User | null | undefined): string | null 
 const hasDashboardDisplayName = (profile: User) =>
   typeof profile.name === 'string' && profile.name.trim().length > 0;
 
-const getDefaultVisibleGender = (value: unknown): 'MALE' | 'FEMALE' | null => {
-  const currentUserGender = normalizeBinaryGender(value);
-  if (currentUserGender === 'MALE') return 'FEMALE';
-  if (currentUserGender === 'FEMALE') return 'MALE';
-  return null;
+const getDefaultVisibleGender = (preferredGender: unknown): 'MALE' | 'FEMALE' | null => {
+  return normalizeBinaryGender(preferredGender);
 };
 
 const getBaseDashboardProfiles = (sourceProfiles: User[], currentUserId: string | null) =>
@@ -85,10 +82,10 @@ const getBaseDashboardProfiles = (sourceProfiles: User[], currentUserId: string 
 const getDefaultDashboardFeedProfiles = (
   sourceProfiles: User[],
   currentUserId: string | null,
-  currentUserGender: unknown,
+  currentUserPreferredGender: unknown,
   passedProfilesMap: PersistedPassedProfilesMap
 ) => {
-  const defaultVisibleGender = getDefaultVisibleGender(currentUserGender);
+  const defaultVisibleGender = getDefaultVisibleGender(currentUserPreferredGender);
   const recentPassedIdSet = new Set(Object.keys(passedProfilesMap));
   const baseProfiles = getBaseDashboardProfiles(sourceProfiles, currentUserId);
   const genderScopedProfiles = defaultVisibleGender
@@ -245,13 +242,13 @@ export const DashboardPage = ({ user: activeUser }: { user: User }) => {
             return getDefaultDashboardFeedProfiles(
               sourceProfiles,
               currentUserId,
-              currentUserData?.gender,
+              currentUserData?.preferredGender,
               persistedPassedProfileMap
             );
         }
 
         return getBaseDashboardProfiles(sourceProfiles, currentUserId);
-    }, [profiles, filteredProfiles, currentUserData?.gender, currentUserData?.id, isReviewingPassedProfiles, persistedPassedProfileMap]);
+    }, [profiles, filteredProfiles, currentUserData?.preferredGender, currentUserData?.id, isReviewingPassedProfiles, persistedPassedProfileMap]);
 
     const {
       queue: profileQueue,
@@ -320,7 +317,7 @@ export const DashboardPage = ({ user: activeUser }: { user: User }) => {
         const nextDefaultFeed = getDefaultDashboardFeedProfiles(
           Array.isArray(profiles) ? profiles : [],
           currentUserData?.id ? String(currentUserData.id) : null,
-          currentUserData?.gender,
+          currentUserData?.preferredGender,
           persistedPassedProfileMap
         );
 
@@ -333,7 +330,7 @@ export const DashboardPage = ({ user: activeUser }: { user: User }) => {
         setIsRefreshingDefaultFeed(false);
         showInfo('No more new profiles right now. Check back later.');
     }, [
-        currentUserData?.gender,
+        currentUserData?.preferredGender,
         currentUserData?.id,
         filteredProfiles,
         isRefreshingDefaultFeed,

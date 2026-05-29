@@ -5,7 +5,7 @@ import AppDropdown from '@/components/AppDropdown';
 import { countries } from '@/constants/countries';
 
 export interface DashboardFiltersPayload {
-  preferredGender?: 'MALE' | 'FEMALE';
+  preferredGender?: 'MALE' | 'FEMALE' | '';
   preferredDenominations?: string[];
   minAge?: number;
   maxAge?: number;
@@ -157,7 +157,7 @@ export const FilterPanel = ({
     const normalizedMaxAge = Math.max(safeMinAge, safeMaxAge);
 
     const payload: DashboardFiltersPayload = {};
-    if (gender) payload.preferredGender = gender;
+    payload.preferredGender = gender; // '' means Any — still send so filterProfiles skips gender check
     if (isPremiumUser) {
       if (passportModeEnabled) payload.passportCountry = passportCountry || null;
       if (distance !== 50) payload.maxDistance = clamp(Math.round(distance), 1, 500);

@@ -640,7 +640,8 @@ export const DashboardPage = ({ user: activeUser }: { user: User }) => {
  
 const handleApplyFilters = async (filters: DashboardFiltersPayload) => {
         try {
-        const normalizedEntries = Object.entries(filters || {}).filter(([, value]) => {
+        const normalizedEntries = Object.entries(filters || {}).filter(([key, value]) => {
+            if (key === 'preferredGender') return true; // '' means "Any" — still send to filterProfiles
             if (value === undefined || value === null) return false;
             if (Array.isArray(value)) return value.length > 0;
             if (typeof value === 'string') return value.trim().length > 0;

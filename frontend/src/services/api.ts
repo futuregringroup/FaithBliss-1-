@@ -1609,7 +1609,7 @@ export const DiscoveryAPI = {
 
   // Filter profiles based on criteria
   filterProfiles: async (filters: {
-    preferredGender?: "MALE" | "FEMALE";
+    preferredGender?: "MALE" | "FEMALE" | "";
     preferredDenominations?: string[];
     minAge?: number;
     maxAge?: number;

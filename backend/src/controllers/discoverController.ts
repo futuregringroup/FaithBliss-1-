@@ -39,6 +39,7 @@ interface IUserProfile extends DocumentData {
   longitude?: number;
   likes?: string[];
   passes?: string[];
+  passHistory?: Record<string, unknown>;
   matches?: string[];
   subscriptionStatus?: string;
   subscriptionTier?: string;
@@ -51,6 +52,35 @@ interface IUserProfile extends DocumentData {
 interface IMatchDoc extends DocumentData {
   users?: string[];
 }
+
+const PASS_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
+const toEpochMillis = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  if (value && typeof value === 'object' && 'toDate' in (value as Record<string, unknown>)) {
+    try {
+      return (value as { toDate(): Date }).toDate().getTime();
+    } catch {
+      return null;
+    }
+  }
+  return null;
+};
+
+const getRecentPassedProfileIds = (passHistory: unknown, now = Date.now()): string[] => {
+  if (!passHistory || typeof passHistory !== 'object' || Array.isArray(passHistory)) return [];
+  return Object.entries(passHistory as Record<string, unknown>)
+    .filter(([targetUid, passedAt]) => {
+      if (!targetUid) return false;
+      const passedAtMs = toEpochMillis(passedAt);
+      return passedAtMs !== null && now - passedAtMs < PASS_COOLDOWN_MS;
+    })
+    .map(([targetUid]) => String(targetUid));
+};
 
 type DiscoveryFilterInput = {
   preferredGender?: unknown;
@@ -186,7 +216,7 @@ const buildExcludedUserIds = async (currentUser: IUserProfile): Promise<Set<stri
     [
       currentUser.id,
       ...(currentUser.likes || []),
-      ...(currentUser.passes || []),
+      ...getRecentPassedProfileIds(currentUser.passHistory),
     ].map(String)
   );
 

@@ -15,6 +15,7 @@ type EditableUser = {
   hasDeveloperAccess: boolean;
   age: number;
   gender: 'MALE' | 'FEMALE';
+  preferredGender: 'MALE' | 'FEMALE' | null;
   location: string;
   bio: string;
   denomination: string;
@@ -33,6 +34,7 @@ type EditableSource = {
   roles?: string[];
   age?: number;
   gender?: string;
+  preferredGender?: string | null;
   location?: string;
   bio?: string;
   denomination?: string;
@@ -46,6 +48,13 @@ type EditableSource = {
 const normalizeEditableGender = (value: unknown): 'MALE' | 'FEMALE' => {
   const normalized = typeof value === 'string' ? value.trim().toUpperCase() : '';
   return normalized === 'FEMALE' ? 'FEMALE' : 'MALE';
+};
+
+const normalizeEditablePreferredGender = (value: unknown): 'MALE' | 'FEMALE' | null => {
+  const normalized = typeof value === 'string' ? value.trim().toUpperCase() : '';
+  if (normalized === 'MALE') return 'MALE';
+  if (normalized === 'FEMALE') return 'FEMALE';
+  return null;
 };
 
 const normalizeEditableRole = (value: unknown): NonNullable<AdminUpdateUserPayload['role']> => {
@@ -87,6 +96,7 @@ const toEditableUser = (user: EditableSource): EditableUser => ({
   hasDeveloperAccess: getNormalizedRoles(user.roles).includes('developer'),
   age: typeof user.age === 'number' ? user.age : 18,
   gender: normalizeEditableGender(user.gender),
+  preferredGender: normalizeEditablePreferredGender(user.preferredGender),
   location: user.location || '',
   bio: user.bio || '',
   denomination: typeof user.denomination === 'string' ? user.denomination : '',
@@ -808,6 +818,7 @@ const AdminPage = () => {
       role: isAdminRole(selectedUser.role) ? undefined : normalizeEditableRole(editingUser.role),
       age: Number(editingUser.age),
       gender: editingUser.gender,
+      preferredGender: editingUser.preferredGender,
       location: editingUser.location.trim(),
       bio: editingUser.bio.trim(),
       denomination: editingUser.denomination.trim(),
@@ -2170,6 +2181,14 @@ const AdminPage = () => {
                   <label className="space-y-2">
                     <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Gender</span>
                     <select value={editingUser.gender} onChange={(e) => updateEditingField('gender', normalizeEditableGender(e.target.value))} className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none">
+                      <option value="MALE">MALE</option>
+                      <option value="FEMALE">FEMALE</option>
+                    </select>
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Preferred Gender</span>
+                    <select value={editingUser.preferredGender ?? ''} onChange={(e) => updateEditingField('preferredGender', normalizeEditablePreferredGender(e.target.value))} className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none">
+                      <option value="">Any</option>
                       <option value="MALE">MALE</option>
                       <option value="FEMALE">FEMALE</option>
                     </select>

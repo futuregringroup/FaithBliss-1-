@@ -419,6 +419,7 @@ export interface AdminUpdateUserPayload {
   hasDeveloperAccess?: boolean;
   age?: number;
   gender?: string;
+  preferredGender?: "MALE" | "FEMALE" | null;
   location?: string;
   bio?: string;
   denomination?: string;
@@ -439,6 +440,7 @@ export interface AdminUpdateUserResponse {
     roles?: string[];
     age: number;
     gender: string;
+    preferredGender?: string | null;
     location: string;
     bio: string;
     denomination: string;

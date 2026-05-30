@@ -455,6 +455,7 @@ const getAllUsers = async (req: CustomRequest, res: Response) => {
         isActive: user.isActive !== false,
         age: user.age,
         gender: user.gender,
+        preferredGender: user.preferredGender ?? null,
         location: user.location,
         bio: user.bio,
         denomination: user.denomination,
@@ -889,8 +890,10 @@ const updateUserProfile = async (req: Request, res: Response) => {
     );
     if (baptismStatus) normalizedUpdates.baptismStatus = baptismStatus;
 
-    const preferredGender = allowedEnum(body.preferredGender, ['MALE', 'FEMALE'] as const);
-    if (preferredGender) normalizedUpdates.preferredGender = preferredGender;
+    if ('preferredGender' in body) {
+      const pg = allowedEnum(body.preferredGender, ['MALE', 'FEMALE'] as const);
+      normalizedUpdates.preferredGender = pg ?? null;
+    }
 
     const shortTextFields: Array<[string, number]> = [
       ['name', 120],
@@ -1301,6 +1304,11 @@ const updateUserByAdmin = async (req: CustomRequest, res: Response) => {
     const nextGender = toTrimmedString(body.gender, 20);
     if (nextGender !== undefined) updates.gender = nextGender;
 
+    if ('preferredGender' in body) {
+      const pg = typeof body.preferredGender === 'string' ? body.preferredGender.trim().toUpperCase() : '';
+      updates.preferredGender = pg === 'MALE' || pg === 'FEMALE' ? pg : null;
+    }
+
     const nextAge = toBoundedNumber(body.age, 18, 99);
     if (nextAge !== undefined) updates.age = nextAge;
 
@@ -1412,6 +1420,7 @@ const updateUserByAdmin = async (req: CustomRequest, res: Response) => {
         roles: getNormalizedRoles(updatedUser),
         age: updatedUser.age,
         gender: updatedUser.gender,
+        preferredGender: updatedUser.preferredGender ?? null,
         location: updatedUser.location,
         bio: updatedUser.bio,
         denomination: updatedUser.denomination,

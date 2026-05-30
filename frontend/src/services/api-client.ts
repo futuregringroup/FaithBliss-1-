@@ -87,8 +87,8 @@ export const getApiClient = (accessToken: string | null) => ({
     getReceivedMatches: (signal?: AbortSignal) =>
       apiClientRequest<any[]>('/api/matches/received', { method: 'GET', signal }, accessToken),
 
-    getPotentialMatches: (signal?: AbortSignal) =>
-      apiClientRequest<any[]>('/api/matches/potential', { method: 'GET', signal }, accessToken),
+    getPotentialMatches: (signal?: AbortSignal, resetPasses = false) =>
+      apiClientRequest<any[]>(`/api/matches/potential${resetPasses ? '?resetPasses=true' : ''}`, { method: 'GET', signal }, accessToken),
 
     likeUser: (userId: string) =>
       apiClientRequest<any>(`/api/matches/like/${userId}`, { method: 'POST' }, accessToken),

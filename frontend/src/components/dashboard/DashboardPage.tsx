@@ -133,15 +133,30 @@ export const DashboardPage = ({ user: activeUser }: { user: User }) => {
     const [isReloadingProfiles, setIsReloadingProfiles] = useState(false);
 
   // Fetch real potential matches from backend
-  const { 
-    data: profiles, 
-    loading: matchesLoading, 
-    error: matchesError, 
-    refetch 
+  const {
+    data: profiles,
+    loading: matchesLoading,
+    error: matchesError,
+    refetch,
+    refetchWithReset,
   } = usePotentialMatches();
 
   // Note: userProfile is now fetching the currently logged-in user's *latest* profile data
-  const { data: userProfile, loading: userLoading } = useUserProfile(); 
+  const { data: userProfile, loading: userLoading, refetch: refetchUserProfile } = useUserProfile();
+
+  useEffect(() => {
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        void refetchUserProfile();
+      }
+    };
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    return () => {
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+    };
+  }, [refetchUserProfile]);
 
     const { likeUser, passUser } = useMatching();
     const { stories, loading: storiesLoading, createStory, markStorySeen, likeStory, getStoryLikes, replyToStory, deleteStory } = useStories();
@@ -490,7 +505,7 @@ export const DashboardPage = ({ user: activeUser }: { user: User }) => {
         if (filteredProfiles !== null) {
           setFilteredProfiles(null);
         }
-        await refetch();
+        await refetchWithReset();
       } finally {
         setIsReloadingProfiles(false);
       }

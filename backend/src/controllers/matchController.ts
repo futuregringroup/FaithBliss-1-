@@ -485,7 +485,8 @@ const getPotentialMatches = async (req: Request, res: Response) => {
       (currentUser as IUserProfile).lookingFor
     );
 
-    const recentPassedIds = getRecentPassedProfileIds(currentUser.passHistory);
+    const forceReset = req.query.resetPasses === 'true';
+    const recentPassedIds = forceReset ? [] : getRecentPassedProfileIds(currentUser.passHistory);
 
     const excludedUids = new Set<string>([
       currentUser.id,

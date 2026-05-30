@@ -257,17 +257,27 @@ export function useUserProfile(currentUserId?: string, currentUserEmail?: string
 export function usePotentialMatches() {
   const { accessToken, isAuthenticated } = useRequireAuth();
   const apiClient = useMemo(() => getApiClient(accessToken ?? null), [accessToken]);
+  const resetPassesRef = useRef(false);
 
   const apiCall = useCallback((signal?: AbortSignal) => {
     if (!accessToken) throw new Error('Authentication required.');
-    return apiClient.Match.getPotentialMatches(signal);
+    const doReset = resetPassesRef.current;
+    resetPassesRef.current = false;
+    return apiClient.Match.getPotentialMatches(signal, doReset);
   }, [apiClient, accessToken]);
 
-  return useApi(
+  const result = useApi(
     isAuthenticated ? apiCall : null,
     [accessToken, isAuthenticated],
     { immediate: isAuthenticated, showErrorToast: true, cacheTime: 0, redirectOnUnauthorized: false }
   );
+
+  const refetchWithReset = useCallback(async () => {
+    resetPassesRef.current = true;
+    return result.refetch();
+  }, [result.refetch]);
+
+  return { ...result, refetchWithReset };
 }
 
 // Hook for matches

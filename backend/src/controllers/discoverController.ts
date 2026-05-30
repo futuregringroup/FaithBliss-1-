@@ -306,7 +306,6 @@ export const filterProfiles = async (req: Request, res: Response) => {
 
   const snapshot = await usersCollection
     .where('onboardingCompleted', '==', true)
-    .where('isActive', '==', true)
     .get();
 
   const results: IUserProfile[] = [];
@@ -315,6 +314,7 @@ export const filterProfiles = async (req: Request, res: Response) => {
     if (excluded.has(doc.id)) return;
 
     const candidate = { id: doc.id, ...doc.data() } as IUserProfile;
+    if (candidate.isActive === false) return;
     if (!canViewerSeeCandidate(currentUser, candidate, featureSettings.passportModeEnabled)) return;
 
     const candidateGender = normalizeGender(candidate.gender);

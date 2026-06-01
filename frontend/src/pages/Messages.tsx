@@ -2588,7 +2588,10 @@ const MessagesContent = () => {
     }
 
     if (profileIdParam && currentConversation.id === profileIdParam) {
-      console.warn('Cannot send message: no mutual match exists for this user yet.');
+      showError(
+        'You can only send messages after both users have matched.',
+        'Not Matched Yet'
+      );
       return false;
     }
 

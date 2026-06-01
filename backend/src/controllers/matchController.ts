@@ -945,6 +945,7 @@ const getMatchConversations = async (req: Request, res: Response) => {
     userDocs.forEach((doc) => {
       if (doc.exists) {
         const d = doc.data() as IUserProfile;
+        if (d.isActive === false || (d as Record<string, unknown>)['isDeleted'] === true) return;
         userMap.set(doc.id, { id: doc.id, name: d.name, profilePhoto1: d.profilePhoto1 });
       }
     });
@@ -978,6 +979,7 @@ const getMatchConversations = async (req: Request, res: Response) => {
         if (!Array.isArray(match.users)) return null;
         const otherUid = match.users.find((u) => u !== currentUid);
         const otherUser = userMap.get(otherUid || '');
+        if (!otherUser) return null;
 
         const updatedAt =
           lastMsg?.createdAt.toDate().toISOString() ||

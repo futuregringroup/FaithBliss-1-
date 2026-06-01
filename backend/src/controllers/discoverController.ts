@@ -211,12 +211,12 @@ const parseProfileFitQuery = (value: unknown): string | null => {
   return toLowerTrimmed(value);
 };
 
-const buildExcludedUserIds = async (currentUser: IUserProfile): Promise<Set<string>> => {
+const buildExcludedUserIds = async (currentUser: IUserProfile, skipPassHistory = false): Promise<Set<string>> => {
   const excluded = new Set<string>(
     [
       currentUser.id,
       ...(currentUser.likes || []),
-      ...getRecentPassedProfileIds(currentUser.passHistory),
+      ...(skipPassHistory ? [] : getRecentPassedProfileIds(currentUser.passHistory)),
     ].map(String)
   );
 
@@ -302,7 +302,7 @@ export const filterProfiles = async (req: Request, res: Response) => {
     : parsedMaxAge;
 
   const maxDistance = hasPremiumFilters ? parseBoundedInt(body.maxDistance, 1, 500) : undefined;
-  const excluded = await buildExcludedUserIds(currentUser);
+  const excluded = await buildExcludedUserIds(currentUser, preferredGender === null);
 
   const snapshot = await usersCollection
     .where('onboardingCompleted', '==', true)

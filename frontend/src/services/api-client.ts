@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { auth } from '@/firebase/config';
 import type { ConversationMessagesResponse } from '@/hooks/useAPI';
 import type {
   AdminResetPasswordResponse,
@@ -56,6 +57,21 @@ const apiClientRequest = async <T>(
   });
 
   if (response.status === 401 && token) {
+    const freshToken = await auth.currentUser?.getIdToken(true);
+    if (freshToken) {
+      const retryHeaders = { ...headers, Authorization: `Bearer ${freshToken}` };
+      const retryResponse = await fetch(url, { ...options, headers: retryHeaders, credentials: 'include' });
+      if (retryResponse.status === 401) {
+        window.location.href = '/login';
+        throw new Error('Unauthorized');
+      }
+      if (!retryResponse.ok) {
+        const errorData = await retryResponse.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${retryResponse.status}`);
+      }
+      if (retryResponse.status === 204) return {} as T;
+      return await retryResponse.json();
+    }
     throw new Error('Unauthorized');
   }
 

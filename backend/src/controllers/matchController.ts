@@ -934,7 +934,7 @@ const getMatchConversations = async (req: Request, res: Response) => {
     const matches = sortedMatches.slice(safeCursor, safeCursor + safeLimit);
 
     const otherUids = matches
-      .map((m) => m.users.find((u) => u !== currentUid))
+      .map((m) => Array.isArray(m.users) ? m.users.find((u) => u !== currentUid) : undefined)
       .filter(Boolean) as string[];
 
     const userDocs = await Promise.all(
@@ -975,6 +975,7 @@ const getMatchConversations = async (req: Request, res: Response) => {
           ? ({ id: lastMsgDoc.id, ...lastMsgDoc.data() } as IMessage)
           : null;
 
+        if (!Array.isArray(match.users)) return null;
         const otherUid = match.users.find((u) => u !== currentUid);
         const otherUser = userMap.get(otherUid || '');
 
@@ -1003,7 +1004,8 @@ const getMatchConversations = async (req: Request, res: Response) => {
       })
     );
 
-    conversations.sort(
+    const validConversations = conversations.filter(Boolean) as NonNullable<(typeof conversations)[number]>[];
+    validConversations.sort(
       (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
     );
 
@@ -1013,7 +1015,7 @@ const getMatchConversations = async (req: Request, res: Response) => {
         : null;
 
     res.status(200).json({
-      items: conversations,
+      items: validConversations,
       nextCursor,
       hasMore: nextCursor !== null,
     });
@@ -1041,7 +1043,7 @@ const getMatchMessages = async (req: Request, res: Response) => {
     }
 
     const match = { id: matchDoc.id, ...matchDoc.data() } as IMatch;
-    if (!match.users.includes(currentUid)) {
+    if (!Array.isArray(match.users) || !match.users.includes(currentUid)) {
       return res.status(403).json({ message: 'You are not part of this match.' });
     }
     const chatAccessState = await getChatAccessStateForUser({

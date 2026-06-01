@@ -1256,6 +1256,16 @@ export const handlePaystackWebhook = async (req: Request, res: Response) => {
       }
 
       const existingSubscription = await getStoredSubscription(userId);
+
+      // Idempotency: skip if this exact reference was already activated
+      if (
+        typeof data.reference === 'string' &&
+        existingSubscription?.reference === data.reference &&
+        existingSubscription?.status === 'active'
+      ) {
+        return res.status(200).json({ received: true });
+      }
+
       const rawPlanCode = data.plan?.plan_code || data.plan;
       const tier =
         (typeof metadata.tier === 'string' && metadata.tier.trim().toLowerCase()) ||

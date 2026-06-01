@@ -42,6 +42,7 @@ export const getMatchConversations = async (
                 const matchData = matchDoc.data();
                 if (!matchData) return null;
 
+                if (!Array.isArray(matchData.users)) return null;
                 const otherUserId = matchData.users.find((uid: string) => uid !== currentUserId);
                 if (!otherUserId) return null;
 

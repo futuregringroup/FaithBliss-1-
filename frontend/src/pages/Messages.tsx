@@ -2265,6 +2265,19 @@ const MessagesContent = () => {
 
   useEffect(() => {
     if (!webSocketService) return;
+    const handleSocketError = (payload: unknown) => {
+      const message = typeof payload === 'string' ? payload : (payload as any)?.message;
+      showError(typeof message === 'string' && message ? message : 'Message failed to send.', 'Send Failed');
+    };
+    webSocketService.onError(handleSocketError);
+    return () => {
+      webSocketService.off('error', handleSocketError);
+      webSocketService.off('connect_error', handleSocketError);
+    };
+  }, [webSocketService, showError]);
+
+  useEffect(() => {
+    if (!webSocketService) return;
 
     const handleMessageReaction = (payload: MessageReactionUpdatePayload) => {
       if (!payload?.messageId) return;

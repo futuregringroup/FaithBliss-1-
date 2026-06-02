@@ -966,6 +966,20 @@ export function useClearApiCache() {
   }, []);
 }
 
+export function invalidateConversationMessagesCache(matchId: string): void {
+  for (const key of Array.from(requestCache.keys())) {
+    try {
+      const parsed = JSON.parse(key) as unknown[];
+      if (Array.isArray(parsed) && parsed.includes(matchId)) {
+        requestCache.delete(key);
+        activeRequests.delete(key);
+      }
+    } catch {
+      // key is not JSON-parseable; skip
+    }
+  }
+}
+
 
 
 

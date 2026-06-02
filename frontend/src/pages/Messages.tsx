@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 
 // Assuming these imports are correct for your Vite project structure
-import { useConversations, useConversationMessages } from '@/hooks/useAPI';
+import { useConversations, useConversationMessages, invalidateConversationMessagesCache } from '@/hooks/useAPI';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { HeartBeatLoader } from '@/components/HeartBeatLoader';
 import AppDropdown from '@/components/AppDropdown';
@@ -2126,6 +2126,12 @@ const MessagesContent = () => {
   // 2. Real-time Message Listener (with optimistic message replacement logic)
   const handleNewMessage = useCallback((message: Message) => {
     const matchId = message.matchId;
+
+    // If the message is for a conversation the user isn't currently viewing,
+    // drop the stale cache so the next open triggers a fresh Firestore fetch.
+    if (matchId !== lastReadMatchId.current) {
+      invalidateConversationMessagesCache(matchId);
+    }
 
     setLocalMessagesData(prev => {
       if (!prev) return null;

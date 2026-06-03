@@ -433,22 +433,39 @@ export const initializeSocketIO = (io: Server) => {
             const attachment = sanitizeAttachment(data.attachment);
             const replyToMessageId = sanitizeReplyToMessageId(data.replyToMessageId);
 
+            // TRACE: log receipt of sendMessage event
+            console.log('[TRACE][SERVER] sendMessage event received', {
+                authenticatedUserId: userId,
+                socketId: socket.id,
+                receiverId,
+                matchId,
+                clientTempId,
+                contentLength: normalizedContent.length,
+                hasAttachment: Boolean(attachment),
+            });
+
             if (!receiverId || !matchId || (!normalizedContent && !attachment)) {
+                console.warn('[TRACE][SERVER] sendMessage: rejected – missing required fields', { receiverId, matchId, hasContent: Boolean(normalizedContent), hasAttachment: Boolean(attachment) });
                 return socket.emit('error', 'Message must include receiverId, matchId, and text or attachment.');
             }
 
             try {
                 const matchDoc = await db.collection('matches').doc(matchId).get();
                 if (!matchDoc.exists) {
+                    console.warn('[TRACE][SERVER] sendMessage: match not found', { matchId });
                     return socket.emit('error', 'Cannot send message: Match not found.');
                 }
 
                 const matchData = matchDoc.data() as { users?: string[] } | undefined;
+                console.log('[TRACE][SERVER] match fetched', { matchId, users: matchData?.users });
+
                 if (!matchData?.users?.includes(userId)) {
+                    console.warn('[TRACE][SERVER] sendMessage: sender not in match', { userId, matchUsers: matchData?.users });
                     return socket.emit('error', 'Cannot send message: You are not part of this match.');
                 }
 
                 if (!matchData.users.includes(receiverId)) {
+                    console.warn('[TRACE][SERVER] sendMessage: receiver not in match', { receiverId, matchUsers: matchData?.users });
                     return socket.emit('error', 'Cannot send message: Receiver is not part of this match.');
                 }
 
@@ -458,7 +475,10 @@ export const initializeSocketIO = (io: Server) => {
                     : 'Someone';
 
                 const chatAccessState = await getChatAccessStateForUserId(userId);
-                if (isChatLockedForMatch(chatAccessState, matchId)) {
+                const chatLocked = isChatLockedForMatch(chatAccessState, matchId);
+                console.log('[TRACE][SERVER] chat access check', { userId, matchId, chatLocked, chatAccessState: JSON.stringify(chatAccessState) });
+                if (chatLocked) {
+                    console.warn('[TRACE][SERVER] sendMessage: chat locked for match', { userId, matchId });
                     return socket.emit('error', FREE_CHAT_LIMIT_MESSAGE);
                 }
 
@@ -484,6 +504,8 @@ export const initializeSocketIO = (io: Server) => {
                     updatedAt: admin.firestore.Timestamp.now(),
                 });
 
+                console.log('[TRACE][SERVER] Firestore write success', { messageId: messageRef.id, matchId, senderId: userId, receiverId });
+
                 const messageToSend = {
                     id: messageRef.id,
                     matchId,
@@ -501,8 +523,21 @@ export const initializeSocketIO = (io: Server) => {
                     clientTempId,
                 };
 
+                // TRACE: log recipient socket state before broadcasting
+                const recipientSockets = usersSocketMap.get(receiverId);
+                const senderSockets = usersSocketMap.get(userId);
+                console.log('[TRACE][SERVER] broadcasting newMessage', {
+                    matchId,
+                    receiverId,
+                    recipientSocketIds: recipientSockets ? Array.from(recipientSockets) : [],
+                    senderSocketIds: senderSockets ? Array.from(senderSockets) : [],
+                    messageId: messageRef.id,
+                });
+
                 io.to(matchId).emit('newMessage', messageToSend);
                 io.to(receiverId).emit('newMessage', messageToSend);
+
+                console.log('[TRACE][SERVER] newMessage emitted to room and recipient user room', { matchId, receiverId });
 
                 if (userId !== receiverId) {
                     await createNotification({
@@ -513,7 +548,7 @@ export const initializeSocketIO = (io: Server) => {
                     });
                 }
             } catch (error) {
-                console.error('Error sending message:', error);
+                console.error('[TRACE][SERVER] Error sending message:', error);
                 socket.emit('error', 'Failed to process message on server.');
             }
         });

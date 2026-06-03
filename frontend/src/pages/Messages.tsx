@@ -2127,6 +2127,18 @@ const MessagesContent = () => {
   const handleNewMessage = useCallback((message: Message) => {
     const matchId = message.matchId;
 
+    // TRACE: instrument newMessage receipt on client
+    console.log('[TRACE][RECIPIENT] handleNewMessage received', {
+      messageId: message.id,
+      clientTempId: message.clientTempId,
+      matchId,
+      senderId: message.senderId,
+      receiverId: message.receiverId,
+      contentLength: message.content?.length ?? 0,
+      currentActiveMatchId: lastReadMatchId.current,
+      isForCurrentConversation: matchId === lastReadMatchId.current,
+    });
+
     // If the message is for a conversation the user isn't currently viewing,
     // drop the stale cache so the next open triggers a fresh Firestore fetch.
     if (matchId !== lastReadMatchId.current) {
@@ -2150,13 +2162,16 @@ const MessagesContent = () => {
 
         if (tempIndex !== -1) {
           // Replace the optimistic (temporary) message with the real message
+          console.log('[TRACE][RECIPIENT] handleNewMessage: replaced optimistic temp message', { tempIndex, messageId: message.id, clientTempId: message.clientTempId });
           newMessages[tempIndex] = message;
         } else if (!newMessages.some(m => m.id === message.id)) {
           // Add the real message only if it's not already in the list
+          console.log('[TRACE][RECIPIENT] handleNewMessage: appended new message to state', { messageId: message.id });
           newMessages = [...newMessages, message];
         } else {
           // Message already exists
-          return prev; 
+          console.log('[TRACE][RECIPIENT] handleNewMessage: message already exists in state, skipping', { messageId: message.id });
+          return prev;
         }
 
         return {
@@ -2164,8 +2179,9 @@ const MessagesContent = () => {
           messages: newMessages,
         };
       }
-      
+
       // If this message is for a new chat (virtual match) that just became real...
+      console.log('[TRACE][RECIPIENT] handleNewMessage: message is NOT for current conversation', { messageMatchId: matchId, currentMatchId: prev?.match?.id });
       if (
         matchId &&
         !localConversations.find(conv => conv.id === matchId) &&
@@ -2174,7 +2190,7 @@ const MessagesContent = () => {
         refetch(); // Refetch conversation list to include the new match
         lastRefetchedMatchId.current = matchId;
       }
-      
+
       return prev;
     });
 
@@ -2597,16 +2613,37 @@ const MessagesContent = () => {
     messageType?: MessageType;
     replyToMessage?: Message | null;
   }): Promise<boolean> => {
-    if (!currentConversation || !webSocketService || !currentUserId) return false;
+    // TRACE: instrument sendOutgoingMessage entry
+    console.log('[TRACE][CLIENT] sendOutgoingMessage entered', {
+      hasCurrentConversation: Boolean(currentConversation),
+      conversationId: currentConversation?.id,
+      hasWebSocketService: Boolean(webSocketService),
+      wsConnected: webSocketService?.isConnected(),
+      currentUserId,
+      contentLength: messageContent?.trim().length ?? 0,
+      hasAttachment: Boolean(attachment),
+      isCurrentConversationLocked,
+      isVirtualConversation: Boolean(profileIdParam && currentConversation?.id === profileIdParam),
+    });
 
-    if (!messageContent.trim() && !attachment) return false;
+    if (!currentConversation || !webSocketService || !currentUserId) {
+      console.warn('[TRACE][CLIENT] sendOutgoingMessage: early exit – missing currentConversation/webSocketService/currentUserId');
+      return false;
+    }
+
+    if (!messageContent.trim() && !attachment) {
+      console.warn('[TRACE][CLIENT] sendOutgoingMessage: early exit – no content and no attachment');
+      return false;
+    }
 
     if (isCurrentConversationLocked) {
+      console.warn('[TRACE][CLIENT] sendOutgoingMessage: early exit – chat locked');
       showError(currentConversationLockMessage, 'Chat Locked');
       return false;
     }
 
     if (profileIdParam && currentConversation.id === profileIdParam) {
+      console.warn('[TRACE][CLIENT] sendOutgoingMessage: early exit – virtual/unmatched conversation');
       showError(
         'You can only send messages after both users have matched.',
         'Not Matched Yet'
@@ -2678,6 +2715,15 @@ const MessagesContent = () => {
       );
     });
 
+    // TRACE: about to call webSocketService.sendMessage
+    console.log('[TRACE][CLIENT] calling webSocketService.sendMessage', {
+      receiverId: currentConversation.otherUser.id,
+      matchId: actualMatchId,
+      clientTempId,
+      contentLength: normalizedContent.length,
+      hasAttachment: Boolean(attachment),
+      replyToMessageId: replyPreview?.id || null,
+    });
     webSocketService.sendMessage(
       currentConversation.otherUser.id,
       normalizedContent,
@@ -2692,6 +2738,14 @@ const MessagesContent = () => {
   };
 
   const handleSendMessage = async () => {
+    // TRACE: instrument handleSendMessage entry
+    console.log('[TRACE][CLIENT] handleSendMessage entered', {
+      newMessageLength: newMessage.trim().length,
+      hasPendingAttachment: Boolean(pendingAttachment),
+      selectedChat,
+      currentConversationId: currentConversation?.id,
+      otherUserId: currentConversation?.otherUser?.id,
+    });
     if (!newMessage.trim() && !pendingAttachment) return;
 
     const receiverId = currentConversation?.otherUser?.id;

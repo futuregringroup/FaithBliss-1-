@@ -183,6 +183,22 @@ class WebSocketService {
     clientTempId?: string,
     replyToMessageId?: string | null
   ): void {
+    // TRACE: instrument message send path
+    const connected = this.socket?.connected ?? false;
+    const socketId = (this.socket as any)?.id ?? '(no socket)';
+    console.log('[TRACE][WS] sendMessage entered', {
+      socketExists: Boolean(this.socket),
+      socketConnected: connected,
+      socketId,
+      receiverId,
+      matchId,
+      clientTempId,
+      contentLength: content?.length ?? 0,
+      hasAttachment: Boolean(attachment),
+    });
+    if (!connected) {
+      console.warn('[TRACE][WS] sendMessage: socket not connected – emit will be silently dropped');
+    }
     this.socket?.emit('sendMessage', {
       receiverId,
       content,
@@ -191,6 +207,7 @@ class WebSocketService {
       clientTempId,
       replyToMessageId,
     });
+    console.log('[TRACE][WS] socket.emit("sendMessage") called');
   }
 
   public emitTyping(receiverId: string, isTyping: boolean): void {

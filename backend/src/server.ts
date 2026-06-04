@@ -9,9 +9,11 @@ import http from "http";
 import mongoose from "mongoose";
 import multer from "multer";
 import path from "path";
+import { createAdapter } from "@socket.io/redis-adapter";
 import { Server } from "socket.io";
 
 import authRoutes from "./routes/authRoutes";
+import { getRedisClients } from "./config/redis";
 import { initializeLocalizedSubscription } from "./controllers/paymentController";
 import { getPublicFeatureSettings } from "./controllers/userController";
 import discoverRoutes from "./routes/discoverRoutes";
@@ -62,6 +64,18 @@ const io = new Server(httpServer, {
   },
   transports: ["websocket", "polling"],
 });
+if (process.env.REDIS_URL) {
+  getRedisClients()
+    .then(({ pub, sub }) => {
+      io.adapter(createAdapter(pub, sub));
+      console.log('[Socket.IO] Redis adapter attached');
+    })
+    .catch((err: Error) => {
+      console.error('[Socket.IO] Redis adapter failed to attach — falling back to in-memory:', err.message);
+    });
+} else {
+  console.warn('[Socket.IO] REDIS_URL not set — using in-memory adapter (single-instance only)');
+}
 initializeSocketIO(io);
 
 app.use(

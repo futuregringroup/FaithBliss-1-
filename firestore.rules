@@ -90,6 +90,77 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ─── chats (Firestore-native real-time messaging) ───────────────────────
+    //
+    // The parent document at chats/{matchId} declares the two participants.
+    // Two schema variations are supported — use whichever matches your data:
+    //
+    //   Variation A — userIds array:   { userIds: [uid1, uid2] }
+    //   Variation B — discrete fields: { user1Id: uid1, user2Id: uid2 }
+    //
+    // Only the participant check helper needs to change; all other rules are
+    // identical between the two variations.
+
+    // ── Variation A: userIds[] array ──────────────────────────────────────
+    match /chats/{matchId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.userIds;
+      allow create, update, delete: if false; // backend-only via Admin SDK
+    }
+
+    match /chats/{matchId}/messages/{messageId} {
+      // Read: caller must be a participant in the parent chat document.
+      allow read: if isSignedIn() &&
+                     request.auth.uid in
+                       get(/databases/$(database)/documents/chats/$(matchId)).data.userIds;
+
+      // Create: caller is the sender and is a participant in the parent doc.
+      // No client may backdate or forge the timestamp — only serverTimestamp()
+      // is accepted (the field must be missing from the incoming write so the
+      // server fills it in via FieldValue.serverTimestamp).
+      allow create: if isSignedIn() &&
+                       request.auth.uid == request.resource.data.senderId &&
+                       request.auth.uid in
+                         get(/databases/$(database)/documents/chats/$(matchId)).data.userIds &&
+                       !('timestamp' in request.resource.data);
+
+      // Updates (e.g. marking isRead) are only allowed for the recipient.
+      allow update: if isSignedIn() &&
+                       request.auth.uid in
+                         get(/databases/$(database)/documents/chats/$(matchId)).data.userIds &&
+                       request.resource.data.diff(resource.data)
+                         .affectedKeys().hasOnly(['isRead']);
+
+      allow delete: if false;
+    }
+
+    // ── Variation B: user1Id / user2Id discrete fields ────────────────────
+    // Uncomment this block (and remove Variation A above) if your chats
+    // documents use { user1Id: "...", user2Id: "..." } instead of userIds[].
+    //
+    // function isChatParticipant(matchId) {
+    //   let chat = get(/databases/$(database)/documents/chats/$(matchId)).data;
+    //   return request.auth.uid == chat.user1Id || request.auth.uid == chat.user2Id;
+    // }
+    //
+    // match /chats/{matchId} {
+    //   allow read: if isSignedIn() && isChatParticipant(matchId);
+    //   allow create, update, delete: if false;
+    // }
+    //
+    // match /chats/{matchId}/messages/{messageId} {
+    //   allow read:   if isSignedIn() && isChatParticipant(matchId);
+    //   allow create: if isSignedIn() &&
+    //                    request.auth.uid == request.resource.data.senderId &&
+    //                    isChatParticipant(matchId) &&
+    //                    !('timestamp' in request.resource.data);
+    //   allow update: if isSignedIn() &&
+    //                    isChatParticipant(matchId) &&
+    //                    request.resource.data.diff(resource.data)
+    //                      .affectedKeys().hasOnly(['isRead']);
+    //   allow delete: if false;
+    // }
+    // ─────────────────────────────────────────────────────────────────────
+
     // Deny all other collections not explicitly listed above.
     match /{document=**} {
       allow read, write: if false;

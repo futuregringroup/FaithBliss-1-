@@ -38,6 +38,7 @@ import {
 // Assuming these imports are correct for your Vite project structure
 import { useConversations, useConversationMessages, invalidateConversationMessagesCache } from '@/hooks/useAPI';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useChatRoom } from '@/hooks/useChatRoom';
 import { HeartBeatLoader } from '@/components/HeartBeatLoader';
 import AppDropdown from '@/components/AppDropdown';
 
@@ -609,6 +610,7 @@ const MessagesContent = () => {
   const layoutImage = layoutUser?.profilePhoto1 || undefined;
   const currentUserId = layoutUser?.id;
   const webSocketService = useWebSocket();
+  const { sendMessage: chatRoomSendMessage } = useChatRoom(selectedChat ?? '', currentUserId ?? '');
 
   useEffect(() => {
     callStatusRef.current = callStatus;
@@ -2626,8 +2628,8 @@ const MessagesContent = () => {
       isVirtualConversation: Boolean(profileIdParam && currentConversation?.id === profileIdParam),
     });
 
-    if (!currentConversation || !webSocketService || !currentUserId) {
-      console.warn('[TRACE][CLIENT] sendOutgoingMessage: early exit – missing currentConversation/webSocketService/currentUserId');
+    if (!currentConversation || !currentUserId) {
+      console.warn('[TRACE][CLIENT] sendOutgoingMessage: early exit – missing currentConversation/currentUserId');
       return false;
     }
 
@@ -2715,23 +2717,7 @@ const MessagesContent = () => {
       );
     });
 
-    // TRACE: about to call webSocketService.sendMessage
-    console.log('[TRACE][CLIENT] calling webSocketService.sendMessage', {
-      receiverId: currentConversation.otherUser.id,
-      matchId: actualMatchId,
-      clientTempId,
-      contentLength: normalizedContent.length,
-      hasAttachment: Boolean(attachment),
-      replyToMessageId: replyPreview?.id || null,
-    });
-    webSocketService.sendMessage(
-      currentConversation.otherUser.id,
-      normalizedContent,
-      actualMatchId,
-      attachment || null,
-      clientTempId,
-      replyPreview?.id || null
-    );
+    await chatRoomSendMessage(normalizedContent);
 
     scheduleScrollToBottom('auto');
     return true;
@@ -3913,12 +3899,11 @@ const MessagesContent = () => {
   }
 
   const hasComposerPayload = Boolean(newMessage.trim() || pendingAttachment);
-  const isComposerConnected = Boolean(webSocketService?.connected);
   const primaryActionDisabled = isCurrentConversationLocked
     ? true
     : isRecordingVoice
       ? false
-      : (isUploadingAttachment || !isComposerConnected);
+      : isUploadingAttachment;
 
   const handlePrimaryComposerAction = () => {
     if (isRecordingVoice) {

@@ -610,7 +610,7 @@ const MessagesContent = () => {
   const layoutImage = layoutUser?.profilePhoto1 || undefined;
   const currentUserId = layoutUser?.id;
   const webSocketService = useWebSocket();
-  const { sendMessage: chatRoomSendMessage } = useChatRoom(selectedChat ?? '', currentUserId ?? '');
+  const { sendMessage: chatRoomSendMessage, messages: firestoreMessages } = useChatRoom(selectedChat ?? '', currentUserId ?? '');
 
   useEffect(() => {
     callStatusRef.current = callStatus;
@@ -1882,6 +1882,7 @@ const MessagesContent = () => {
   // Use a local state for messages to allow real-time updates without immediate refetch
   const [localMessagesData, setLocalMessagesData] = useState<ConversationMessagesResponse | null>(null);
   const lastReadMatchId = useRef<string | null>(null);
+  const syncedFirestoreMsgIds = useRef<Set<string>>(new Set());
 
   // Fetch messages for selected conversation, and update local state
   const effectiveMatchId = selectedChat && selectedChat !== profileIdParam ? selectedChat : '';
@@ -2221,6 +2222,93 @@ const MessagesContent = () => {
 
     scheduleScrollToBottom('auto');
   }, [localConversations, refetch, selectedChat, currentUserId]);
+
+  // Reset the synced-IDs set whenever the active chat changes so old IDs
+  // from the previous conversation don't bleed into the next one.
+  useEffect(() => {
+    syncedFirestoreMsgIds.current = new Set();
+  }, [selectedChat]);
+
+  // Sync Firestore real-time messages into localMessagesData (chat view) and
+  // localConversations (inbox). This replaces the WebSocket-based path that is
+  // currently disabled: onSnapshot fires on both the sender's and recipient's
+  // clients, so we use it as the single source of truth for real-time delivery.
+  useEffect(() => {
+    if (!firestoreMessages.length || !selectedChat) return;
+
+    const newMsgs = firestoreMessages.filter(
+      (fm) => !syncedFirestoreMsgIds.current.has(fm.id)
+    );
+    if (!newMsgs.length) return;
+
+    newMsgs.forEach((fm) => syncedFirestoreMsgIds.current.add(fm.id));
+
+    // --- Chat view ---
+    setLocalMessagesData((prev) => {
+      if (!prev?.match || prev.match.id !== selectedChat) return prev;
+
+      let messages = [...prev.messages];
+      for (const fm of newMsgs) {
+        // Replace a matching optimistic (temp-*) message if one exists
+        const tempIdx = messages.findIndex(
+          (m) =>
+            m.id.startsWith('temp-') &&
+            m.senderId === fm.senderId &&
+            m.content === fm.content
+        );
+
+        const mapped: Message = {
+          id: fm.id,
+          matchId: fm.matchId,
+          senderId: fm.senderId,
+          receiverId: '',
+          content: fm.content,
+          type: fm.type,
+          isRead: fm.isRead,
+          createdAt: fm.createdAt,
+          updatedAt: fm.createdAt,
+          attachment: null,
+          replyTo: null,
+          reactions: [],
+        };
+
+        if (tempIdx !== -1) {
+          messages[tempIdx] = mapped;
+        } else if (!messages.some((m) => m.id === fm.id)) {
+          messages = [...messages, mapped];
+        }
+      }
+
+      return { ...prev, messages };
+    });
+
+    // --- Inbox (last-message preview + unread badge) ---
+    const lastMsg = newMsgs[newMsgs.length - 1];
+    setLocalConversations((prev) => {
+      const updated = prev.map((conv) => {
+        if (conv.id !== selectedChat) return conv;
+        return {
+          ...conv,
+          lastMessage: {
+            content: lastMsg.content,
+            createdAt: lastMsg.createdAt,
+            type: lastMsg.type,
+            attachment: null,
+          },
+          unreadCount:
+            lastMsg.senderId !== currentUserId
+              ? (conv.unreadCount || 0) + 1
+              : conv.unreadCount,
+          updatedAt: lastMsg.createdAt,
+        };
+      });
+      return updated.sort(
+        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      );
+    });
+
+    scheduleScrollToBottom('smooth');
+  }, [firestoreMessages, selectedChat, currentUserId]);
 
   const applyMessageReactionsUpdate = useCallback(
     (messageId: string, reactions: Message['reactions'], matchId?: string) => {
